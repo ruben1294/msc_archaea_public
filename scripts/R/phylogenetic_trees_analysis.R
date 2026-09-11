@@ -184,7 +184,7 @@ write.table(resultados_ordenados, tsv_file,
 cat("\n[OK] Tabla de resultados guardada en:", tsv_file, "\n")
 
 # =============================================================================
-# 3. MATRIZ DE CORRELACIÓN DE TODOS LOS DENDROGRAMAS
+# ---- 3. correlation matrix across every tree ----
 # =============================================================================
 
 cat("\n--- Generando matriz de correlación ---\n")

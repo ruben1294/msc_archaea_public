@@ -278,8 +278,8 @@ STATION_COLORS = {
 }
 
 # Depth colors: code to (hex, Spanish label)
-# Note: OMZ samples have Depth="ROMZ" in MAGs_metadata.tsv (ROMZ = Región de
-# mínima de oxígeno / oxygen minimum zone), not "OMZ".
+# OMZ samples carry Depth="ROMZ" in MAGs_metadata.tsv, not "OMZ". ROMZ is the
+# Spanish abbreviation for the oxygen minimum zone.
 DEPTH_COLORS = {
     "BTM":  ("#1d3557", "Fondo"),
     "1000": ("#a8dadc", "1000 m"),

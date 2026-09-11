@@ -428,7 +428,7 @@ species_parent_lookup <- get_parent_lookup(meta_df, "Species")
 cat("  [OK] Parent lookup para", length(species_parent_lookup), "especies\n")
 
 # ---- sparse ANI: edge list of pairs above 75% ----
-# Formato actual de skani sparse: Ref_file, Query_file, ANI, Align_fraction_ref,
+# skani sparse output columns: Ref_file, Query_file, ANI, Align_fraction_ref,
 # Align_fraction_query, Ref_name, Query_name. Las dos primeras columnas son
 # skani reports absolute .fa paths, so the basename without extension is what
 # joins against meta_df$NameWithoutExtension.

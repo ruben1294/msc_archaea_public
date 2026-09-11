@@ -24,18 +24,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # This one runs locally rather than on the cluster: it is sqlite work and small
 # TSV edits, nothing that needs a scheduler.
 
-# --- Logging functions ---
-log_info() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $*"
-}
-log_error() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $*" >&2
-}
-log_warn() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $*"
-}
-
-# --- Error handling ---
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR
 
 log_info "anvi'o 9 pangenome cleanup for publication"
@@ -59,16 +47,6 @@ if [[ ! -f "$MAGS_METADATA" ]]; then
     exit 1
 fi
 
-# Required external tools
-for cmd in sqlite3 anvi-delete-misc-data anvi-export-misc-data anvi-import-misc-data python3; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        log_error "Required command not found in PATH: $cmd"
-        log_error "Activate the anvio-9 conda env before running this script:"
-        log_error "  conda activate anvio-9"
-        exit 1
-    fi
-done
-
 # Keys to delete from items / layers misc-data tables
 ITEMS_KEYS_TO_REMOVE=(
     "EVERYTHING"
@@ -87,7 +65,7 @@ LAYERS_KEYS_TO_REMOVE=(
 )
 
 # English -> Spanish renames (real anvi'o v9 pangenome keys)
-# Items: primera letra capitalizada
+# Item keys, capitalised for display
 declare -A RENAME_ITEMS=(
     [num_genomes_gene_cluster_has_hits]="Prevalencia_genómica"
     [num_genes_in_gene_cluster]="Genes_en_cluster"
@@ -139,8 +117,8 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
 
     log_info "  Species: ${species_name//_/ }"
 
-# ---- pASO 0: copias de trabajo + integrity checks ----
-    log_info "    Paso 0: copying PAN.db -> PAN_modified.db; GENOMES.db -> GENOMES_modified.db"
+# ---- step 0: working copies, with integrity checks ----
+    log_info "    Step 0: copying PAN.db -> PAN_modified.db; GENOMES.db -> GENOMES_modified.db"
     cp -f "$pan_db" "$pan_mod"
     cp -f "$gen_db" "$gen_mod"
     for db in "$pan_mod" "$gen_mod"; do
@@ -153,7 +131,7 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
     log_info "    Originals intact: $(basename "$pan_db"), $(basename "$gen_db")"
     log_info "    Working copies:   $(basename "$pan_mod"), $(basename "$gen_mod")"
 
-    # Snapshot inicial de claves
+    # Snapshot of the keys before anything is removed
     log_info "    Initial item_additional_data keys:"
     sqlite3 "$pan_mod" "SELECT DISTINCT data_key FROM item_additional_data;" \
         | sed 's/^/      /'
@@ -161,8 +139,8 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
     sqlite3 "$pan_mod" "SELECT DISTINCT data_key FROM layer_additional_data;" \
         | sed 's/^/      /'
 
-# ---- tAREA 1: eliminar capas de items ----
-    log_info "    Tarea 1a: deleting items keys from PAN_modified.db.item_additional_data"
+# ---- task 1: drop items keys ----
+    log_info "    Task 1a: deleting items keys from PAN_modified.db.item_additional_data"
     for key in "${ITEMS_KEYS_TO_REMOVE[@]}"; do
         if anvi-delete-misc-data \
             -p "$pan_mod" \
@@ -174,7 +152,7 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
         fi
     done
 
-    log_info "    Tarea 1b: deleting function annotation sources from GENOMES_modified.db.gene_function_calls"
+    log_info "    Task 1b: deleting function annotation sources from GENOMES_modified.db.gene_function_calls"
     for src in "${GENE_FUNCTION_SOURCES_TO_REMOVE[@]}"; do
         deleted=$(sqlite3 "$gen_mod" "DELETE FROM gene_function_calls WHERE source = '$src'; SELECT changes();")
         log_info "      removed source '$src': $deleted rows"
@@ -197,8 +175,8 @@ con.close()
 PYEOF
     sqlite3 "$gen_mod" "VACUUM;" >/dev/null 2>&1 || true
 
-# ---- tAREA 2: eliminar capas de layers ----
-    log_info "    Tarea 2: deleting layers keys"
+# ---- task 2: drop layers keys ----
+    log_info "    Task 2: deleting layers keys"
     for key in "${LAYERS_KEYS_TO_REMOVE[@]}"; do
         if anvi-delete-misc-data \
             -p "$pan_mod" \
@@ -210,15 +188,15 @@ PYEOF
         fi
     done
 
-    # TAREA 3 (opción B): NO se renombra genome_name.
+    # Task 3: genome_name is deliberately left alone.
     # Step 24 already imported DisplayName as a layer, and anvi-display-pan
     # labels genomes from it. The internal genome_name stays as the sanitised
     # NameWithoutExtension so it keeps matching GENOMES.db and every internal
     # table in PAN.db.
-    log_info "    Tarea 3: skipped (genome_name kept; DisplayName layer already provides relabeling)"
+    log_info "    Task 3: skipped (genome_name kept; DisplayName layer already provides relabeling)"
 
-# ---- tAREA 4: traducir nombres de parámetros (items + layers) ----
-    log_info "    Tarea 4: translating parameter names to Spanish"
+# ---- task 4: translate the parameter names, items and layers ----
+    log_info "    Task 4: translating parameter names to Spanish"
     items_tsv_en="${species_dir}/items_data.tsv"
     items_tsv_es="${species_dir}/items_data_esp.tsv"
     layers_tsv_en="${species_dir}/layers_data.tsv"
@@ -274,7 +252,7 @@ rewrite("${items_tsv_en}", "${items_tsv_es}", rename_items)
 rewrite("${layers_tsv_en}", "${layers_tsv_es}", rename_layers)
 PYEOF
 
-    # Importar versiones en español
+    # Import the Spanish versions
     anvi-import-misc-data \
         "$items_tsv_es" \
         -p "$pan_mod" \
@@ -310,7 +288,7 @@ PYEOF
     #   OMZ / ROMZ -> ZMOR
     #   1000       -> "1000 m"
     #   BTM        -> Fondo
-    log_info "    Tarea 5: building & importing layers (Estacion, Profundidad ES)"
+    log_info "    Task 5: building & importing layers (Estacion, Profundidad ES)"
     species_layers_tsv="${species_dir}/misc_data_layers_${species_name}.tsv"
 
     if [[ ! -f "$external_genomes_file" ]]; then
@@ -367,16 +345,16 @@ PYEOF
     #        layer_orders.data (newick string).
     #   GEN: genome_info.genome_name, gene_function_calls.genome_name,
     #        gene_info.genome_name, self.value (cuando key='genome_names').
-    # El hash 'genomes_storage_hash' se preserva idéntico en ambas DBs;
+    # genomes_storage_hash stays identical across both databases;
     # anvi'o only checks that the two agree; it does not recompute them.
-    log_info "    Tarea 6: renaming genome_name -> PanShortName (cascade across PAN+GENOMES)"
+    log_info "    Task 6: renaming genome_name -> PanShortName (cascade across PAN+GENOMES)"
     python3 - <<PYEOF
 import sqlite3, csv, re, sys
 
 def sanitize(s):
     return re.sub(r"[^a-zA-Z0-9_]", "_", s or "")
 
-# Genomas presentes en este pangenoma
+# The genomes this pangenome covers
 keep = set()
 with open("${external_genomes_file}") as f:
     next(f)
@@ -407,7 +385,7 @@ print(f"      Renaming {len(mapping)} genomes:")
 for o, n in sorted(mapping.items()):
     print(f"        {o}  ->  {n}")
 
-# Sanity: target names únicos
+# Sanity check: the target names have to be unique
 if len(set(mapping.values())) != len(mapping):
     print("ERROR: PanShortName values colisionan dentro de esta especie")
     sys.exit(1)

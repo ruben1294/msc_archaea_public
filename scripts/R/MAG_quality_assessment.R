@@ -2949,7 +2949,7 @@ p_bar_context <- ggplot(summary_54, aes(x = Station, y = n_MAGs, fill = Mean_Qua
     x = "Estación de muestreo",
     y = "Número de MAGs recuperados"
   ) +
-  # Usando tu tema personalizado
+  # Using the shared publication theme
   theme_publication(base_size = 14) +
   theme(
     strip.background = element_rect(fill = "gray90", color = "black"),

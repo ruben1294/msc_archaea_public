@@ -526,13 +526,13 @@ plot_forest <- function(results_df, title, outfile,
 # CARGAR DATOS
 # =============================================================================
 
-# ---- dRAM2 traits ----
+# ---- DRAM2 traits ----
 if (!file.exists(TRAITS_FILE)) stop("traits.xlsx no encontrado: ", TRAITS_FILE)
 traits_energy <- read_excel(TRAITS_FILE, sheet = "energy")
 traits_carbon <- read_excel(TRAITS_FILE, sheet = "carbon")
 cat("DRAM2 traits cargados\n")
 
-# ---- cNPS cycle abundance (CSV to data.frame binario MAG × pathway) ----
+# ---- CNPS cycle abundance: CSV to a binary MAG by pathway data.frame ----
 cat("Cargando datos CNPS.cycle...\n")
 cnps_carbon   <- load_cnps_abundance(file.path(CNPS_DIR, "carbon",   "C_abundance.csv"))
 cnps_nitrogen <- load_cnps_abundance(file.path(CNPS_DIR, "nitrogen", "N_abundance.csv"))

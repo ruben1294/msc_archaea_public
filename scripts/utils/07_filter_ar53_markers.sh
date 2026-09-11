@@ -16,9 +16,8 @@ OUTPUT_DIR="${PROJECT_DIR}/${MARKER_ALIGNMENT_SUBDIR:-10_marker_alignment}/ar53_
 # Scratch space for the intermediate files
 TEMP_DIR="${OUTPUT_DIR}/.temp_processing"
 
-# Configuración
 TOTAL_MARKERS=53
-MIN_MARKER_PERCENT=50  # Porcentaje mínimo de marcadores requerido
+MIN_MARKER_PERCENT=50  # A MAG below this share of markers is dropped
 MIN_MARKERS=$(awk -v total=$TOTAL_MARKERS -v percent=$MIN_MARKER_PERCENT 'BEGIN {print int((total * percent / 100) + 0.5)}')
 
 mkdir -p "$OUTPUT_DIR"
@@ -34,18 +33,18 @@ log_msg() {
 
 # Iniciar log
 log_msg "========================================"
-log_msg "Filtrado de marcadores AR53"
+log_msg "Filtering de markers AR53"
 log_msg "Fecha: $(date '+%Y-%m-%d %H:%M:%S')"
 log_msg "========================================"
-log_msg "Directorio de entrada: $AR53_DIR"
-log_msg "Directorio de salida: $OUTPUT_DIR"
-log_msg "Directorio temporal: $TEMP_DIR"
-log_msg "Archivo de log: $LOG_FILE"
+log_msg "Input directory: $AR53_DIR"
+log_msg "Output directory: $OUTPUT_DIR"
+log_msg "Scratch directory: $TEMP_DIR"
+log_msg "Log file: $LOG_FILE"
 log_msg ""
-log_msg "Configuración:"
-log_msg "  Total de marcadores AR53: $TOTAL_MARKERS"
-log_msg "  Mínimo porcentaje requerido: ${MIN_MARKER_PERCENT}%"
-log_msg "  Mínimo marcadores requeridos: $MIN_MARKERS"
+log_msg "Configuration:"
+log_msg "  Total de markers AR53: $TOTAL_MARKERS"
+log_msg "  Minimum percentage required: ${MIN_MARKER_PERCENT}%"
+log_msg "  Minimum markers required: $MIN_MARKERS"
 log_msg ""
 
 # ============================================================
@@ -53,7 +52,7 @@ log_msg ""
 # ============================================================
 
 log_msg "========================================"
-log_msg "PASO 1: Filtrado por longitud de secuencia"
+log_msg "Step 1: filter by sequence length"
 log_msg "========================================"
 
 processed=0
@@ -61,19 +60,19 @@ total_seqs_kept_length=0
 total_seqs_removed_length=0
 total_files=$(ls "$AR53_DIR"/*.fa 2>/dev/null | wc -l)
 
-log_msg "Total de archivos a procesar: $total_files"
+log_msg "Total de files a procesar: $total_files"
 log_msg ""
 
-# Procesar cada archivo .fa
+# One marker file at a time
 for fasta_file in "$AR53_DIR"/*.fa; do
     [ -f "$fasta_file" ] || continue
     
     basename_file=$(basename "$fasta_file")
     temp_output_file="$TEMP_DIR/$basename_file"
     
-    log_msg "Procesando: $basename_file"
+    log_msg "Processing: $basename_file"
     
-    # Calcular longitud promedio usando awk
+    # Mean sequence length, which sets the length floor below
     avg_length=$(awk '
     BEGIN { total_length=0; seq_count=0; current_seq="" }
     /^>/ {
@@ -102,8 +101,8 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     # to align usefully, so that is the cut.
     min_length=$(awk -v avg="$avg_length" 'BEGIN { print int(avg * 0.30) }')
     
-    log_msg "  Longitud promedio: $avg_length AA"
-    log_msg "  Umbral mínimo (30%): $min_length AA"
+    log_msg "  Length mean: $avg_length AA"
+    log_msg "  Length floor, 30% of the mean: $min_length AA"
     
     temp_stats="${TEMP_DIR}/.stats_${basename_file}.tmp"
     
@@ -111,7 +110,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     awk -v min_len="$min_length" -v stats_file="$temp_stats" '
     BEGIN { current_header=""; current_seq=""; kept=0; removed=0 }
     /^>/ {
-        # Procesar secuencia anterior
+        # Flush the sequence that just ended
         if (current_header != "") {
             seq_length = length(current_seq)
             if (seq_length > min_len) {
@@ -129,7 +128,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     }
     { current_seq = current_seq $0 }
     END {
-        # Procesar última secuencia
+        # Flush the final sequence, which no header follows
         if (current_header != "") {
             seq_length = length(current_seq)
             if (seq_length > min_len) {
@@ -140,7 +139,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
                 ++removed
             }
         }
-        # Escribir estadísticas al archivo temporal
+        # awk runs in a subshell, so its counters come back through a temp file
         print kept "," removed > stats_file
     }
     ' "$fasta_file" > "$temp_output_file"
@@ -155,8 +154,8 @@ for fasta_file in "$AR53_DIR"/*.fa; do
         removed=0
     fi
     
-    log_msg "  Secuencias conservadas: $kept"
-    log_msg "  Secuencias eliminadas: $removed"
+    log_msg "  Sequences kept: $kept"
+    log_msg "  Secuencias dropped: $removed"
     
     # Actualizar contadores totales
     total_seqs_kept_length=$((total_seqs_kept_length + kept))
@@ -166,10 +165,10 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     log_msg ""
 done
 
-log_msg "Paso 1 completado:"
-log_msg "  Archivos procesados: $processed"
-log_msg "  Secuencias conservadas: $total_seqs_kept_length"
-log_msg "  Secuencias eliminadas por longitud: $total_seqs_removed_length"
+log_msg "Step 1 done:"
+log_msg "  Files processed: $processed"
+log_msg "  Sequences kept: $total_seqs_kept_length"
+log_msg "  Sequences dropped on length: $total_seqs_removed_length"
 log_msg ""
 
 # ============================================================
@@ -177,7 +176,7 @@ log_msg ""
 # ============================================================
 
 log_msg "========================================"
-log_msg "PASO 2: Análisis de completitud de marcadores"
+log_msg "Step 2: marker completeness"
 log_msg "========================================"
 
 ALL_MAGS_FILE="${TEMP_DIR}/all_mags.txt"
@@ -206,7 +205,7 @@ mags_kept=0
 mags_removed=0
 
 while IFS= read -r mag_name; do
-    # Contar en cuántos archivos aparece este MAG
+    # How many markers this MAG appears in
     marker_count=0
     
     for temp_file in "$TEMP_DIR"/*.fa; do
@@ -216,7 +215,7 @@ while IFS= read -r mag_name; do
         fi
     done
     
-    # Calcular porcentaje de completitud
+    # Marker completeness, as a percentage
     completeness=$(awk -v present=$marker_count -v total=$TOTAL_MARKERS 'BEGIN {printf "%.2f", (present/total)*100}')
     
     # Decidir si mantener o eliminar
@@ -232,9 +231,9 @@ while IFS= read -r mag_name; do
     
 done < "${TEMP_DIR}/unique_mags.txt"
 
-log_msg "Análisis completado:"
-log_msg "  MAGs con ≥${MIN_MARKER_PERCENT}% marcadores: $mags_kept (conservados)"
-log_msg "  MAGs con <${MIN_MARKER_PERCENT}% marcadores: $mags_removed (eliminados)"
+log_msg "Analysis done:"
+log_msg "  MAGs con ≥${MIN_MARKER_PERCENT}% markers: $mags_kept (kept)"
+log_msg "  MAGs con <${MIN_MARKER_PERCENT}% markers: $mags_removed (dropped)"
 log_msg "  Reporte de completitud: $MAG_REPORT"
 log_msg ""
 
@@ -243,7 +242,7 @@ log_msg ""
 # ============================================================
 
 log_msg "========================================"
-log_msg "PASO 3: Generando archivos finales"
+log_msg "PASO 3: Writing files finales"
 log_msg "========================================"
 
 total_seqs_kept_final=0
@@ -267,7 +266,7 @@ for temp_file in "$TEMP_DIR"/*.fa; do
         removed_seqs=0;
     }
     /^>/ {
-        # Procesar secuencia anterior
+        # Flush the sequence that just ended
         if (current_header != "" && keep_current == 1) {
             print current_header
             print current_seq
@@ -294,7 +293,7 @@ for temp_file in "$TEMP_DIR"/*.fa; do
     }
     { current_seq = current_seq $0 }
     END {
-        # Procesar última secuencia
+        # Flush the final sequence, which no header follows
         if (current_header != "" && keep_current == 1) {
             print current_header
             print current_seq
@@ -307,7 +306,7 @@ for temp_file in "$TEMP_DIR"/*.fa; do
     ' mags_keep_file="$MAGS_TO_KEEP" stats_file="${TEMP_DIR}/.final_stats_${basename_file}.tmp" \
       "$temp_file" > "$final_output"
     
-    # Leer estadísticas
+    # Read the counters back
     stats_file="${TEMP_DIR}/.final_stats_${basename_file}.tmp"
     if [ -f "$stats_file" ]; then
         kept_final=$(cut -d',' -f1 "$stats_file")
@@ -322,10 +321,10 @@ for temp_file in "$TEMP_DIR"/*.fa; do
     if [ "$kept_final" -eq 0 ]; then
         rm -f "$final_output"
         ((++empty_files))
-        log_msg "  ${basename_file}: sin secuencias después de filtrado (archivo no creado)"
+        log_msg "  ${basename_file}: no sequences survived filtering, file not written"
     else
         ((++files_with_seqs))
-        log_msg "  ${basename_file}: $kept_final secuencias conservadas, $removed_final removidas por MAG incompleto"
+        log_msg "  ${basename_file}: $kept_final sequences conservadas, $removed_final removidas por MAG incompleto"
     fi
     
     total_seqs_kept_final=$((total_seqs_kept_final + kept_final))
@@ -333,10 +332,10 @@ for temp_file in "$TEMP_DIR"/*.fa; do
 done
 
 log_msg ""
-log_msg "Paso 3 completado:"
+log_msg "Step 3 done:"
 log_msg "  Archivos con datos: $files_with_seqs"
-log_msg "  Archivos vacíos (no creados): $empty_files"
-log_msg "  Secuencias conservadas: $total_seqs_kept_final"
+log_msg "  Empty files, not written: $empty_files"
+log_msg "  Sequences kept: $total_seqs_kept_final"
 log_msg "  Secuencias removidas por MAG incompleto: $total_seqs_removed_mag"
 log_msg ""
 
@@ -345,14 +344,14 @@ log_msg ""
 # ============================================================
 
 log_msg "========================================"
-log_msg "Limpiando archivos temporales..."
+log_msg "Limpiando files temporales..."
 log_msg "========================================"
 
 rm -rf "$TEMP_DIR"
-log_msg "Directorio temporal eliminado"
+log_msg "Scratch directory eliminado"
 log_msg ""
 
-# Calcular estadísticas finales
+# Final counts
 total_seqs_original=$((total_seqs_kept_length + total_seqs_removed_length))
 total_seqs_removed=$((total_seqs_removed_length + total_seqs_removed_mag))
 
@@ -365,23 +364,23 @@ fi
 log_msg "========================================"
 log_msg "RESUMEN FINAL"
 log_msg "========================================"
-log_msg "Secuencias originales: $total_seqs_original"
+log_msg "Sequences in: $total_seqs_original"
 log_msg ""
-log_msg "Filtrado por longitud:"
+log_msg "Filtering por length:"
 log_msg "  Eliminadas: $total_seqs_removed_length"
 log_msg ""
-log_msg "Filtrado por completitud de MAGs:"
+log_msg "Filtering por completitud de MAGs:"
 log_msg "  MAGs analizados: $total_mags"
-log_msg "  MAGs conservados (≥${MIN_MARKER_PERCENT}%): $mags_kept"
-log_msg "  MAGs eliminados (<${MIN_MARKER_PERCENT}%): $mags_removed"
-log_msg "  Secuencias eliminadas: $total_seqs_removed_mag"
+log_msg "  MAGs kept (≥${MIN_MARKER_PERCENT}%): $mags_kept"
+log_msg "  MAGs dropped (<${MIN_MARKER_PERCENT}%): $mags_removed"
+log_msg "  Secuencias dropped: $total_seqs_removed_mag"
 log_msg ""
 log_msg "Resultado final:"
-log_msg "  Secuencias conservadas: $total_seqs_kept_final"
-log_msg "  Secuencias eliminadas (total): $total_seqs_removed"
-log_msg "  Tasa de retención: $final_retention"
+log_msg "  Sequences kept: $total_seqs_kept_final"
+log_msg "  Secuencias dropped (total): $total_seqs_removed"
+log_msg "  Retention rate: $final_retention"
 log_msg ""
-log_msg "Archivos marcadores finales: $files_with_seqs / $total_files"
+log_msg "Archivos markers finales: $files_with_seqs / $total_files"
 log_msg ""
 log_msg "Resultados en: $OUTPUT_DIR"
 log_msg "Reporte de MAGs: $MAG_REPORT"

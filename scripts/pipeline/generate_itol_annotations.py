@@ -75,7 +75,7 @@ REFERENCE_LEAVES = [
 ALL_LEAVES = TARGET_MAGS + REFERENCE_LEAVES
 BACTERIAL_OUTGROUPS = {'REF_GCF_000008545.1', 'REF_GCA_000008545.1'}
 
-# MAPEO A NOMBRES RENOMBRADOS (según 10mags_pmsf.renamed.treefile)
+# Mapping to the relabelled names, as they appear in 10mags_pmsf.renamed.treefile
 
 # Internal name to relabelled name, for the MAGs
 MAG_DISPLAY_NAMES = {
@@ -197,7 +197,7 @@ TAXONOMY_MAP = {
     'REF_GCF_000008625.1':    ('#adb5bd', 'Bacteria'),
 }
 
-# CAMPOS DRAM2 (07_dram2_binary.txt) - Traducidos al español
+# DRAM2 fields for 07_dram2_binary.txt, labelled in Spanish for the figure
 DRAM2_FIELDS = [
     ('Fijación de carbono (CBB)',
      ['Reductive pentose phosphate cycle (Calvin cycle)'], 0.5),
@@ -314,14 +314,14 @@ def parse_quality(path):
     missing = target_set - set(completeness)
     if missing:
         for m in sorted(missing):
-            print(f" WARNING [quality]: {m} no encontrado en quality report", file=sys.stderr)
+            print(f" WARNING [quality]: {m} not found en quality report", file=sys.stderr)
     return completeness, contamination
 
 def parse_metadata(path):
     """
     Lee MAGs_metadata.tsv.
     Devuelve:
-      order : lista de NameWithoutExtension en orden de aparición (sin header)
+      order : NameWithoutExtension values in the order they appear, no header
       stations : dict NameWithoutExtension to Station
       depths   : dict NameWithoutExtension to Depth
       display_names_tree : dict NameWithoutExtension to DisplayName_formato_arbol
@@ -353,7 +353,7 @@ def parse_metadata(path):
 def tsv_name_to_dot(tsv_name):
     """
     Convierte nombre estilo TSV (guiones bajos entre campos principales) al
-    formato del árbol (puntos):
+    tree format, dot separated:
       A4_BTM_megahit_bin.28  to A4.BTM.megahit.bin.28
       A4_1000_megahit_bin.28 to A4.1000.megahit.bin.28
     Solo reemplaza los guiones bajos entre STATION, DEPTH y ASSEMBLER.
@@ -367,7 +367,7 @@ def tsv_name_to_dot(tsv_name):
 
 def parse_ani(path, target_set):
     """
-    Lee tax_.ar53.summary.tsv y extrae el ANI más relevante para cada MAG objetivo.
+    Reads tax_.ar53.summary.tsv and pulls the most relevant ANI per target MAG.
     Prioridad: closest_genome_ani to closest_placement_ani to -1 (sin hit).
     Devuelve dict: dot_name to float (ANI) o -1.
     """
@@ -393,7 +393,7 @@ def parse_ani(path, target_set):
 
 def parse_product(product_path, metadata_order):
     """
-    Lee product.tsv (sin columna de índice; filas alineadas con metadata_order).
+    Reads product.tsv. It has no index column, and its rows align with metadata_order.
     Devuelve dict: mag_name to dict{column_name to value_string}
     Solo incluye MAGs en TARGET_MAGS.
     """
@@ -411,10 +411,11 @@ def parse_product(product_path, metadata_order):
 
 def eval_field(mag_row, columns, threshold):
     """
-    Evalúa si un campo metabólico está presente para un MAG dado.
-    OR lógico sobre la lista de columnas:
+    Whether a metabolic field is present for one MAG.
+    Logical OR across the listed columns:
       - threshold=None to columna booleana: True / '1' to 1, False / '0' to 0
-      - threshold=float to columna numérica (0-1): >= threshold to 1
+      threshold as a float treats the column as numeric 0 to 1, and counts it
+      as present at or above that value
     Devuelve 1 o 0.
     """
     for col in columns:
@@ -434,8 +435,8 @@ def eval_field(mag_row, columns, threshold):
 
 def get_dram2_active_fields():
     """
-    Calcula qué campos DRAM2 tienen al menos un valor 1 en algún MAG.
-    Retorna lista de índices de campos no vacíos.
+    Which DRAM2 fields carry at least one positive across the MAGs.
+    Returns the indices of the non-empty fields.
     """
     active = []
     n_fields = len(DRAM2_EXPECTED.get(list(DRAM2_EXPECTED.keys())[0], []))
@@ -540,7 +541,7 @@ def write_03_completeness_bar(outdir, completeness, contamination):
             val = completeness.get(mag)
             if val is None:
                 continue
-            # Clasificación según criterios MIMAG
+            # MIMAG bands
             # https://www.nature.com/articles/nbt.3893
             if val >= 90:
                 color = '#2a9d8f'  # High-quality
@@ -571,7 +572,7 @@ def write_04_contamination_bar(outdir, contamination):
             val = contamination.get(mag)
             if val is None:
                 continue
-            # Clasificación según criterios MIMAG (https://www.nature.com/articles/nbt.3893)
+            # MIMAG bands (https://www.nature.com/articles/nbt.3893)
             # High-quality MAGs: ≤5%, Medium-quality MAGs: ≤10%
             if val <= 5:
                 color = '#2a9d8f'  # calidad alta (green)
@@ -588,7 +589,7 @@ def write_05_ani_heatmap(outdir, ani_data):
     for mag, expected in ANI_EXPECTED.items():
         observed = ani_data.get(mag, None)
         if observed is None:
-            print(f" WARNING [05]: {mag} no encontrado en taxonomy TSV", file=sys.stderr)
+            print(f" WARNING [05]: {mag} not found en taxonomy TSV", file=sys.stderr)
         elif expected != -1 and observed != -1:
             if abs(observed - expected) > 0.5:
                 print(
@@ -618,7 +619,7 @@ def write_05_ani_heatmap(outdir, ani_data):
         for mag in TARGET_MAGS:
             val = ani_data.get(mag, -1)
             if val == -1:
-                f.write(f"{translate_leaf(mag)}\t\n")  # vacío to NaN to COLOR_NAN
+                f.write(f"{translate_leaf(mag)}\t\n")  # blank, which iTOL renders as COLOR_NAN
             else:
                 f.write(f"{translate_leaf(mag)}\t{val:.2f}\n")
     return fname
@@ -641,14 +642,14 @@ def write_06_label_styles(outdir):
                 color, size = '#adb5bd', '1'
             else:
                 color, size = '#457b9d', '1'
-            # Referencias: itálica
+            # Reference genomes go italic
             f.write(f"{out_leaf}\tlabel\tnode\t{color}\t{size}\titalic\t\n")
     return fname
 
 def write_07_dram2_binary(outdir, product_data):
     fname = '07_dram2_binary.txt'
     
-    # Obtener índices de campos activos (no vacíos)
+    # Indices of the fields that carry data
     active_field_indices = get_dram2_active_fields()
     
     # Filtrar DRAM2_FIELDS, colores y etiquetas
@@ -662,7 +663,7 @@ def write_07_dram2_binary(outdir, product_data):
     missing_cols = set()
     for mag in TARGET_MAGS:
         if mag not in product_data:
-            print(f" WARNING [07]: {mag} no encontrado en product.tsv", file=sys.stderr)
+            print(f" WARNING [07]: {mag} not found en product.tsv", file=sys.stderr)
             results[mag] = [0] * n_fields
             continue
         row = product_data[mag]
@@ -699,7 +700,7 @@ def write_07_dram2_binary(outdir, product_data):
             for lbl, exp, obs in diff:
                 print(f"  {lbl}: esperado={exp}, calculado={obs}", file=sys.stderr)
     if n_mismatches == 0:
-        print(" [07] Validación DRAM2: OK — todos los valores coinciden con los esperados.")
+        print(" [07] DRAM2 validation passed: every value matches what was expected.")
 
     with _open(outdir, fname) as f:
         f.write("DATASET_BINARY\n")
@@ -809,8 +810,8 @@ def write_10_depth_colorstrip(outdir, depths):
 
 def validate_leaf_coverage(outdir):
     """
-    Lee todos los archivos generados, extrae nombres de hoja en la sección DATA
-    y compara contra los nombres renombrados que se esperan en el árbol
+    Reads every file just written, pulls the leaf names out of the DATA section
+    and compares them against the relabelled names the tree is expected to use.
     (10mags_pmsf.renamed.treefile).
     """
     all_leaf_set = {translate_leaf(x) for x in ALL_LEAVES}
@@ -833,8 +834,8 @@ def validate_leaf_coverage(outdir):
                     for part in leaf.split('|'):
                         referenced.add(part.strip())
 
-        missing_from_file = all_leaf_set - referenced  # en árbol pero no en archivo
-        extra_in_file = referenced - all_leaf_set      # en archivo pero no en árbol
+        missing_from_file = all_leaf_set - referenced  # in the tree, absent from the file
+        extra_in_file = referenced - all_leaf_set      # in the file, absent from the tree
 
         covered = len(referenced & all_leaf_set)
         total = len(all_leaf_set)
@@ -843,10 +844,10 @@ def validate_leaf_coverage(outdir):
         print(f" {fname}: {covered}/{total} hojas cubiertas [{status}]")
         if missing_from_file:
             for m in sorted(missing_from_file):
-                print(f"  MISSING (en árbol pero no en archivo): {m}")
+                print(f"  MISSING, in the tree but not in this file: {m}")
         if extra_in_file:
             for e in sorted(extra_in_file):
-                print(f"  EXTRA (no está en árbol): {e}")
+                print(f"  EXTRA, not in the tree: {e}")
     print()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -861,14 +862,14 @@ def main():
     ]
     if missing:
         for p in missing:
-            print(f"ERROR: archivo de entrada no encontrado: {p}", file=sys.stderr)
+            print(f"ERROR: archivo de entrada not found: {p}", file=sys.stderr)
         sys.exit(1)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    print(f"Directorio de salida: {OUTPUT_DIR}")
+    print(f"Output directory: {OUTPUT_DIR}")
 
     # Parse once, reuse everywhere below
-    print("Parseando archivos de entrada...")
+    print("Parseando files de entrada...")
     metadata_order, stations, depths, display_names_tree = parse_metadata(METADATA_TSV)
     completeness, contamination = parse_quality(QUALITY_TSV)
     ani_data = parse_ani(TAXONOMY_TSV, set(TARGET_MAGS))
@@ -907,8 +908,8 @@ def main():
                 file=sys.stderr,
             )
 
-    # Generación
-    print("\nGenerando anotaciones iTOL...")
+    # Write the files
+    print("\nWriting anotaciones iTOL...")
     generated = []
     for fn, args in [
         (write_01_source_colorstrip,      (OUTPUT_DIR,)),
@@ -929,13 +930,13 @@ def main():
 
     validate_leaf_coverage(OUTPUT_DIR)
 
-    print(f"Listo. {len(generated)} archivos escritos en:")
+    print(f"Listo. {len(generated)} files escritos en:")
     print(f"  {OUTPUT_DIR}")
     print("\nInstrucciones iTOL:")
     print("  1. Sube el treefile (10mags_pmsf.renamed.treefile) a https://itol.embl.de")
-    print("  2. Arrastra cada archivo .txt al árbol para activar la anotación.")
+    print("  2. Drag each .txt onto the tree to switch that annotation on.")
     print("  3. Ajusta CLADE_RANGES en 08_branch_support_colors.txt si los pares de")
-    print("     hojas no delimitan correctamente los clados en tu árbol específico.")
+    print("     leaves do not bound the clades correctly in your tree.")
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,6 @@
 
 # Script: 03_post_KO_assign_concat_KOs.sh
 # Description: Concatenate all KO assignment files, filter best hits for duplicates
-# Author: Rubén Alfonso Castañeda Martínez
 # Date: 2025/12/30
 # Last modified: 2026/01/02
 

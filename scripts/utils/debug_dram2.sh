@@ -75,17 +75,17 @@ echo ""
 # 4. container detection
 echo "=== 4. container detection ==="
 
-echo "--- Listando TODOS los contenedores Docker activos ---"
+echo "--- All running Docker containers ---"
 ssh "$NODO" "docker ps" 2>&1
 echo ""
 
-echo "--- Listando contenedores Docker (formato compacto) ---"
+echo "--- Listando containeres Docker (formato compacto) ---"
 CONTAINERS=$(ssh "$NODO" "docker ps --format 'ID={{.ID}} Image={{.Image}} Names={{.Names}}'")
 echo "$CONTAINERS"
 echo ""
 
 # The container name is not stable, so try several ways to find it.
-echo "--- Intentando detectar contenedor de DRAM2/MMSeqs2 ---"
+echo "--- Intentando detectar container de DRAM2/MMSeqs2 ---"
 
 # By image name
 CONTAINER_ID=$(ssh "$NODO" "docker ps --filter ancestor=microbiomedata/nmdc_taxa_classify --format '{{.ID}}'" 2>/dev/null | head -1)
@@ -101,17 +101,17 @@ if [ -z "$CONTAINER_ID" ]; then
 fi
 
 if [ -z "$CONTAINER_ID" ]; then
-    echo "ADVERTENCIA: No se detectó ningún contenedor Docker activo."
-    echo "Verificando si se está usando Singularity..."
+    echo "No running Docker container found."
+    echo "Checking for Singularity instead..."
     ssh "$NODO" "ps aux | grep singularity | grep -v grep"
     echo ""
     USING_DOCKER=false
 else
-    echo "Contenedor detectado: $CONTAINER_ID"
+    echo "Container detectado: $CONTAINER_ID"
     USING_DOCKER=true
     
     echo ""
-    echo "--- Información del contenedor ---"
+    echo "--- Container detail ---"
     ssh "$NODO" "docker inspect $CONTAINER_ID --format 'Image: {{.Config.Image}}
 Name: {{.Name}}
 Status: {{.State.Status}}
@@ -130,11 +130,11 @@ if [ "$USING_DOCKER" = true ]; then
     ssh "$NODO" "docker exec $CONTAINER_ID ps aux"
     echo ""
     
-    echo "=== LOGS DEL CONTENEDOR (últimas 100 líneas) ==="
+    echo "=== Container logs, last 100 lines ==="
     ssh "$NODO" "docker logs $CONTAINER_ID --tail 100"
     echo ""
 else
-    echo "=== 5. SALTANDO INSPECCIÓN DE CONTENEDOR (no se detectó Docker) ==="
+    echo "=== 5. Skipping container inspection, no Docker found ==="
     echo ""
 fi
 
@@ -143,7 +143,7 @@ echo "=== 6. Nextflow work directory ==="
 
 NF_WORK="${NF_WORK:-${HOME}/.nextflow/assets/WrightonLabCSU/DRAM/work}"
 
-echo "Buscando directorios de trabajo recientes en: $NF_WORK"
+echo "Looking for directorios de trabajo recientes en: $NF_WORK"
 
 # The five most recent work directories
 echo "--- Últimos 5 directorios de trabajo modificados ---"
@@ -158,10 +158,10 @@ echo ""
 LAST_WORK=$(find "$NF_WORK" -type f -name ".command.sh" -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2- | xargs dirname)
 
 if [ -z "$LAST_WORK" ]; then
-    echo "ERROR: No se encontró ningún directorio de trabajo de Nextflow"
+    echo "No Nextflow work directory found"
     echo ""
 else
-    echo "Directorio de trabajo más reciente: $LAST_WORK"
+    echo "Most recent work directory: $LAST_WORK"
     echo ""
     
     echo "--- Contenido del directorio ---"
@@ -172,11 +172,11 @@ else
     cat "$LAST_WORK"/.command.sh
     echo ""
     
-    echo "=== STDOUT (.command.log) - últimas 100 líneas ==="
+    echo "=== stdout (.command.log), last 100 lines ==="
     if [ -f "$LAST_WORK/.command.log" ]; then
         tail -100 "$LAST_WORK"/.command.log
     else
-        echo "Archivo .command.log no existe o está vacío"
+        echo ".command.log is missing or empty"
     fi
     echo ""
     
@@ -184,11 +184,11 @@ else
     if [ -f "$LAST_WORK/.command.err" ]; then
         cat "$LAST_WORK"/.command.err
     else
-        echo "Archivo .command.err no existe o está vacío"
+        echo ".command.err is missing or empty"
     fi
     echo ""
     
-    echo "=== SCRIPT DE EJECUCIÓN (.command.run) - primeras 50 líneas ==="
+    echo "=== Run script (.command.run), first 50 lines ==="
     if [ -f "$LAST_WORK/.command.run" ]; then
         head -50 "$LAST_WORK"/.command.run
     else
@@ -200,11 +200,11 @@ fi
 # 7. active Nextflow configuration
 echo "=== 7. active Nextflow configuration ==="
 
-echo "--- Configuración de proceso (threads, CPUs) ---"
+echo "--- Configuration de proceso (threads, CPUs) ---"
 grep -n -E "cpus|threads|memory|THREAD" *.config configs/*.config 2>/dev/null | grep -v "^Binary"
 echo ""
 
-echo "--- Configuración de Docker ---"
+echo "--- Configuration de Docker ---"
 grep -n -E "docker\.|runOptions" *.config configs/*.config 2>/dev/null | grep -v "^Binary"
 echo ""
 

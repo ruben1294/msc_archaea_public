@@ -66,7 +66,7 @@ mkdir -p "$PANGENOME_DIR" \
     "$ALL_MAGS_REFORMATTED" "$ALL_MAGS_CONTIGS_DB" "$ALL_MAGS_GENE_REPORTS" "$TEMP_DIR"
 log_info "Output directory: $PANGENOME_DIR"
 
-# ---- pART 1: Process ALL MAGs ----
+# ---- part 1: process every MAG ----
 
 # --- Step 1: Reformat MAG FASTA files for anvi'o9 ---
 log_info "Step 1: Reformatting MAG FASTA files..."
@@ -198,7 +198,7 @@ log_info "Skipping step 5 for now..."
 #done
 #log_info "Step 5 complete: NCBI COGs run on $faa_count gene files, $faa_skip skipped"
 
-# ---- pART 2: Pangenomics workflow ----
+# ---- part 2: pangenome construction ----
 log_info "Starting pangenomics workflow..."
 
 # --- Cleanup: remove output files from previous runs ---

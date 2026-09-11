@@ -125,10 +125,10 @@ def read_physchem(path):
 def read_depths(path):
     """Sheet1 of Depths.xlsx: per-station x depth metadata.
     Skips the units pseudo-row (row 2 in the source) by dropping rows where
-    Estación is empty.
+    the Station column is empty.
     """
     df = pd.read_excel(path, sheet_name=0, engine="openpyxl")
-    # Drop pseudo-rows: rows where Estación is NaN/empty
+    # Drop the spacer rows the spreadsheet carries, where Station is blank
     station_col = None
     for cand in ("Estación", "Estacion", "Station"):
         if cand in df.columns:

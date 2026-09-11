@@ -42,7 +42,7 @@ def load_metadata(metadata_file):
 
 def replace_names_in_file(file_path, name_mapping):
     """Substitute every MAG name in one tree file, in place."""
-    print(f"\nProcesando: {file_path.name}")
+    print(f"\nProcessing: {file_path.name}")
 
     with open(file_path, "r") as f:
         content = f.read()
@@ -69,7 +69,7 @@ def replace_names_in_file(file_path, name_mapping):
             f.write(original_content)
         print(f"  Backup saved: {backup_path.name}")
 
-        # Escribir archivo modificado
+        # Write the rewritten file back in place
         with open(file_path, "w") as f:
             f.write(content)
 
@@ -127,5 +127,5 @@ if __name__ == "__main__":
     # Cargar metadatos
     name_mapping = load_metadata(METADATA_FILE)
 
-    # Procesar archivos
+    # Walk the tree files
     process_tree_files(TREE_DIR, name_mapping, TREE_EXTENSIONS)

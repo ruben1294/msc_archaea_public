@@ -117,7 +117,7 @@ def procesar_mags(carpeta):
         
         # Parse according to expected format
         if len(partes) >= 5:
-            # Formato: Station.Depth.Assembler.bin.BinNumber
+            # Expected shape: Station.Depth.Assembler.bin.BinNumber
             estacion = partes[0]
             profundidad = partes[1]
             ensamblador = partes[2]
@@ -125,7 +125,7 @@ def procesar_mags(carpeta):
             bin_id_raw = ".".join(partes[4:])
             
         elif len(partes) == 5 and partes[3] == "bin":
-            # Formato específico: Station.Depth.Assembler.bin.BinNumber
+            # The full five-part form
             estacion = partes[0]
             profundidad = partes[1]
             ensamblador = partes[2]
@@ -133,7 +133,7 @@ def procesar_mags(carpeta):
             bin_id_raw = partes[4]
             
         elif len(partes) == 4:
-            # Formato sin binner
+            # Same, but with no assembler field
             estacion = partes[0]
             profundidad = partes[1]
             ensamblador = partes[2]
@@ -141,7 +141,7 @@ def procesar_mags(carpeta):
             bin_id_raw = partes[3]
             
         else:
-            # Formato desconocido
+            # Anything else: keep the name whole and flag it
             estacion = partes[0] if len(partes) > 0 else "unknown"
             profundidad = partes[1] if len(partes) > 1 else "unknown"
             ensamblador = partes[2] if len(partes) > 2 else "unknown"

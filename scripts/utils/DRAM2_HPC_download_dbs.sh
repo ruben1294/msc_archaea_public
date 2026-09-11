@@ -41,7 +41,7 @@ transfer_db() {
         log "[OK] Transferencia enviada exitosamente: $db_name"
         SUCCESS+=("$db_name")
     else
-        log "[FAIL] ERROR: Falló la transferencia de $db_name"
+        log "[FAIL] transfer of $db_name failed"
         FAILED+=("$db_name")
     fi
     log ""
@@ -59,7 +59,7 @@ log "Transferencias exitosas: ${#SUCCESS[@]}"
 log "Transferencias fallidas: ${#FAILED[@]}"
 log ""
 
-# Detalles de éxitos
+# What succeeded
 if [ ${#SUCCESS[@]} -gt 0 ]; then
     log "Bases de datos transferidas exitosamente:"
     for db in "${SUCCESS[@]}"; do
@@ -68,14 +68,14 @@ if [ ${#SUCCESS[@]} -gt 0 ]; then
     log ""
 fi
 
-# Detalles de fallos
+# What failed
 if [ ${#FAILED[@]} -gt 0 ]; then
     log "Bases de datos que fallaron:"
     for db in "${FAILED[@]}"; do
         log "  [FAIL] $db"
     done
     log ""
-    log "ADVERTENCIA: Algunas transferencias fallaron. Revisa el log para más detalles."
+    log "[WARN] some transfers failed; see the log for detail."
 else
     log "Todas las transferencias fueron enviadas exitosamente."
 fi
@@ -84,7 +84,7 @@ log ""
 log "Para monitorear el progreso de las transferencias, ejecuta:"
 log "  globus task list"
 log ""
-log "Para ver detalles de una transferencia específica:"
+log "To inspect one transfer:"
 log "  globus task show <TASK_ID>"
 log ""
 log "Archivo de log guardado en: $LOG_FILE"
@@ -151,7 +151,7 @@ log "Resumen guardado en: $SUMMARY_FILE"
 echo ""
 cat "$SUMMARY_FILE"
 
-# Exit code basado en éxito/fallo
+# Exit non-zero if any database failed to download
 if [ ${#FAILED[@]} -gt 0 ]; then
     exit 1
 else
