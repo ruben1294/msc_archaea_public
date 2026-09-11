@@ -5,11 +5,13 @@ message: If you use this code, please cite it as below.
 type: software
 authors:
   - family-names: Castañeda-Martínez
-    given-names: Rubén Alfonso
+    given-names: Rubén
+    orcid: "https://orcid.org/0000-0001-9272-7968"
+
     affiliation: >-
       Centro de Investigación Científica y de Educación Superior de Ensenada
       (CICESE)
-    email: ruben@cicese.edu.mx
+version: "0.0.1"
 repository-code: https://github.com/ruben1294/gom-archaeal-mags
 license: MIT
 abstract: >-
