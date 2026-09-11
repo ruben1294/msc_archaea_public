@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: >-
+  Analysis code for archaeal MAGs from the deep Gulf of Mexico
+message: If you use this code, please cite it as below.
+type: software
+authors:
+  - family-names: Castañeda-Martínez
+    given-names: Rubén Alfonso
+    affiliation: >-
+      Centro de Investigación Científica y de Educación Superior de Ensenada
+      (CICESE)
+    email: ruben@cicese.edu.mx
+repository-code: https://github.com/ruben1294/gom-archaeal-mags
+license: MIT
+abstract: >-
+  Pipeline and analysis code for 54 archaeal metagenome-assembled genomes from
+  six stations and three depths in the deep Gulf of Mexico. Covers quality
+  assessment, GTDB taxonomic classification, functional annotation with DRAM2
+  and eggNOG-mapper, marker-based phylogenomics, ANI, chimerism screening, and
+  anvi'o pangenomics across the species with enough genomes to support it.
+keywords:
+  - archaea
+  - metagenome-assembled genomes
+  - Gulf of Mexico
+  - phylogenomics
+  - pangenomics
+  - functional annotation
+  - Poseidoniales
+  - Nitrososphaerales
