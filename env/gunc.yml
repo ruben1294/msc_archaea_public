@@ -1,0 +1,15 @@
+# Step 17. GUNC screens for chimeric assemblies.
+#
+# Its two reference databases, ProGenomes3 and GTDB r214, are downloaded by
+# scripts/utils/download_gunc_1.1_db.sh, and GUNC_DB in configs/server.env has
+# to point at the same directory afterwards.
+name: GUNC_v1.1
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - gunc=1.0.6
+  - diamond=2.0.15
+  - prodigal

@@ -1,0 +1,14 @@
+# Steps 10 to 13, plus 19 and 20. The marker-based phylogenomics route.
+#
+# FASconCAT-G is a single Perl script with no conda package;
+# scripts/utils/install_FASconCAT-G.sh fetches it and records where it went.
+name: phylo
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - mafft=7.520
+  - trimal=1.4.1
+  - iqtree=2.3.6
+  - perl

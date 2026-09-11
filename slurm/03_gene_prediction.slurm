@@ -43,7 +43,7 @@ if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
     # shellcheck source=/dev/null
     source "$CONDA_PROFILE"
 fi
-conda activate base
+conda activate prodigal
 
 SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/03_gene_prediction.sh"
 

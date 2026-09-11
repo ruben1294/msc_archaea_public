@@ -1,0 +1,15 @@
+# Step 01 and utils/01. CheckM2 predicts completeness and contamination, which
+# is what sets the 54-MAG cohort.
+#
+# The DIAMOND database it needs is downloaded separately, with
+# `checkm2 database --download`, and its path goes into CHECKM2_DB in
+# configs/server.env.
+name: checkm2
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - checkm2=1.0.2
+  - diamond=2.0.4

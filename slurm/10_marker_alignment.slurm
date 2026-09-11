@@ -39,6 +39,11 @@ fi
 if [[ -n "${CLUSTER_MODULE:-}" ]]; then
     module load "$CLUSTER_MODULE"
 fi
+if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$CONDA_PROFILE"
+fi
+conda activate phylo
 
 SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/10_marker_alignment.sh"
 

@@ -1,0 +1,51 @@
+name: anvio-9
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python=3.9
+
+  - sqlite=3.46
+  - gcc
+  - gxx
+  - make
+
+  - prodigal
+  - idba
+  - mcl
+  - muscle=3.8.1551
+  - famsa
+  - hmmer
+  - diamond
+  - blast
+  - megahit
+  - spades
+  - bowtie2
+  - bwa
+  - graphviz
+  - samtools>=1.9
+  - trimal
+  - iqtree
+  - trnascan-se
+  - fasttree
+  - vmatch
+
+  - r-base
+  - r-tidyverse
+  - r-optparse
+  - r-stringi
+  - r-magrittr
+  - bioconductor-qvalue
+
+  - meme
+  - ghostscript
+  - nodejs=20.12.2
+
+#  - llvmlite
+#  - numba
+
+  - pip
+  - setuptools<70
+  - wheel

@@ -43,7 +43,7 @@ if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
     # shellcheck source=/dev/null
     source "$CONDA_PROFILE"
 fi
-conda activate gtdbtk-2.5.1
+conda activate gtdbtk
 
 SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/09_de_novo_tree.sh"
 

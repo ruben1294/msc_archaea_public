@@ -43,7 +43,7 @@ if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
     # shellcheck source=/dev/null
     source "$CONDA_PROFILE"
 fi
-conda activate gtdbtk-2.6.1_py312
+conda activate skani
 
 SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/16_sketching_ani.sh"
 

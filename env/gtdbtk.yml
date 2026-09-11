@@ -1,0 +1,23 @@
+# Steps 02, 09, 18 and 21. GTDB-Tk classifies the MAGs and builds the de novo
+# trees.
+#
+# GTDBTK_DATA_PATH has to point at the reference package or GTDB-Tk refuses to
+# start. The release matters: the trees here were built against r220, while the
+# skani ANI in step 16 used r226. Mixing releases gives inconsistent placements.
+#
+# Steps 09, 18 and 21 set a short TMPDIR because Prodigal, which GTDB-Tk calls
+# internally, fails with "OSError: AF_UNIX path too long" on a deep one.
+name: gtdbtk
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.12
+  - gtdbtk=2.6.1
+  - fastani
+  - fasttree
+  - hmmer
+  - prodigal
+  - pplacer
+  - mash

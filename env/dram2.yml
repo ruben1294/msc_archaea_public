@@ -1,0 +1,15 @@
+# Step 08. DRAM2 runs as a Nextflow workflow inside containers, so this
+# environment holds only the scheduler, not the tools.
+#
+# The workflow itself is fetched with `nextflow pull WrightonLabCSU/DRAM`;
+# slurm/DRAM2_HPC_install.slurm does that and checks the container runtime.
+# On a cluster where only the login node reaches the internet, that pull has to
+# happen there, once, and every later run sets NXF_OFFLINE.
+name: DRAMV2
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - openjdk=17
+  - nextflow=24.10.0

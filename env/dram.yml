@@ -1,0 +1,16 @@
+# Step 05. DRAM v1, superseded for the thesis figures by DRAM2 in step 08 but
+# kept because the two disagree on enough trait calls that the comparison is
+# worth reproducing.
+name: DRAM_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - dram=1.5.0
+  - prodigal
+  - mmseqs2
+  - hmmer
+  - trnascan-se
+  - barrnap

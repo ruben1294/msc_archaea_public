@@ -43,7 +43,7 @@ if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
     # shellcheck source=/dev/null
     source "$CONDA_PROFILE"
 fi
-conda activate iqtree
+conda activate phylo
 
 SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/13_phylogenomic_tree.sh"
 
