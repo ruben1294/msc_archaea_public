@@ -29,6 +29,14 @@ set -euo pipefail
 REPO_ROOT="${SLURM_SUBMIT_DIR:-$PWD}"
 mkdir -p "$REPO_ROOT/logs"
 
+SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/17_chimerism.sh"
+
+if [[ ! -f "$SCRIPT_PATH" ]]; then
+    echo "Script not found: $SCRIPT_PATH" >&2
+    echo "Submit from the repository root, not from slurm/." >&2
+    exit 1
+fi
+
 # Cluster-specific module and conda setup. Copy slurm/cluster.env.example to
 # slurm/cluster.env and edit it; without it, conda has to be on PATH already.
 if [[ -f "$REPO_ROOT/slurm/cluster.env" ]]; then
@@ -44,14 +52,6 @@ if [[ -n "${CONDA_PROFILE:-}" && -f "$CONDA_PROFILE" ]]; then
     source "$CONDA_PROFILE"
 fi
 conda activate GUNC_v1.1
-
-SCRIPT_PATH="$REPO_ROOT/scripts/pipeline/17_chimerism.sh"
-
-if [[ ! -f "$SCRIPT_PATH" ]]; then
-    echo "Script not found: $SCRIPT_PATH" >&2
-    echo "Submit from the repository root, not from slurm/." >&2
-    exit 1
-fi
 
 echo "Running $SCRIPT_PATH"
 
