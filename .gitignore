@@ -21,6 +21,8 @@ work/
 # cluster hostnames and absolute paths tied to one machine.
 configs/*.env
 !configs/*.env.example
+slurm/*.env
+!slurm/*.env.example
 
 # The input tables under data/ are small and belong in the repo, so they need an
 # exception to the blanket spreadsheet rules.
