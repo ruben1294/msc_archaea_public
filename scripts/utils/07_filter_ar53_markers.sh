@@ -47,9 +47,7 @@ log_msg "  Minimum percentage required: ${MIN_MARKER_PERCENT}%"
 log_msg "  Minimum markers required: $MIN_MARKERS"
 log_msg ""
 
-# ============================================================
-# PASO 1: Filtrar secuencias cortas
-# ============================================================
+# ---- PASO 1: Filtrar secuencias cortas ----
 
 log_msg "========================================"
 log_msg "Step 1: filter by sequence length"
@@ -171,9 +169,7 @@ log_msg "  Sequences kept: $total_seqs_kept_length"
 log_msg "  Sequences dropped on length: $total_seqs_removed_length"
 log_msg ""
 
-# ============================================================
-# ---- step 2: marker completeness per MAG ----
-# ============================================================
+# ---- ---- step 2: marker completeness per MAG ----
 
 log_msg "========================================"
 log_msg "Step 2: marker completeness"
@@ -237,9 +233,7 @@ log_msg "  MAGs con <${MIN_MARKER_PERCENT}% markers: $mags_removed (dropped)"
 log_msg "  Reporte de completitud: $MAG_REPORT"
 log_msg ""
 
-# ============================================================
-# PASO 3: Filtrar archivos removiendo MAGs incompletos
-# ============================================================
+# ---- PASO 3: Filtrar archivos removiendo MAGs incompletos ----
 
 log_msg "========================================"
 log_msg "PASO 3: Writing files finales"
@@ -339,9 +333,7 @@ log_msg "  Sequences kept: $total_seqs_kept_final"
 log_msg "  Secuencias removidas por MAG incompleto: $total_seqs_removed_mag"
 log_msg ""
 
-# ============================================================
-# LIMPIEZA Y RESUMEN FINAL
-# ============================================================
+# ---- LIMPIEZA Y RESUMEN FINAL ----
 
 log_msg "========================================"
 log_msg "Limpiando files temporales..."

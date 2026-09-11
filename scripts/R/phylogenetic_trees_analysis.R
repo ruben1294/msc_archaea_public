@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-# =============================================================================
 # Compares the trees that pipeline step 13 produced across its nine
 # combinations of alignment strategy and model.
 #
@@ -9,7 +8,6 @@
 # then ranked by that correlation, and the ten most similar get a tanglegram so
 # the disagreements can be read directly.
 # Fecha: 2026/02/03
-# =============================================================================
 
 user_lib <- Sys.getenv("R_LIBS_USER")
 if (user_lib == "") {
@@ -73,9 +71,7 @@ if (!font_found) {
 
 cat("[OK] Font configuration complete\n\n")
 
-# =============================================================================
-# TEMA PERSONALIZADO
-# =============================================================================
+# ---- TEMA PERSONALIZADO ----
 theme_publication <- function(base_size = 11) {
   theme_bw(base_size = base_size) +
     theme(
@@ -94,9 +90,7 @@ theme_publication <- function(base_size = 11) {
     )
 }
 
-# =============================================================================
-# 1. CARGA Y PREPARACIÓN DE DATOS
-# =============================================================================
+# ---- 1. CARGA Y PREPARACIÓN DE DATOS ----
 
 OUTPUT_DIR <- paste0(file.path(PROJECT_DIR, "results", "SO_02", "phylogeny"), "/",
                      fecha, "_analysis")
@@ -171,9 +165,7 @@ for(i in 1:ncol(combinaciones)) {
 # Most similar pairs first
 resultados_ordenados <- resultados[order(-resultados$cophenetic_cor), ]
 
-# =============================================================================
-# 2. GUARDAR RESULTADOS
-# =============================================================================
+# ---- 2. GUARDAR RESULTADOS ----
 
 # Guardar tabla de resultados en formato TSV
 tsv_file <- file.path(OUTPUT_DIR, "comparaciones_arboles.tsv")
@@ -183,9 +175,7 @@ write.table(resultados_ordenados, tsv_file,
             quote = FALSE)
 cat("\n[OK] Tabla de resultados guardada en:", tsv_file, "\n")
 
-# =============================================================================
-# ---- 3. correlation matrix across every tree ----
-# =============================================================================
+# ---- ---- 3. correlation matrix across every tree ----
 
 cat("\n--- Generando matriz de correlación ---\n")
 
@@ -239,9 +229,7 @@ corrplot(cors, method = "circle", type = "lower",
 dev.off()
 cat("[OK] Gráfico de correlación (circle) guardado\n")
 
-# =============================================================================
-# 4. GENERAR Y GUARDAR TANGLEGRAMS
-# =============================================================================
+# ---- 4. GENERAR Y GUARDAR TANGLEGRAMS ----
 
 cat("\n--- Generando tanglegrams ---\n")
 

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-################################################################################
 # Script: MAG_quality_assessment.R
 # Description: Comprehensive quality analysis of MAGs using CheckM2 reports
 #              following MIMAG standards (Bowers et al., 2017, Nature Biotech)
 # Created: 2025-12-19
 # Version: 1.0
-################################################################################
 
 ### To run it, do:
 #Rscript scripts/analysis/MAG_quality_assessment.R \
@@ -788,9 +786,7 @@ mimag_colors <- c(
   "Contaminado" = "#e74c3c"
 )
 
-# ============================================================================
-# FIGURA 3A: Conjunto de datos LIZT
-# ============================================================================
+# ---- FIGURA 3A: Conjunto de datos LIZT ----
 
 # Lizt dataset
 df_lizt <- df_combined %>% filter(Dataset == "Lizt")
@@ -858,9 +854,7 @@ save_dual(p3_lizt_publication, file.path(output_dir, "Fig3A_pub_assembly_metrics
 
 cat("[OK] Saved Figure 3A\n")
 
-# ============================================================================
-# FIGURA 3B: Conjunto de datos VALENTÍN
-# ============================================================================
+# ---- FIGURA 3B: Conjunto de datos VALENTÍN ----
 
 # Valentin dataset, the 54 MAGs this thesis is about
 df_valentin <- df_combined %>% filter(Dataset == "Valentín")
@@ -1089,9 +1083,7 @@ save_dual(p6_publication, file.path(output_dir, "Fig6_pub_MIMAG_quality_Valentin
 cat("[OK] Saved Figure 6\n")
 
 # 2026/04/02:
-# ==============================================================================
-# PRUEBAS ESTADÍSTICAS (Kruskal-Wallis) PARA DISTRIBUCIÓN DE CALIDAD
-# ==============================================================================
+# ---- PRUEBAS ESTADÍSTICAS (Kruskal-Wallis) PARA DISTRIBUCIÓN DE CALIDAD ----
 cat("\n=== Realizando pruebas estadísticas (Kruskal-Wallis) ===\n")
 
 # The test runs on the 54 high and medium quality MAGs, less ZMOR (n = 2) and
@@ -1481,14 +1473,12 @@ if (nrow(df_val_filtered) > 0) {
     width = 14, height = 16)
   cat("[OK] Saved Figure 7b (assembly metrics)\n")
 
-  # =========================================================================
   # Fig 7d: assembly metrics by taxonomic order
   #
   # The same metrics as Fig 7b (Genome_Size, Coding_Density, Contig_N50,
   # GC_Content), grouped by Order from FullTaxonomy rather than by depth or
   # station. Each subplot carries a Kruskal-Wallis result, restricted to orders
   # with at least ORDER_MIN_N members, 3 by default.
-  # =========================================================================
   if (!is.null(cli_args$metadata) && file.exists(cli_args$metadata)) {
     cat("=== Generating Figure 7d: Assembly metrics by Order ===\n")
 
@@ -1651,7 +1641,6 @@ if (nrow(df_val_filtered) > 0) {
   cat("[WARN] No valid Station/Depth data for Valentín dataset. Skipping Figure 7.\n")
 }
 
-# ============================================================================
 # GUNC Chimerism Analysis – Figures 8–12
 #
 # Requires: --gunc-progenomes and --gunc-gtdb CLI arguments pointing to the
@@ -1677,7 +1666,6 @@ if (nrow(df_val_filtered) > 0) {
 #   Fig 10 – Taxonomic rank where CSS is maximised (maxCSS level)
 #   Fig 11 – Database concordance scatter (ProGenomes3 vs GTDB r214 CSS)
 #   Fig 12 – Per-MAG comprehensive summary: completeness + contamination + CSS
-# ============================================================================
 
 if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
@@ -2894,10 +2882,8 @@ table1 <- df_combined %>%
 write.csv(table1, file.path(output_dir, "Table1_summary_statistics.csv"),
           row.names = FALSE)
 
-# =============================================================================
 # RESUMEN CONTEXTUAL DE LOS 54 MAGs FINALES (ESTACIÓN, PROFUNDIDAD Y CALIDAD)
 # Faceted bar chart that opens the results section
-# =============================================================================
 cat("\n=== Generando gráfico de contexto de los 54 MAGs finales ===\n")
 
 # df_valentin rather than df_combined, so this covers only the 54 MAGs of this

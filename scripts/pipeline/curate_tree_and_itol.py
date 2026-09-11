@@ -47,12 +47,12 @@ import os
 import re
 import subprocess
 import sys
-from collections import defaultdict, OrderedDict
 
 # SELF-BOOTSTRAP: re-exec inside the gtdbtk-2.6.1 conda env if needed.
 # This lets the script run directly from VS Code (any Python interpreter)
 # without manually activating the environment first.
 _CONDA_ENV = "gtdbtk-2.6.1"
+
 
 def _ensure_conda_env() -> None:
     if os.environ.get("CONDA_DEFAULT_ENV") == _CONDA_ENV:
@@ -69,8 +69,8 @@ def _ensure_conda_env() -> None:
                 conda_exe = candidate
                 break
     if not conda_exe:
-        print(f"[WARN] conda not found — proceeding without env switch "
-              f"(FastTree may not be in PATH)", flush=True)
+        print("[WARN] conda not found — proceeding without env switch "
+              "(FastTree may not be in PATH)", flush=True)
         return
     print(f"[INFO] Re-execing inside conda env '{_CONDA_ENV}' …", flush=True)
     os.execv(conda_exe, [conda_exe, "run", "--no-capture-output",
@@ -110,7 +110,6 @@ def build_paths(project_dir: str) -> dict:
         "itol_dir":        os.path.join(r, "results", "SO_02", "phylogenomics",
                                         "itol_annotations"),
     }
-
 
 # REFERENCE SELECTION
 # Each tuple: (GTDB_leaf_in_de_novo_tree, display_label, genus, justification)
@@ -245,7 +244,6 @@ REF_DISPLAY = {r[0]: r[1] for r in SELECTED_REFERENCES}
 # Genus map: GTDB_leaf_id to genus
 REF_GENUS = {r[0]: r[2] for r in SELECTED_REFERENCES}
 
-
 # COLORS AND TAXONOMY
 # Genus-level color palette (consistent with DRAM2 analysis heatmaps)
 GENUS_COLORS = {
@@ -351,8 +349,8 @@ DRAM2_FIELD_COLORS = [
     "#e76f51",  # Phototrophy
 ]
 
-
 # UTILITIES
+
 
 def tsv_name_to_dot(tsv_name: str) -> str:
     """A4_BTM_megahit_bin.28  to  A4.BTM.megahit.bin.28"""
@@ -370,8 +368,8 @@ def dot_name_to_display(dot_name: str, display_map: dict) -> str:
 def _open_out(path: str):
     return open(path, "w", newline="\n", encoding="utf-8")
 
-
 # DATA LOADING
+
 
 def load_metadata(path: str):
     """
@@ -465,8 +463,8 @@ def eval_field(row: dict, columns: list, threshold) -> int:
                 pass
     return 0
 
-
 # REFERENCE SELECTION REPORT
+
 
 def write_reference_selection_table(out_path: str):
     """Writes a TSV documenting the selected references and their justification."""
@@ -476,8 +474,8 @@ def write_reference_selection_table(out_path: str):
             fh.write(f"{leaf_id}\t{label}\t{genus}\t{reason}\n")
     log.info("Reference selection table to %s", out_path)
 
-
 # MSA EXTRACTION
+
 
 def extract_msa(msa_gz_path: str, keep_ids: set, out_fasta_path: str) -> int:
     """
@@ -514,8 +512,8 @@ def extract_msa(msa_gz_path: str, keep_ids: set, out_fasta_path: str) -> int:
     log.info("MSA extraction: %d sequences written to %s", written, out_fasta_path)
     return written
 
-
 # TREE INFERENCE (FastTree)
+
 
 def run_fasttree(msa_fasta: str, out_tree: str, log_file: str,
                  n_threads: int = 4, prot_model: str = "LG") -> None:
@@ -545,9 +543,9 @@ def run_fasttree(msa_fasta: str, out_tree: str, log_file: str,
         sys.exit(proc.returncode)
     log.info("FastTree completed to %s", out_tree)
 
-
 # TREE PRUNING (DendroPy), used to create a GTDB-topology pruned tree
 # as a complement/validation of the re-inferred FastTree
+
 
 def prune_decorated_tree(decorated_tree_path: str, keep_ids: set,
                           out_path: str) -> None:
@@ -586,8 +584,8 @@ def prune_decorated_tree(decorated_tree_path: str, keep_ids: set,
     tree.write(path=out_path, schema="newick")
     log.info("Pruned GTDB-topology tree to %s", out_path)
 
-
 # DISPLAY NAME MAPPING for iTOL
+
 
 def build_leaf_display_map(mag_order: list, display: dict) -> dict:
     """
@@ -625,8 +623,8 @@ def rename_tree_leaves(tree_path: str, out_path: str,
 def translate(name: str, leaf_map: dict) -> str:
     return leaf_map.get(name, name)
 
-
 # iTOL FILE WRITERS
+
 
 def write_01_source_colorstrip(out_dir: str, mag_order: list,
                                 leaf_map: dict) -> str:
@@ -962,8 +960,8 @@ def write_10_depth_colorstrip(out_dir: str, mag_order: list,
             f.write(f"{translate(mag, leaf_map)}\t{color}\t{label}\n")
     return path
 
-
 # VALIDATION
+
 
 def validate_itol_coverage(itol_dir: str,
                             mag_leaves: set,
@@ -1021,8 +1019,8 @@ def validate_itol_coverage(itol_dir: str,
         for e in sorted(extra):
             log.warning("    EXTRA in file (not in expected leaf set): %s", e)
 
-
 # MAIN
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -1074,7 +1072,9 @@ def main() -> None:
     # ---- Load quality / ANI / DRAM2 ----
     log.info("Loading quality metrics …")
     comp, cont = load_quality(P["quality_tsv"], target_set)
-    ani         = load_ani(P["taxonomy_tsv"], target_set)
+    # Called for the coverage warnings it logs; the table itself goes unused
+    # here, since the ANI annotation file is written from product instead.
+    load_ani(P["taxonomy_tsv"], target_set)
     product     = load_product(P["product_tsv"], mag_order, target_set)
 
     # ---- Build leaf display map ----
@@ -1164,7 +1164,6 @@ def main() -> None:
         log.info("  GTDB-pruned tree     : %s", pruned_nwk)
     log.info("  iTOL annotations     : %s", P["itol_dir"])
     log.info("══════════════════════════════════════════════════════════")
-
 
 if __name__ == "__main__":
     main()

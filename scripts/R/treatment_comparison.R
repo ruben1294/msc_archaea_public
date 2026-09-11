@@ -1,12 +1,10 @@
 #!/usr/bin/env Rscript
 
-# =============================================================================
 # Script: treatment_comparison.R
 # Aggregated trait heatmaps by group (figures 9a to 9f), Fisher tests and
 # logistic models per functional trait, over both the DRAM2 traits and the
 # carbon, nitrogen and sulfur cycle pathways from CNPS.cycle.
 # Fecha: 2026-02-26
-# =============================================================================
 
 # === PAQUETES ===
 if (!require("pacman", quietly = TRUE)) install.packages("pacman")
@@ -302,13 +300,11 @@ translate_to_spanish <- function(names_vec, translation_cache_file = CACHE_FILE)
   translated
 }
 
-# =============================================================================
 # HELPER: cargar CSV de abundancia CNPS y convertir a data.frame de rasgos
 #
 # Los CSV de CNPS tienen formato:  Type | MAG1 | MAG2 | ...
 # El resultado tiene formato:      genome | pathway1 | pathway2 | ...
 # Los valores son binarios (presencia/ausencia: valor > 0 to 1).
-# =============================================================================
 
 load_cnps_abundance <- function(csv_path) {
   if (!file.exists(csv_path)) {
@@ -340,9 +336,7 @@ load_cnps_abundance <- function(csv_path) {
   out
 }
 
-# =============================================================================
-# ---- aggregated trait heatmap: percent of MAGs carrying each trait ----
-# =============================================================================
+# ---- ---- aggregated trait heatmap: percent of MAGs carrying each trait ----
 
 make_trait_aggregated_heatmap <- function(trait_df, group_by_vec, group_label_title,
                                           title_es, outfile,
@@ -450,9 +444,7 @@ make_trait_aggregated_heatmap <- function(trait_df, group_by_vec, group_label_ti
   }, error = function(e) cat("  \u26a0 Error en", title_es, ":", conditionMessage(e), "\n"))
 }
 
-# =============================================================================
-# HELPER: Forest plot de odds ratios
-# =============================================================================
+# ---- HELPER: Forest plot de odds ratios ----
 plot_forest <- function(results_df, title, outfile,
                         x_col     = "OR",
                         xmin_col  = "CI_low",
@@ -522,9 +514,7 @@ plot_forest <- function(results_df, title, outfile,
   cat("  \u2713 Guardado:", basename(outfile), "\n")
 }
 
-# =============================================================================
-# CARGAR DATOS
-# =============================================================================
+# ---- CARGAR DATOS ----
 
 # ---- DRAM2 traits ----
 if (!file.exists(TRAITS_FILE)) stop("traits.xlsx no encontrado: ", TRAITS_FILE)
@@ -556,11 +546,9 @@ order_raw[is.na(order_raw) | trimws(order_raw) == ""] <- "Desconocido"
 order_grp <- setNames(order_raw, metadata$NameWithoutExtension)
 cat("Órdenes detectados:", paste(unique(order_grp), collapse = ", "), "\n")
 
-# =============================================================================
 # SECCIÓN 1: Heatmaps agregados
 # Fig9a-9f:  DRAM2 traits (energy / carbon)
 # Fig12a-12i: CNPS cycle (carbon / nitrogen / sulfur)
-# =============================================================================
 cat("=== SECCIÓN 1: HEATMAPS AGREGADOS ===\n\n")
 
 # ---- fig9a-9f: DRAM2 traits ----
@@ -673,9 +661,7 @@ for (spec in cnps_heatmap_specs) {
 
 cat("\u2713 Sección 1 completada\n\n")
 
-# =============================================================================
-# SECCIÓN 2: Test de Fisher (rasgo × nivel de grupo)
-# =============================================================================
+# ---- SECCIÓN 2: Test de Fisher (rasgo × nivel de grupo) ----
 cat("=== SECCIÓN 2: TEST DE FISHER ===\n\n")
 
 run_fisher_tests <- function(trait_df, group_vec, sheet_name, group_var_name) {
@@ -796,9 +782,7 @@ if (length(fisher_parts) > 0) {
   cat("\u26a0 Sin resultados del test de Fisher\n\n")
 }
 
-# =============================================================================
-# ---- section 3: logistic model per trait ----
-# =============================================================================
+# ---- ---- section 3: logistic model per trait ----
 cat("=== SECCIÓN 3: MODELOS LOGÍSTICOS ===\n\n")
 
 meta_long <- tibble(

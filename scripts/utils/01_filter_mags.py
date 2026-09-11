@@ -157,6 +157,5 @@ def main() -> int:
         logger.error("%s: %s", type(exc).__name__, exc, exc_info=True)
         return 1
 
-
 if __name__ == "__main__":
     sys.exit(main())

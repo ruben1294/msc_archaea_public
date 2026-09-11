@@ -1,5 +1,4 @@
 #!/usr/bin/env Rscript
-################################################################################
 # Script: ANI_intraspecies.R
 # Within-species ANI across the 54 MAGs, from the skani output of pipeline
 # step 16. Several figures, each looking at the same matrix differently.
@@ -19,15 +18,12 @@
 #
 # Created: 2026-04-14
 # Version: 2.0
-################################################################################
 
 # From RStudio: Ctrl+Shift+Enter to source.
 # From the terminal:
 # Rscript scripts/R/ANI_intraspecies.R
 
-# ============================================================
-# ---- 1. project root and paths ----
-# ============================================================
+# ---- ---- 1. project root and paths ----
 # Shared style and path resolution. This block locates _pub_style.R without
 # resolve_project_dir(), since that function lives inside it.
 .msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
@@ -59,9 +55,7 @@ NOVEL_AF_MIN <- 5
 
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-# ============================================================
-# 2. Paquetes
-# ============================================================
+# ---- 2. Paquetes ----
 cat("\n=== Cargando paquetes ===\n")
 required_packages <- c(
   "tidyverse", # dplyr, ggplot2, readr, tidyr, stringr, forcats
@@ -97,9 +91,7 @@ for (pkg in required_packages) {
 }
 cat("\n[OK] Todos los paquetes cargados\n\n")
 
-# ============================================================
-# ---- 3. fonts, same as tax_analysis.R ----
-# ============================================================
+# ---- ---- 3. fonts, same as tax_analysis.R ----
 cat("=== Configurando fuentes ===\n")
 showtext_auto()
 showtext_opts(dpi = 300)
@@ -157,9 +149,7 @@ if (!font_found) {
 if (!font_found) cat("  [WARN] Usando fuente sans-serif por defecto.\n")
 cat("[OK] Configuración de fuentes completada\n\n")
 
-# ============================================================
-# ---- 4. publication theme, same as tax_analysis.R ----
-# ============================================================
+# ---- ---- 4. publication theme, same as tax_analysis.R ----
 theme_publication <- function(base_size = 14) {
   theme_bw(base_size = base_size) +
     theme(
@@ -185,9 +175,7 @@ save_fig <- function(p, path, width, height, dpi = 300) {
   cat("  [OK] Guardada:", basename(path), "\n")
 }
 
-# ============================================================
-# ---- 5. project palettes ----
-# ============================================================
+# ---- ---- 5. project palettes ----
 
 # Profundidad — ORDEN: ZMOR to 1000 m to Fondo ( to  OMZ al final)
 # Matching tax_analysis.R and the rest of the project.
@@ -217,9 +205,7 @@ species_palette <- c(
   "UBA36 N/A"                   = "#BFC9CA"
 )
 
-# ============================================================
-# ---- 6. taxonomic name formatting ----
-# ============================================================
+# ---- ---- 6. taxonomic name formatting ----
 # Copied verbatim from tax_analysis.R rather than sourced, so the two scripts
 # stay visually identical even if one is edited without the other.
 
@@ -381,9 +367,7 @@ wrap_md_label <- function(lbl, width = 28) {
   paste0(substr(lbl, 1, best - 1), "<br>", substr(lbl, best + 1, nchar(lbl)))
 }
 
-# ============================================================
-# ---- 7. load and prepare the data ----
-# ============================================================
+# ---- ---- 7. load and prepare the data ----
 cat("=== Cargando datos ===\n")
 
 # — Metadata —
@@ -608,13 +592,10 @@ get_group_submat <- function(group_val) {
 
 cat("[OK] Datos preparados\n\n")
 
-# ============================================================
-# ---- Fig1: within-species ANI distribution, assigned species ----
-# ============================================================
+# ---- ---- Fig1: within-species ANI distribution, assigned species ----
 # Species on the y axis with formatted names. MAGs without a species go to
 # Fig1b instead, and a species holding a single MAG is dropped because it
 # yields no pairs.
-# ============================================================
 cat("=== Fig1: Distribución ANI — especies asignadas ===\n")
 
 fig1_data <- sparse_df |>
@@ -684,9 +665,7 @@ save_fig(p_fig1, file.path(output_dir, "Fig1_ANI_distribucion_intraespecie.png")
   width = 8.5, height = 7.5
 )
 
-# ============================================================
-# ---- Fig1b: within-genus ANI distribution, unassigned groups ----
-# ============================================================
+# ---- ---- Fig1b: within-genus ANI distribution, unassigned groups ----
 cat("=== Fig1b: Distribución ANI — grupos N/A ===\n")
 
 fig1b_data <- sparse_df |>
@@ -782,9 +761,7 @@ if (nrow(fig1b_data) > 0) {
   cat("  [WARN] Sin pares intra-grupo N/A con n ≥ 2 MAGs. Fig1b omitida.\n")
 }
 
-# ============================================================
-# ---- Fig2: pairwise heatmaps per species ----
-# ============================================================
+# ---- ---- Fig2: pairwise heatmaps per species ----
 cat("=== Fig2: Heatmaps por especie ===\n")
 
 # Build a ggplot heatmap for one group
@@ -879,9 +856,7 @@ save_fig(p_fig2, file.path(output_dir, "Fig2_ANI_heatmaps_por_especie.png"),
   width = 4.2 * ncols_fig2, height = 4.0 * nrows_fig2 + 1.0
 )
 
-# ============================================================
-# ---- Fig2b: heatmaps for unassigned groups with at least 3 MAGs ----
-# ============================================================
+# ---- ---- Fig2b: heatmaps for unassigned groups with at least 3 MAGs ----
 cat("=== Fig2b: Heatmaps — grupos N/A ===\n")
 
 if (length(na_ge3) > 0) {
@@ -903,14 +878,11 @@ if (length(na_ge3) > 0) {
   cat("  [WARN] Sin grupos N/A con ≥ 3 MAGs. Fig2b omitida.\n")
 }
 
-# ============================================================
-# ---- Fig3: ANI by depth context ----
-# ============================================================
+# ---- ---- Fig3: ANI by depth context ----
 # Pairs from the same depth against pairs spanning depths, for each species
 # with at least 3 MAGs. The clearest case is Thalassarchaeum sp002507125, where
 # the OMZ MAG sits consistently further from the rest than the 1000 m and BTM
 # MAGs sit from each other.
-# ============================================================
 cat("=== Fig3: ANI por profundidad — especies asignadas ===\n")
 
 fig3_data <- sparse_df |>
@@ -977,9 +949,7 @@ if (nrow(fig3_data) > 0) {
   cat("  [WARN] Sin grupos con ambos contextos de profundidad. Fig3 omitida.\n")
 }
 
-# ============================================================
-# ---- Fig3c: ANI by station context ----
-# ============================================================
+# ---- ---- Fig3c: ANI by station context ----
 cat("=== Fig3c: ANI por estación — especies asignadas ===\n")
 
 fig3c_data <- sparse_df |>
@@ -1046,9 +1016,7 @@ if (nrow(fig3c_data) > 0) {
   cat("  [WARN] Sin grupos con ambos contextos de estación. Fig3c omitida.\n")
 }
 
-# ============================================================
-# ---- Fig3b: ANI by depth, unassigned groups ----
-# ============================================================
+# ---- ---- Fig3b: ANI by depth, unassigned groups ----
 cat("=== Fig3b: ANI por profundidad — grupos N/A ===\n")
 
 fig3b_data <- sparse_df |>
@@ -1102,9 +1070,7 @@ if (nrow(fig3b_data) > 0) {
   cat("  [WARN] Sin grupos N/A con ambos contextos de profundidad. Fig3b omitida.\n")
 }
 
-# ============================================================
-# ---- Fig4: full 54 by 54 heatmap ----
-# ============================================================
+# ---- ---- Fig4: full 54 by 54 heatmap ----
 cat("=== Fig4: Heatmap completo 54×54 ===\n")
 
 group_order_fig4 <- c(
@@ -1228,14 +1194,11 @@ draw(ht_fig4_meta, merge_legend = TRUE, padding = unit(c(5, 5, 5, 5), "mm"))
 dev.off()
 cat("  [OK] Guardada:", basename(out_fig4_meta), "\n")
 
-# ============================================================
-# ---- Fig5: each MAG's contribution to its species ANI ----
-# ============================================================
+# ---- ---- Fig5: each MAG's contribution to its species ANI ----
 # Assigned species with at least 3 MAGs only.
 # One boxplot per MAG, over its ANI against every conspecific.
 # An outlier shows up as the lowest median in its species.
 # Box colour is the focal MAG's depth, ordered ZMOR, 1000 m, Fondo, OMZ.
-# ============================================================
 cat("=== Fig5: Contribución por MAG ===\n")
 
 fig5_rows <- list()
@@ -1329,9 +1292,7 @@ save_fig(p_fig5, file.path(output_dir, "Fig5_ANI_contribucion_por_MAG.png"),
   width = 14, height = 10
 )
 
-# ============================================================
-# ---- Fig5b: the same, coloured by station ----
-# ============================================================
+# ---- ---- Fig5b: the same, coloured by station ----
 cat("=== Fig5b: Contribución por MAG — por estación ===\n")
 
 fig5_data <- fig5_data |>
@@ -1370,9 +1331,7 @@ save_fig(p_fig5b, file.path(output_dir, "Fig5b_ANI_contribucion_por_MAG_estacion
   width = 14, height = 10
 )
 
-# ============================================================
-# ---- statistics: does provenance shift ANI? ----
-# ============================================================
+# ---- ---- statistics: does provenance shift ANI? ----
 # Two complementary tests, because neither alone is sufficient here:
 #
 #  (1) Modelo Lineal Mixto global (LMM, lme4::lmer)
@@ -1396,7 +1355,6 @@ save_fig(p_fig5b, file.path(output_dir, "Fig5b_ANI_contribucion_por_MAG_estacion
 #      makes the p-values anticonservative. That is why the interpretation
 #      leans on the effect size, the median difference with its bootstrap
 #      interval, rather than on significance.
-# ============================================================
 cat("=== Análisis estadístico: procedencia vs. ANI ===\n")
 
 # ---- Paquete adicional: lme4 --------------------------------
@@ -1739,10 +1697,8 @@ if (!is.null(p_fd) || !is.null(p_fs)) {
   cat("  [OK] Fig7_estadistica_procedencia.png\n")
 }
 
-# ============================================================
 # ---- Fig6: unassigned MAGs against their genus ----
 # Disabled behind if (FALSE). Remove the guard and its closing brace to run it.
-# ============================================================
 if (FALSE) {
 cat("=== Fig6: MAGs noveles en contexto de género ===\n")
 
@@ -1897,9 +1853,7 @@ save_fig(p_fig6, file.path(output_dir, "Fig6_ANI_MAGs_noveles.png"),
 )
 } # fin if (FALSE) — Fig6
 
-# ============================================================
-# Resumen final
-# ============================================================
+# ---- Resumen final ----
 cat("\n=== Resumen de resultados ===\n")
 cat("Directorio de salida:", output_dir, "\n\n")
 

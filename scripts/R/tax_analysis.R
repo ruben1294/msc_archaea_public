@@ -1,5 +1,4 @@
 #!/usr/bin/env Rscript
-################################################################################
 # Script: tax_analysis.R
 # Description: Comprehensive taxonomic analysis of archaeal MAGs classified
 #              with GTDB-Tk classify_wf. Generates bar charts, heatmaps and
@@ -7,7 +6,6 @@
 #              family levels, as well as novelty, ANI, and biogeography plots.
 # Created: 2026-03-23
 # Version: 1.0
-################################################################################
 
 ### Para correr en RStudio: usa Source o Ctrl+Shift +Enter.
 ###
@@ -274,9 +272,7 @@ phylum_palette <- c(
   "Otro"              = "#C8974D"
 )
 
-# ============================================================================
-# === Data Loading and Processing ===
-# ============================================================================
+# ---- === Data Loading and Processing ----
 cat("=== Loading data ===\n")
 
 # Load GTDB-Tk summary
@@ -369,9 +365,7 @@ df <- tax_parsed %>%
 cat("[OK] Parsed taxonomy for", nrow(df), "MAGs\n")
 cat("[OK] Matched to metadata:", sum(!is.na(df$Station)), "with station info\n\n")
 
-# ============================================================================
-# === Helpers ===
-# ============================================================================
+# ---- === Helpers ----
 
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
@@ -539,16 +533,13 @@ make_label_fn <- function(parent_lookup, level = "Species") {
   function(x) fmt_taxon_vec(x, parent_lookup, level = level)
 }
 
-# ============================================================================
-# ---- section 1: bar charts, every combination per taxonomic rank ----
-# ============================================================================
+# ---- ---- section 1: bar charts, every combination per taxonomic rank ----
 # 4 chart types × 3 taxon levels = 12 bar charts
 #
 # Type A: x = station, fill = taxon
 # Type B: x = depth,   fill = taxon
 # Type C: x = station, facet by depth, fill = taxon
 # Type D: x = depth,   facet by station, fill = taxon
-# ============================================================================
 cat("\n=== Sección 1: Gráficos de barras por nivel taxonómico ===\n")
 
 taxon_levels <- list(
@@ -770,12 +761,10 @@ for (tl in taxon_levels) {
   if (prefix == "especie") p_panel_c <- pD
 }
 
-# ============================================================================
 # === SECTION 1c: Panel combinado filo / orden / especie ===
 # a (arriba-izq): Fig1C_barras_filo_estacion_x_profundidad
 # b (arriba-der): Fig1C_barras_orden_estacion_x_profundidad
 # c (abajo, full-width): Fig1D_barras_especie_profundidad_x_estacion
-# ============================================================================
 cat("\n=== Sección 1c: Panel combinado filo/orden/especie ===\n")
 
 {
@@ -801,12 +790,10 @@ cat("\n=== Sección 1c: Panel combinado filo/orden/especie ===\n")
   )
 }
 
-# ============================================================================
 # ---- section 1b: MAGs with no species assignment ----
 # These are the candidate new archaeal species. Plotting where they sit by
 # station and depth, coloured by genus, shows where the taxonomic novelty
 # concentrates and which lineages account for it.
-# ============================================================================
 cat("\n=== Sección 1b: MAGs sin especie asignada ===\n")
 
 df_novel_sp <- df_bar %>%
@@ -867,12 +854,10 @@ if (nrow(df_novel_sp) > 0) {
   cat("  [WARN] No hay MAGs sin especie asignada – se omiten Fig1E y Fig1F\n")
 }
 
-# ============================================================================
 # ---- section 2: phylogenetic overview, phylum and class ----
 # The whole collection falls into two or three phyla: Thermoplasmatota,
 # Thermoproteota and Undinarchaeota. Phylum and class are the minimum context
 # for describing what this set of MAGs covers.
-# ============================================================================
 cat("\n=== Sección 2: Distribución de clases arqueales ===\n")
 
 df_phylo <- df %>%
@@ -934,11 +919,9 @@ save_fig(p2c, "Fig2C_clases_estacion_profundidad.png",
 )
 save_fig(p2d, "Fig2D_clases_profundidad_estacion.png", width = 12, height = 6)
 
-# ============================================================================
 # ---- section 7: bubble chart of ecological niches ----
 # With few categories, a bubble chart carries presence, relative abundance and
 # spatial distribution at once, where a heatmap would only show the last two.
-# ============================================================================
 cat("\n=== Sección 7: Gráficos de burbujas por nivel taxonómico ===\n")
 
 make_bubble_plot <- function(df_in, taxon_col, y_label, title_str) {
@@ -1009,13 +992,11 @@ save_fig(b7b$plot, "Fig7b_burbujas_clase_estacion_profundidad.png", width = 13, 
 save_fig(b7c$plot, "Fig7c_burbujas_orden_estacion_profundidad.png", width = 13, height = b7c$height)
 save_fig(b7d$plot, "Fig7d_burbujas_genero_estacion_profundidad.png", width = 13, height = b7d$height)
 
-# ============================================================================
 # ---- section 8: taxonomic diversity per sample, genus richness ----
 # Genus richness per station and depth is the basic alpha diversity measure
 # here. Comparing it across depths is what exposes a diversity gradient, which
 # is the ground for discussing how the oxygen minimum zone and hydrostatic
 # pressure shape the archaeal community.
-# ============================================================================
 cat("\n=== Sección 8: Riqueza de géneros por muestra ===\n")
 
 df_richness <- df %>%
@@ -1069,12 +1050,10 @@ p8_combined <- (p8a / p8b) +
 
 save_fig(p8_combined, "Fig8_riqueza_MAGs_por_muestra.png", width = 10, height = 10)
 
-# ============================================================================
 # ---- section 9: shared and exclusive genera ----
 # Whether a genus is confined to one station or depth, or turns up everywhere,
 # speaks to dispersal, how connected the water masses are, and how specific the
 # niche is. Standard ground in marine microbial biogeography.
-# ============================================================================
 cat("\n=== Sección 9: Exclusividad geográfica de géneros por estación ===\n")
 
 excl_st_colors <- c(
@@ -1102,13 +1081,11 @@ make_excl_station_df <- function(df_in, taxon_col, n_total_stations = 6) {
 # Fig9: genus
 df_excl_genero <- make_excl_station_df(df, "Genus")
 
-# ============================================================================
 # ---- section 9b: station exclusivity at phylum, class, order and family ----
 # Extending the exclusivity analysis above the genus rank
 # superiores permite evaluar si linajes completos (filos, clases) tienen
 # separates restricted from cosmopolitan distributions, which is what
 # environmental gradients and water-mass connectivity act on.
-# ============================================================================
 cat("\n=== Sección 9b: Exclusividad por estación (Filo, Clase, Orden, Familia) ===\n")
 
 df_excl_filo <- make_excl_station_df(df, "Phylum")
@@ -1142,9 +1119,7 @@ excl_xlsx_path <- file.path(output_dir, "tax_exclusividad_resumen.xlsx")
 saveWorkbook(excl_wb, excl_xlsx_path, overwrite = TRUE)
 cat("[OK] Saved: tax_exclusividad_resumen.xlsx\n")
 
-# ============================================================================
-# === Summary table: taxonomy per MAG ===
-# ============================================================================
+# ---- === Summary table: taxonomy per MAG ----
 cat("\n=== Exportando tabla resumen ===\n")
 
 df_summary <- df %>%
@@ -1165,9 +1140,7 @@ cat("[OK] Análisis taxonómico completado\n")
 cat("Resultados guardados en:", output_dir, "\n")
 cat("========================================\n\n")
 
-# ============================================================================
-# ---- quality and taxonomy table for the unassigned MAGs ----
-# ============================================================================
+# ---- ---- quality and taxonomy table for the unassigned MAGs ----
 cat("=== GENERANDO TABLA DE CALIDAD/TAXONOMÍA (MAGs sin especie) ===\n")
 
 quality_report_file <- file.path(PROJECT_ROOT, "results/02_mags_quality/20251222_valentin_quality_report.tsv")
@@ -1341,7 +1314,6 @@ if (length(mags_no_species) == 0) {
   )
 }
 
-# ============================================================================
 # ---- section 10: skani, novelty as a number ----
 #
 # GTDB-Tk places the unassigned MAGs using phylogenetic distance thresholds,
@@ -1417,9 +1389,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
     pull(NameWithoutExtension)
   cat(sprintf("  MAGs sin especie asignada: %d\n", length(novel_ids)))
 
-  # =========================================================================
-  # Load and parse novel10_vs_gtdb.tsv
-  # =========================================================================
+  # ---- Load and parse novel10_vs_gtdb.tsv ----
   skani_gtdb_raw <- read_tsv(skani_gtdb_file, show_col_types = FALSE)
 
   skani_gtdb <- skani_gtdb_raw %>%
@@ -1465,12 +1435,10 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   cat("  Best GTDB hits calculados\n")
 
-  # =========================================================================
   # Fig 10A: lollipop, ANI to the closest GTDB R226 representative.
   # Puts every novel MAG on the same axis against its nearest known relative.
   # Point size carries the aligned fraction, which is what resolves the
   # ambiguity of an ANI computed over short conserved stretches.
-  # =========================================================================
   novelty_colors_10 <- c(
     "Nueva especie (ANI 90–95%)" = "#2980B9",
     "Nueva especie (ANI 85–90%)" = "#8E44AD",
@@ -1542,9 +1510,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
       legend.position  = "right"
     )
 
-  # =========================================================================
-  # Fig 10A, two-panel form: lollipop for ANI beside bars for AF
-  # =========================================================================
+  # ---- Fig 10A, two-panel form: lollipop for ANI beside bars for AF ----
 
   # ---- two-panel form ----
   # The ANI percentage sits left of the lollipop so it reads without a lookup.
@@ -1618,14 +1584,12 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
     theme(plot.tag = element_text(face = "bold", size = 20, color = "black"))
   save_fig(p10a_opC, "Fig10A_opC_dual_panel.png", width = 18, height = 6)
 
-  # =========================================================================
   # Fig 10B: scatter of ANI against AF_query, every GTDB hit above 5% AF.
   # The cloud is each novel MAG's signature in GTDB reference space. High AF
   # with high ANI marks a genuine relative; very low AF with high ANI
   # indican alineamiento en genes conservados (falsos positivos). El cuadrante
   # top left quadrant (AF >= 50%, ANI < 95%) is confirmed new species; the
   # bottom band (AF < 50%) is a taxon GTDB R226 does not represent well.
-  # =========================================================================
   skani_hits_filt <- skani_gtdb %>%
     filter(AF_query > 5) %>%
     mutate(DisplayName = get_display(MAG_id))
@@ -1720,7 +1684,6 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   save_fig(p10b, "Fig10B_skani_ani_vs_af_scatter.png", width = 12, height = 7)
 
-  # =========================================================================
   # Fig 11: ANI heatmap, novel MAGs against the whole collection.
   # The all-vs-all comparison inside the collection shows whether the novel
   # MAGs are geographically spread populations of one species (same
@@ -1728,7 +1691,6 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # or separate lineages. That distinction is what the biogeography argument
   # rests on: hydrological connectivity between stations against niche
   # specificity by depth.
-  # =========================================================================
   skani_sparse_raw <- read_tsv(skani_sparse_file, show_col_types = FALSE)
 
   skani_sparse <- skani_sparse_raw %>%
@@ -2198,12 +2160,10 @@ if (FALSE) { # Sección 12 desactivada
   }
 } # fin if (FALSE) – Sección 12
 
-# ============================================================================
 # ---- section 13: Sankey, taxonomic flow from phylum to species ----
 # The alluvial diagram shows the 54 MAGs separating as the hierarchy descends.
 # One flow per MAG, band thickness by how many share a transition, colour by
 # phylum, so a lineage stays traceable the whole way down.
-# ============================================================================
 cat("\n=== Sección 13: Sankey plot taxonómico Filo to Especie ===\n")
 
 if (!requireNamespace("ggalluvial", quietly = TRUE)) {
@@ -2410,7 +2370,6 @@ p_sankey <- ggplot(
 
 save_fig(p_sankey, "Fig13_sankey_taxonomico_filo_especie.png", width = 17, height = 11)
 
-# ============================================================================
 # === SECTION 1c (v2): Panel combinado sankey / orden / especie ===
 # A variant of Fig1_panel_filo_orden_especie where subpanel (a) carries the
 # Sankey instead of the stacked phylum bars. Subpanels (b) and (c) are reused
@@ -2418,7 +2377,6 @@ save_fig(p_sankey, "Fig13_sankey_taxonomico_filo_especie.png", width = 17, heigh
 # 1c because p_sankey is defined in
 # section 13, and p_panel_b and p_panel_c are still in the global environment
 # from section 1.
-# ============================================================================
 cat("\n=== Sección 1c (v2): Panel sankey + orden + especie ===\n")
 
 {

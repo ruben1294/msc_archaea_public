@@ -15,9 +15,6 @@ from pathlib import Path
 
 import pandas as pd
 
-import os
-from pathlib import Path
-
 # Project root, from the environment or the usual location. Every path below
 # derives from it, so the script runs wherever the tree happens to live.
 PROJECT_DIR = Path(os.environ.get("MSC_ARCHAEA_DIR", Path.home() / "msc_archaea"))
@@ -106,17 +103,14 @@ def process_tree_files(tree_dir, name_mapping, extensions):
 
     # Resumen final
     print(f"\n{'=' * 70}")
-    print(f"RESUMEN")
+    print("RESUMEN")
     print(f"{'=' * 70}")
     print(f"Files rewritten: {total_files}")
     print(f"Total de reemplazos realizados: {total_replacements}")
-    print(f"\n[OK] Finished")
+    print("\n[OK] Finished")
     print("\nA .backup copy was written next to each file.")
 
-
-# =============================================================================
-# EJECUCIÓN PRINCIPAL
-# =============================================================================
+# ---- EJECUCIÓN PRINCIPAL ----
 
 if __name__ == "__main__":
     print("=" * 70)

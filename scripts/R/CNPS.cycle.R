@@ -1,4 +1,3 @@
-# =============================================================================
 # Biogeochemical cycles (C, N, P, S) across the archaeal MAGs.
 #
 # Datos:    54 MAGs arqueales de metagenomas marinos
@@ -24,7 +23,6 @@
 #   {PW}_host_ratio.png                  stacked bars, phylum by group, every pathway
 #
 # Under 10_MAGs/ only two ComplexHeatmap variants are produced: depth, and no sidebar.
-# =============================================================================
 #
 # NOTAS DE DISEÑO:
 #   The Xcyc.abundance() functions read the global `ko` directly rather than
@@ -35,7 +33,6 @@
 #   explicit zero rows for every KO the cycle functions ask for.
 #   · Bug 2 (log10): valores ≤ 1 to log10(1) = 0 to seq(a+1,b,1) falla.
 #   Worked around by scaling `ko` by 100 before the cycle functions run.
-# =============================================================================
 
 script_start <- Sys.time()
 cat(sprintf("=== Inicio del script: %s ===\n\n", format(script_start, "%Y-%m-%d %H:%M:%S")))
@@ -481,17 +478,13 @@ message(sprintf(
   nrow(abundance), ncol(abundance) - 1L
 ))
 
-# =============================================================================
-# HELPERS DE LOOKUP
-# =============================================================================
+# ---- HELPERS DE LOOKUP ----
 
 get_mag_depth <- function(mags) meta$Depth[match(mags, meta$NameWithoutExtension)]
 get_mag_station <- function(mags) meta$Station[match(mags, meta$NameWithoutExtension)]
 get_mag_display_name <- function(mags) meta$DisplayName[match(mags, meta$NameWithoutExtension)]
 
-# =============================================================================
-# Save the host-relative results across all six taxonomic ranks
-# =============================================================================
+# ---- Save the host-relative results across all six taxonomic ranks ----
 
 save_host_relative <- function(result_list, out_subdir, prefix) {
   ranks <- c("Phylum", "Class", "Order", "Family", "Genus", "Species")
@@ -503,9 +496,7 @@ save_host_relative <- function(result_list, out_subdir, prefix) {
   }
 }
 
-# =============================================================================
-# HELPER: filtrar abundance_df a un subconjunto de MAGs
-# =============================================================================
+# ---- HELPER: filtrar abundance_df a un subconjunto de MAGs ----
 
 subset_abund <- function(abundance_df, mag_subset) {
   avail <- intersect(mag_subset, setdiff(colnames(abundance_df), "Type"))
@@ -515,7 +506,6 @@ subset_abund <- function(abundance_df, mag_subset) {
   abundance_df[, c("Type", avail), drop = FALSE]
 }
 
-# =============================================================================
 # Biogeochemical cycle heatmap, styled to match the DRAM2 figures
 #
 #   rows    MAGs by DisplayName, ordered ROMZ, 1000, BTM, then by station
@@ -523,7 +513,6 @@ subset_abund <- function(abundance_df, mag_subset) {
 # · Color = blanco to rojo (completitud normalizada 0–1)
 #   ann_v   0 no sidebar, rows cluster freely
 #           1 depth and station, 2 depth only, 3 station only
-# =============================================================================
 
 make_cnps_heatmap <- function(abundance_df, title_es, outfile, ann_v = 1L) {
   type_col <- as.character(abundance_df$Type)
@@ -670,13 +659,11 @@ make_cnps_heatmap <- function(abundance_df, title_es, outfile, ann_v = 1L) {
   message("    \u2713 ", basename(outfile))
 }
 
-# =============================================================================
 # Mean abundance per station
 #
 #   rows  stations, alphabetical
 #   cols    pathways, labelled in Spanish
 # · Color = blanco to rojo (media de abundancia normalizada 0–1)
-# =============================================================================
 
 make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
   type_col <- as.character(abundance_df$Type)
@@ -763,7 +750,6 @@ make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
   message("    \u2713 ", basename(outfile))
 }
 
-# =============================================================================
 # Taxa by pathway heatmap
 #
 #   rows   taxa at genus level, or whichever rank_idx selects
@@ -772,7 +758,6 @@ make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
 #
 # pw_results: lista nombrada de listas de 6 dfs (salidas de ACF(), Fer(), etc.)
 # rank_idx  index into each list: 1 phylum, 2 class, 3 order, 4 family, 5 genus, 6 species
-# =============================================================================
 
 make_cnps_taxonomy_heatmap <- function(pw_results, rank_idx = 5L,
                                        rank_label = "G\u00e9nero",
@@ -893,7 +878,6 @@ make_cnps_taxonomy_heatmap <- function(pw_results, rank_idx = 5L,
   message("    \u2713 ", basename(outfile))
 }
 
-# =============================================================================
 # Every figure for one cycle, into a given directory
 #
 # Genera:
@@ -907,7 +891,6 @@ make_cnps_taxonomy_heatmap <- function(pw_results, rank_idx = 5L,
 # ann_versions: which sidebar variants to produce.
 #   0 no sidebar, 1 depth and station, 2 depth, 3 station
 # station_heatmap: TRUE adds the per-station heatmap, which only applies to the full 54
-# =============================================================================
 
 run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
                             out_dir, group_st, group_dp,
@@ -1046,9 +1029,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
   }
 }
 
-# =============================================================================
-# SECCIÓN A – CICLOS ELEMENTALES (54 MAGs)
-# =============================================================================
+# ---- SECCIÓN A – CICLOS ELEMENTALES (54 MAGs) ----
 
 message("\n══ [A] Ciclos elementales – 54 MAGs ══")
 
@@ -1094,9 +1075,7 @@ run_cycle_plots(
   group_station, group_depth
 )
 
-# =============================================================================
-# SECCIÓN B – ORDENACIÓN (PCA · PCoA · NMDS) – 54 MAGs
-# =============================================================================
+# ---- SECCIÓN B – ORDENACIÓN (PCA · PCoA · NMDS) – 54 MAGs ----
 
 message("\n══ [B] Ordenaci\u00f3n – 54 MAGs ══")
 
@@ -1144,10 +1123,8 @@ run_ordination(C.abundance, group_depth, "C_depth", ord_out)
 run_ordination(N.abundance, group_depth, "N_depth", ord_out)
 run_ordination(S.abundance, group_depth, "S_depth", ord_out)
 
-# =============================================================================
 # ---- section C: host-relative statistics, taxonomy against cycle ----
 # The package functions read Gene, tax, abundance and group from the global environment.
-# =============================================================================
 
 message("\n══ [C] Host-relative stats ══")
 
@@ -1283,13 +1260,11 @@ for (rnk in list(
   }
 }
 
-# =============================================================================
 # ---- section D: host ratio, stacked bars by phylum ----
 #
 # Replaces the package's host.ratio(), which fixes cellwidth and cellheight in
 # pheatmap and leaves most of the canvas blank when there are only a few taxa.
 # This ggplot2 version sizes itself to whatever it is given.
-# =============================================================================
 
 message("\n══ [D] Host ratio plots ══")
 
@@ -1396,11 +1371,9 @@ for (nm in names(p_results)) {
   )
 }
 
-# =============================================================================
 # SECCIÓN F – SUBCONJUNTO DE 10 MAGs SIN ESPECIE
 # Same structure as sections A and B, restricted to the mags_10 subset.
 # Laid out like section 16 of DRAM2_output_analysis.R.
-# =============================================================================
 
 message("\n══ [F] Subconjunto 10 MAGs sin especie ══")
 message("  MAGs: ", paste(mags_10, collapse = ", "))
@@ -1487,7 +1460,6 @@ if (length(mags_10) == 0) {
   }
 }
 
-# =============================================================================
 # SECCIÓN G – RESUMEN A NIVEL COMUNIDAD: BURBUJAS TAXONÓMICAS Y DE METADATOS
 #
 # Absorbs what used to live in CNPS.cycle_2.R.
@@ -1495,7 +1467,6 @@ if (length(mags_10) == 0) {
 #            WSL_BASE, OUT_DIR, CNPS_CACHE_FILE, meta
 # Reads the CSVs written in section A rather than the in-memory objects.
 # The _g suffix keeps these names clear of the global environment.
-# =============================================================================
 
 message("\n\u2550\u2550 [G] Resumen comunidad: gr\u00e1ficos de burbujas taxon\u00f3micas y de metadatos \u2550\u2550")
 
@@ -2074,7 +2045,6 @@ for (i in seq_along(tax_levels_g)) {
 #   drop = TRUE keeps each cycle to its own pathways
 #   the cycle labels sit to the right of the taxa panel
 #   "Taxones" appears as the top strip of that right-hand panel
-# =============================================================================
 
 message("  Generando paneles combinados Meta + Taxonom\u00eda...")
 
@@ -2206,9 +2176,7 @@ message(
   file.path(OUT_DIR, "resumen_comunidad")
 )
 
-# =============================================================================
-# FIN
-# =============================================================================
+# ---- FIN ----
 
 message(paste0(
   "\n---\nAn\u00e1lisis CNPS.cycle completado.\nResultados en: ", OUT_DIR

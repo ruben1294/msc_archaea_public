@@ -24,7 +24,6 @@ import os
 import sys
 import csv
 import re
-from collections import defaultdict
 
 # CONFIGURATION
 # Project root, from the environment or the usual location.
@@ -124,6 +123,7 @@ REF_DISPLAY_NAMES = {
 #   MAGs: NameWithoutExtension to DisplayName, spaces become underscores
 # - Referencias: REF_DISPLAY_NAMES
 LEAF_NAME_MAP = {}
+
 
 def translate_leaf(name: str) -> str:
     """Devuelve el nombre renombrado que usa el treefile/iTOL."""
@@ -288,6 +288,7 @@ DEPTH_COLORS = {
 # FUNCIONES DE PARSEO
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def parse_quality(path):
     """
     Lee el reporte de calidad CheckM2 (columnas Name, Completeness, Contamination).
@@ -316,6 +317,7 @@ def parse_quality(path):
         for m in sorted(missing):
             print(f" WARNING [quality]: {m} not found en quality report", file=sys.stderr)
     return completeness, contamination
+
 
 def parse_metadata(path):
     """
@@ -350,6 +352,7 @@ def parse_metadata(path):
 
     return order, stations, depths, display_names_tree
 
+
 def tsv_name_to_dot(tsv_name):
     """
     Convierte nombre estilo TSV (guiones bajos entre campos principales) al
@@ -364,6 +367,7 @@ def tsv_name_to_dot(tsv_name):
     if m:
         return f"{m.group(1)}.{m.group(2)}.{m.group(3)}.bin.{m.group(4)}"
     return tsv_name  # no match to devolver sin cambios
+
 
 def parse_ani(path, target_set):
     """
@@ -391,6 +395,7 @@ def parse_ani(path, target_set):
             ani[dot_name] = val
     return ani
 
+
 def parse_product(product_path, metadata_order):
     """
     Reads product.tsv. It has no index column, and its rows align with metadata_order.
@@ -408,6 +413,7 @@ def parse_product(product_path, metadata_order):
             if mag_name in target_set:
                 data[mag_name] = dict(row)
     return data
+
 
 def eval_field(mag_row, columns, threshold):
     """
@@ -433,6 +439,7 @@ def eval_field(mag_row, columns, threshold):
                 pass
     return 0
 
+
 def get_dram2_active_fields():
     """
     Which DRAM2 fields carry at least one positive across the MAGs.
@@ -440,7 +447,7 @@ def get_dram2_active_fields():
     """
     active = []
     n_fields = len(DRAM2_EXPECTED.get(list(DRAM2_EXPECTED.keys())[0], []))
-    
+
     for field_idx in range(n_fields):
         has_any = False
         for mag, values in DRAM2_EXPECTED.items():
@@ -449,16 +456,18 @@ def get_dram2_active_fields():
                 break
         if has_any:
             active.append(field_idx)
-    
+
     return active
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GENERADORES DE ARCHIVOS iTOL
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _open(outdir, filename):
     """Abre un archivo de salida con newline Unix."""
     return open(os.path.join(outdir, filename), 'w', newline='\n', encoding='utf-8')
+
 
 def write_01_source_colorstrip(outdir):
     fname = '01_source_colorstrip.txt'
@@ -483,6 +492,7 @@ def write_01_source_colorstrip(outdir):
         for leaf in REFERENCE_LEAVES:
             f.write(f"{translate_leaf(leaf)}\t#457b9d\tReference\n")
     return fname
+
 
 def write_02_taxonomy_colorstrip(outdir):
     fname = '02_taxonomy_colorstrip.txt'
@@ -520,6 +530,7 @@ def write_02_taxonomy_colorstrip(outdir):
                 f.write(f"{out_leaf}\t#cccccc\tUnknown\n")
     return fname
 
+
 def write_03_completeness_bar(outdir, completeness, contamination):
     fname = '03_completeness_bar.txt'
     with _open(outdir, fname) as f:
@@ -552,6 +563,7 @@ def write_03_completeness_bar(outdir, completeness, contamination):
             f.write(f"{translate_leaf(mag)}\t{val}\t{color}\n")
     return fname
 
+
 def write_04_contamination_bar(outdir, contamination):
     fname = '04_contamination_bar.txt'
     with _open(outdir, fname) as f:
@@ -582,6 +594,7 @@ def write_04_contamination_bar(outdir, contamination):
                 color = '#e63946'  # calidad baja (red)
             f.write(f"{translate_leaf(mag)}\t{val}\t{color}\n")
     return fname
+
 
 def write_05_ani_heatmap(outdir, ani_data):
     fname = '05_ani_heatmap.txt'
@@ -624,6 +637,7 @@ def write_05_ani_heatmap(outdir, ani_data):
                 f.write(f"{translate_leaf(mag)}\t{val:.2f}\n")
     return fname
 
+
 def write_06_label_styles(outdir):
     fname = '06_label_styles.txt'
     with _open(outdir, fname) as f:
@@ -646,12 +660,13 @@ def write_06_label_styles(outdir):
             f.write(f"{out_leaf}\tlabel\tnode\t{color}\t{size}\titalic\t\n")
     return fname
 
+
 def write_07_dram2_binary(outdir, product_data):
     fname = '07_dram2_binary.txt'
-    
+
     # Indices of the fields that carry data
     active_field_indices = get_dram2_active_fields()
-    
+
     # Filtrar DRAM2_FIELDS, colores y etiquetas
     active_dram2_fields = [DRAM2_FIELDS[i] for i in active_field_indices]
     active_dram2_colors = [DRAM2_FIELD_COLORS[i] for i in active_field_indices]
@@ -722,6 +737,7 @@ def write_07_dram2_binary(outdir, product_data):
             f.write(translate_leaf(mag) + "\t" + "\t".join(str(v) for v in vals) + "\n")
     return fname
 
+
 def write_08_branch_support_colors(outdir):
     fname = '08_branch_support_colors.txt'
     with _open(outdir, fname) as f:
@@ -741,6 +757,7 @@ def write_08_branch_support_colors(outdir):
             out2 = translate_leaf(leaf2)
             f.write(f"{out1}|{out2}\trange\t{color}\t{label}\n")
     return fname
+
 
 def write_09_station_colorstrip(outdir, stations):
     fname = '09_station_colorstrip.txt'
@@ -768,6 +785,7 @@ def write_09_station_colorstrip(outdir, stations):
             color = STATION_COLORS.get(station, '#999999')
             f.write(f"{translate_leaf(mag)}\t{color}\t{station}\n")
     return fname
+
 
 def write_10_depth_colorstrip(outdir, depths):
     fname = '10_depth_colorstrip.txt'
@@ -807,6 +825,7 @@ def write_10_depth_colorstrip(outdir, depths):
 # ══════════════════════════════════════════════════════════════════════════════
 # VALIDACIÓN POST-GENERACIÓN
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def validate_leaf_coverage(outdir):
     """
@@ -853,6 +872,7 @@ def validate_leaf_coverage(outdir):
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def main():
     # Validar archivos de entrada

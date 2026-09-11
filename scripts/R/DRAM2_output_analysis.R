@@ -2,7 +2,6 @@
 
 cat("Inicio:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
 
-# =============================================================================
 # Everything the DRAM2 output feeds: annotation-rate tables, trait heatmaps,
 # metabolism summaries, the KEGG-Decoder comparison, and the figures for the
 # functional annotation objective.
@@ -11,7 +10,6 @@ cat("Inicio:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
 # results/SO_01/funct_annot/. Figure labels are Spanish, matching the thesis;
 # translation runs through DeepL against a cached table, so the script works
 # offline once the cache exists.
-# =============================================================================
 
 user_lib <- Sys.getenv("R_LIBS_USER")
 if (user_lib == "") {
@@ -327,9 +325,7 @@ make_taxon_label_expr <- function(names, level = "Species") {
   lgds
 }
 
-# =============================================================================
-# TEMA PERSONALIZADO
-# =============================================================================
+# ---- TEMA PERSONALIZADO ----
 theme_publication <- function(base_size = 11) {
   theme_bw(base_size = base_size) +
     theme(
@@ -349,9 +345,7 @@ theme_publication <- function(base_size = 11) {
     )
 }
 
-# =============================================================================
-# 1. CARGA Y PREPARACIÓN DE DATOS
-# =============================================================================
+# ---- 1. CARGA Y PREPARACIÓN DE DATOS ----
 # Shared style and path resolution. This block locates _pub_style.R without
 # resolve_project_dir(), since that function lives inside it.
 .msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
@@ -428,9 +422,7 @@ if ("kegg_id" %in% colnames(dram)) {
   cat("  [WARN] kegg_id NO disponible\n")
 }
 
-# =============================================================================
-# FUNCIONES DE MAPEO AUTOMÁTICO: ID to DESCRIPCIÓN FUNCIONAL
-# =============================================================================
+# ---- FUNCIONES DE MAPEO AUTOMÁTICO: ID to DESCRIPCIÓN FUNCIONAL ----
 
 # --- 1. MAPEO DE KEGG KOs ---
 get_kegg_description <- function(ko_ids, use_cache = TRUE, cache_dir = NULL) {
@@ -758,9 +750,7 @@ create_functional_labels <- function(ids, id_col, data, max_length = 50, use_keg
   return(labels)
 }
 
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
+# ---- HELPER FUNCTIONS ----
 
 make_unique_names <- function(names) {
   duplicated_names <- duplicated(names) | duplicated(names, fromLast = TRUE)
@@ -808,9 +798,7 @@ reorder_rows_by_version <- function(mat, ann_df, annotation_version,
   )
 }
 
-# =============================================================================
-# 2. CLASIFICACIÓN DE CALIDAD DE ANOTACIÓN
-# =============================================================================
+# ---- 2. CLASIFICACIÓN DE CALIDAD DE ANOTACIÓN ----
 # What counts as a real functional annotation: a gene qualifies only on a hit
 # against a curated or HMM functional database
 # (KEGG, KOfam, dbCAN, CAMPER, sulfur, methyl, FeGenie, metals). Un hit en
@@ -1074,9 +1062,7 @@ fmt_order_label <- function(ord_name) {
   ord_name
 }
 
-# =============================================================================
-# 3. TABLAS FORMATEADAS CON FLEXTABLE
-# =============================================================================
+# ---- 3. TABLAS FORMATEADAS CON FLEXTABLE ----
 cat("\n=== GENERANDO TABLAS FORMATEADAS ===\n")
 
 .has_flextable <- requireNamespace("flextable", quietly = TRUE) &&
@@ -1349,9 +1335,7 @@ write_csv(datos_dram2_transpuesto, file.path(OUTPUT_DIR, "tabla_02_datos_dram2_t
 write_csv(datos_taxonomia, file.path(OUTPUT_DIR, "tabla_04_datos_taxonomia.csv"))
 cat("[OK] Datos de tablas guardados en CSV\n")
 
-# =============================================================================
-# 4. PREPARACIÓN DE MATRICES PARA HEATMAPS
-# =============================================================================
+# ---- 4. PREPARACIÓN DE MATRICES PARA HEATMAPS ----
 cat("\n=== PREPARANDO MATRICES PARA HEATMAPS ===\n")
 
 heatmap_data <- summary_by_mag %>%
@@ -1398,9 +1382,7 @@ ordered_percent <- order_matrix_by_depth(heatmap_percent, annotation_row)
 heatmap_percent_ordered <- ordered_percent$matrix
 annotation_row_percent_ordered <- ordered_percent$annotation
 
-# =============================================================================
-# 5. HEATMAPS GENERALES
-# =============================================================================
+# ---- 5. HEATMAPS GENERALES ----
 cat("\n=== GENERANDO HEATMAPS GENERALES ===\n")
 
 cat("\nGenerando heatmap general de bases de datos...\n")
@@ -1548,9 +1530,7 @@ draw(ht_03)
 dev.off()
 cat("[OK] Heatmap de porcentajes guardado\n")
 
-# =============================================================================
-# 6. HEATMAPS INDIVIDUALES CON DESCRIPCIONES FUNCIONALES
-# =============================================================================
+# ---- 6. HEATMAPS INDIVIDUALES CON DESCRIPCIONES FUNCIONALES ----
 cat("\n=== GENERANDO HEATMAPS INDIVIDUALES CON DESCRIPCIONES ===\n")
 
 generate_db_heatmap <- function(data, db_col, db_name, output_file, title, use_kegg_api = TRUE) {
@@ -1644,9 +1624,7 @@ generate_db_heatmap <- function(data, db_col, db_name, output_file, title, use_k
 
 cat("[OK] Sección de heatmaps individuales por base de datos omitida (eliminada por diseño)\n")
 
-# =============================================================================
-# 7. GRÁFICOS GENERALES
-# =============================================================================
+# ---- 7. GRÁFICOS GENERALES ----
 cat("\n=== GENERANDO GRÁFICOS GENERALES ===\n")
 
 cat("\nGenerando gráfico de calidad de anotación...\n")
@@ -2173,9 +2151,7 @@ ggsave(file.path(OUTPUT_DIR, "plot_04_functional_composition_stacked.png"),
 
 cat("[OK] Gráfico de composición funcional guardado\n")
 
-# =============================================================================
-# 8. ANÁLISIS ESPECÍFICOS CON DESCRIPCIONES FUNCIONALES
-# =============================================================================
+# ---- 8. ANÁLISIS ESPECÍFICOS CON DESCRIPCIONES FUNCIONALES ----
 cat("\n=== ANÁLISIS ESPECÍFICOS CON DESCRIPCIONES ===\n")
 
 # KEGG KOs
@@ -2326,12 +2302,8 @@ if ("Completeness" %in% colnames(summary_by_mag_display) &&
   cat("[WARN] Datos de calidad no disponibles\n")
 }
 
-# =============================================================================
-# 9. RESUMEN FINAL
-# =============================================================================
-# =============================================================================
-# 10. KEGG-DECODER Y KEGG-EXPANDER HEATMAPS (ComplexHeatmap)
-# =============================================================================
+# ---- 9. RESUMEN FINAL ----
+# ---- 10. KEGG-DECODER Y KEGG-EXPANDER HEATMAPS (ComplexHeatmap) ----
 cat("\n=== GENERANDO HEATMAPS DE KEGG-DECODER Y KEGG-EXPANDER ===\n")
 
 DECODER_FILE <- file.path(PROJECT_DIR, "results", "07_metabolic_reconstruction", "keggdecoder_static", "keggdecoder_output.list")
@@ -2768,9 +2740,7 @@ if (file.exists(DECODER_FILE) && file.exists(EXPANDER_FILE)) {
 cat("[OK] Sección KEGG-Decoder/Expander completada\n")
 cat("  Caché de traducciones en:", OUTPUT_DIR, "\n\n")
 
-# =============================================================================
-# RUTAS Y DATOS DE DRAM2 DISTILLATION (compartidos en secciones 11-15)
-# =============================================================================
+# ---- RUTAS Y DATOS DE DRAM2 DISTILLATION (compartidos en secciones 11-15) ----
 PRODUCT_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "VISUALIZE", "product.tsv")
 GENOME_STATS_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "SUMMARIZE", "genome_stats.tsv")
 QUALITY_REPORT_FILE <- file.path(PROJECT_DIR, "results", "02_mags_quality", "20251222_valentin_quality_report.tsv")
@@ -2915,9 +2885,7 @@ depth_colors_std <- setNames(
   depth_levels_std
 )
 
-# =============================================================================
-# 11. HEATMAP DE PRODUCT.TSV – Completitud de rutas DRAM2
-# =============================================================================
+# ---- 11. HEATMAP DE PRODUCT.TSV – Completitud de rutas DRAM2 ----
 cat("\n=== SECCIÓN 11: HEATMAP DE PRODUCT.TSV ===\n")
 
 if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
@@ -3452,14 +3420,10 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
   cat("[WARN] product.tsv o genome_stats.tsv no encontrado, omitiendo sección 11\n\n")
 }
 
-# =============================================================================
-# 12. ESTADÍSTICAS DE CALIDAD DE GENOMAS (genome_stats.tsv)
-# =============================================================================
+# ---- 12. ESTADÍSTICAS DE CALIDAD DE GENOMAS (genome_stats.tsv) ----
 cat("=== SECCIÓN 12: omitida (Fig5a y Fig5b eliminadas por diseño) ===\n\n")
 
-# =============================================================================
-# 13. RASGOS METABÓLICOS PREDICHOS (traits.xlsx)
-# =============================================================================
+# ---- 13. RASGOS METABÓLICOS PREDICHOS (traits.xlsx) ----
 cat("=== SECCIÓN 13: RASGOS METABÓLICOS PREDICHOS (traits.xlsx) ===\n")
 
 make_trait_heatmap <- function(trait_df, title_es, subtitle_tool = NULL,
@@ -3753,17 +3717,13 @@ if (file.exists(TRAITS_FILE)) {
   cat("[WARN] traits.xlsx no encontrado, omitiendo sección 13\n\n")
 }
 
-# =============================================================================
-# 13b. RASGOS AGREGADOS POR PROFUNDIDAD, ESTACIÓN Y GÉNERO TAXONÓMICO
-# =============================================================================
+# ---- 13b. RASGOS AGREGADOS POR PROFUNDIDAD, ESTACIÓN Y GÉNERO TAXONÓMICO ----
 cat("=== SECCIÓN 13b: Ver treatment_comparison.R ===\n")
 # What used to live here, the aggregated heatmaps Fig9a to 9f along with the
 # Fisher tests and logistic models, now lives in treatment_comparison.R.
 cat("  (Gráficos 9a-9f generados por treatment_comparison.R)\n\n")
 
-# =============================================================================
-# 14. RESUMEN METABÓLICO POR CATEGORÍA (metabolism_summary.xlsx)
-# =============================================================================
+# ---- 14. RESUMEN METABÓLICO POR CATEGORÍA (metabolism_summary.xlsx) ----
 cat("=== SECCIÓN 14: RESUMEN METABÓLICO (metabolism_summary.xlsx) ===\n")
 
 # Completeness heatmap by subcategory, from one sheet of
@@ -4170,9 +4130,7 @@ if (file.exists(METABOLISM_FILE)) {
   cat("[WARN] metabolism_summary.xlsx no encontrado, omitiendo sección 14\n\n")
 }
 
-# =============================================================================
-# 15. HEATMAPS POR CATEGORÍA DE GENES (summarized_genomes.tsv)
-# =============================================================================
+# ---- 15. HEATMAPS POR CATEGORÍA DE GENES (summarized_genomes.tsv) ----
 cat("=== SECCIÓN 15: HEATMAPS POR CATEGORÍA DE GENES (summarized_genomes.tsv) ===\n")
 
 if (file.exists(SUMMARIZED_GENOMES_FILE)) {
@@ -4433,8 +4391,6 @@ if (file.exists(SUMMARIZED_GENOMES_FILE)) {
   cat("[WARN] summarized_genomes.tsv no encontrado, omitiendo sección 15\n\n")
 }
 
-# =============================================================================
-
 cat("\n", rep("=", 70), "\n", sep = "")
 cat("RESUMEN DEL ANÁLISIS COMPLETO\n")
 cat(rep("=", 70), "\n", sep = "")
@@ -4496,9 +4452,7 @@ cat("  ", OUTPUT_DIR, "\n")
 cat(rep("=", 70), "\n", sep = "")
 cat("\n[OK] Análisis completado exitosamente!\n\n")
 
-# =============================================================================
-# 16. ANÁLISIS PARA LOS 10 MAGs SIN TAXONOMÍA A NIVEL ESPECIE
-# =============================================================================
+# ---- 16. ANÁLISIS PARA LOS 10 MAGs SIN TAXONOMÍA A NIVEL ESPECIE ----
 cat("\n=== SECCIÓN 16: ANÁLISIS PARA 10 MAGs SIN TAXONOMÍA A NIVEL ESPECIE ===\n")
 
 # The MAGs with no species-level assignment
@@ -4629,9 +4583,7 @@ if (length(mags_no_species) == 0) {
     }
   }
 
-  # =========================================================================
-  # Four sidebar variants
-  # =========================================================================
+  # ---- Four sidebar variants ----
   ann_version_dirs <- c(
     "2" = "prof_estacion", # v2: profundidad + estación
     "3" = "profundidad", # v3: solo profundidad

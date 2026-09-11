@@ -11,9 +11,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 load_project_config
 
-# ============================================================================
-# Configuration
-# ============================================================================
+# ---- Configuration ----
 
 # The KofamKOALA submission date is part of the directory name, so the most
 # recent one is taken unless a path is given on the command line.
@@ -37,9 +35,7 @@ MAG_STATS_FILE="${INPUT_DIR}/all_kofam_KOs.MAG_stats.tsv"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="${INPUT_DIR}/03_post_KO_assign_${TIMESTAMP}.log"
 
-# ============================================================================
-# Functions
-# ============================================================================
+# ---- Functions ----
 
 log() {
     local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
@@ -52,9 +48,7 @@ error() {
     exit 1
 }
 
-# ============================================================================
-# Validation
-# ============================================================================
+# ---- Validation ----
 
 log "=========================================="
 log "KO Assignment Post-Processing Pipeline"
@@ -80,9 +74,7 @@ log "Found ${#input_ko_files[@]} result_ko_part*.txt files (primary source)"
 log "Found ${#input_part_files[@]} result_part*.txt files (for scoring)"
 log ""
 
-# ============================================================================
-# Cleanup
-# ============================================================================
+# ---- Cleanup ----
 
 log "Cleaning up previous output files..."
 rm -f "$INPUT_DIR"/all_kofam_*.tsv || true
@@ -90,9 +82,7 @@ rm -f "$INPUT_DIR"/all_kofam_*.tmp || true
 log "Cleanup completed"
 log ""
 
-# ============================================================================
-# Step 1: Extract score information from result_part*.txt files
-# ============================================================================
+# ---- Step 1: Extract score information from result_part*.txt files ----
 
 log "=========================================="
 log "Step 1: Extracting score information"
@@ -110,9 +100,7 @@ n_scores=$(wc -l < "$SCORES_FILE")
 log "[OK] Extracted $n_scores score entries"
 log ""
 
-# ============================================================================
-# Step 2: Build best-hit lookup table (for proteins with multiple KOs)
-# ============================================================================
+# ---- Step 2: Build best-hit lookup table (for proteins with multiple KOs) ----
 
 log "=========================================="
 log "Step 2: Building best-hit lookup table"
@@ -162,9 +150,7 @@ log "[OK] Best hits selected: $n_best"
 log "[OK] Discarded duplicate hits: $n_discarded"
 log ""
 
-# ============================================================================
-# Step 3: Concatenate result_ko_part*.txt files (ALL proteins)
-# ============================================================================
+# ---- Step 3: Concatenate result_ko_part*.txt files (ALL proteins) ----
 
 log "=========================================="
 log "Step 3: Concatenating all proteins"
@@ -179,9 +165,7 @@ n_total=$(wc -l < "$TEMP_RAW")
 log "[OK] Total proteins from result_ko_part*.txt: $n_total"
 log ""
 
-# ============================================================================
-# Step 4: Replace multiple KO assignments with best hit
-# ============================================================================
+# ---- Step 4: Replace multiple KO assignments with best hit ----
 
 log "=========================================="
 log "Step 4: Filtering by best hits"
@@ -224,9 +208,7 @@ log "  With KO: $n_with_ko"
 log "  Without KO: $n_without_ko"
 log ""
 
-# ============================================================================
-# Step 5: Transform protein IDs (replace _ with . and | with _)
-# ============================================================================
+# ---- Step 5: Transform protein IDs (replace _ with . and | with _) ----
 
 log "=========================================="
 log "Step 5: Transforming protein IDs"
@@ -255,9 +237,7 @@ n_transformed=$(wc -l < "$TRANSFORMED_FILE")
 log "[OK] Transformed file created: $TRANSFORMED_FILE ($n_transformed lines)"
 log ""
 
-# ============================================================================
-# Step 6: Parse MAG names and genes
-# ============================================================================
+# ---- Step 6: Parse MAG names and genes ----
 
 log "=========================================="
 log "Step 6: Parsing MAG names and genes"
@@ -287,9 +267,7 @@ n_parsed=$(wc -l < "$PARSED_FILE")
 log "[OK] Parsed file created: $PARSED_FILE ($n_parsed lines)"
 log ""
 
-# ============================================================================
-# Step 7: Generate unique MAG-KO assignments
-# ============================================================================
+# ---- Step 7: Generate unique MAG-KO assignments ----
 
 log "=========================================="
 log "Step 7: Generating MAG-KO assignments"
@@ -302,9 +280,7 @@ n_mag_ko=$(wc -l < "$BY_MAG_FILE")
 log "[OK] MAG-KO assignments: $BY_MAG_FILE ($n_mag_ko unique pairs)"
 log ""
 
-# ============================================================================
-# Step 8: Generate per-MAG statistics (CORRECTED + Multi-KO column)
-# ============================================================================
+# ---- Step 8: Generate per-MAG statistics (CORRECTED + Multi-KO column) ----
 
 log "=========================================="
 log "Step 8: Calculating per-MAG statistics"
@@ -448,9 +424,7 @@ tail -n +2 "$MAG_STATS_FILE" | sort -t$'\t' -k7,7nr | head -5 | \
     awk -F'\t' '{printf "  %s: %.2f%% (%d/%d, %d multi-KO)\n", $1, $7, $4, $3, $6}'
 log ""
 
-# ============================================================================
-# Summary
-# ============================================================================
+# ---- Summary ----
 
 log "=========================================="
 log "Pipeline Summary"

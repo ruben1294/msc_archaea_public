@@ -76,10 +76,8 @@ DEPTHS_COL_RENAME = {
     "Profundidad de colecta (m)": "Collection_depth_m",
 }
 
+# ---- HELPERS ----
 
-# ==========================================
-# HELPERS
-# ==========================================
 
 def normalize_depth(value):
     if value is None:
@@ -99,10 +97,8 @@ def backup(path):
     print(f"[backup] {path} -> {bak}")
     return bak
 
+# ---- READERS ----
 
-# ==========================================
-# READERS
-# ==========================================
 
 def read_physchem(path):
     """Sheet1 of Physicochemical_properties.xlsx: 1 row per Depth aggregated."""
@@ -154,15 +150,13 @@ def read_depths(path):
     dropped = before - len(df)
     if dropped > 0:
         print(f"[info]   dropped {dropped} rows outside MAG cohort "
-              f"(station or depth)")
+              "(station or depth)")
     # Spanish display label for figures
     df["Depth_es"] = df["Depth"].map(DEPTH_ES_LABELS)
     return df
 
+# ---- MAIN ----
 
-# ==========================================
-# MAIN
-# ==========================================
 
 def main():
     print(f"[info] reading {PHYSCHEM_XLSX}")
@@ -176,9 +170,9 @@ def main():
     # Sanity check: report station coverage vs MAG metadata
     mag_stations = {"A4", "A6", "C22", "F37", "PO1", "Y6"}
     depths_stations = set(depths_df["Station"].astype(str).unique())
-    print(f"[info] MAG stations missing in Depths.xlsx: "
+    print("[info] MAG stations missing in Depths.xlsx: "
           f"{sorted(mag_stations - depths_stations)}")
-    print(f"[info] Depths.xlsx stations not in MAG dataset: "
+    print("[info] Depths.xlsx stations not in MAG dataset: "
           f"{sorted(depths_stations - mag_stations)}")
 
     # Sanity check: depth coverage
@@ -189,7 +183,7 @@ def main():
     expected_mag_depths = {"1000", "BTM", "ROMZ"}
     missing_in_depths = expected_mag_depths - depths_depths
     if missing_in_depths:
-        print(f"[warn] MAG Depth labels missing from Depths.xlsx: "
+        print("[warn] MAG Depth labels missing from Depths.xlsx: "
               f"{sorted(missing_in_depths)} -- RDA join will produce NA for these")
 
     # Backup and write combined workbook
@@ -200,10 +194,9 @@ def main():
         depths_df.to_excel(writer, sheet_name=SHEET2_NAME, index=False)
 
     print(f"[done] sheets written: {SHEET1_NAME!r}, {SHEET2_NAME!r}")
-    print(f"[note] R reader (script 29):")
+    print("[note] R reader (script 29):")
     print(f"  physchem <- readxl::read_xlsx('{OUTPUT_XLSX}', sheet = '{SHEET1_NAME}')")
     print(f"  stations <- readxl::read_xlsx('{OUTPUT_XLSX}', sheet = '{SHEET2_NAME}')")
-
 
 if __name__ == "__main__":
     main()

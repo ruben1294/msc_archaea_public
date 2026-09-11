@@ -92,9 +92,7 @@ suppressPackageStartupMessages({
   library(ComplexHeatmap)
 })
 
-# =============================================================================
-# 0. RUTAS
-# =============================================================================
+# ---- 0. RUTAS ----
 # RStudio on Windows reaches the project over a UNC path into WSL, while WSL
 # itself sees a POSIX path. The UNC form is tried first and falls back, so the
 # script runs unchanged in either.
@@ -128,9 +126,7 @@ stopifnot(file.exists(METADATA_FILE), file.exists(TRAITS_FILE), file.exists(ANNO
           dir.exists(CNPS_DIR), file.exists(GTDB_FILE),
           file.exists(ANI_SPARSE_FILE), file.exists(PAN_CLASS_FILE))
 
-# =============================================================================
-# ---- 1. typography, matching the rest of the project ----
-# =============================================================================
+# ---- ---- 1. typography, matching the rest of the project ----
 source(file.path(SCRIPTS_R_DIR, "_pub_style.R"))  # define font_family + showtext
 
 # Injects the font family into any grid::gpar(), so ComplexHeatmap renders in
@@ -164,9 +160,7 @@ theme_publication <- function(base_size = 11) {
     )
 }
 
-# =============================================================================
-# 1b. FORMATOS DE SALIDA — SVG (vectorial) + PNG a 600 dpi
-# =============================================================================
+# ---- 1b. FORMATOS DE SALIDA — SVG (vectorial) + PNG a 600 dpi ----
 # Every figure is written twice, same name and different extension:
 #   .svg  vector, for laying out and rescaling without loss
 #   .png  raster at 600 dpi, as a fallback wherever SVG is handled badly, which
@@ -256,9 +250,7 @@ open_device <- function(f, w_in, h_in, bg_col = "transparent") {
   }
 }
 
-# =============================================================================
-# 2. METADATOS TAXONÓMICOS
-# =============================================================================
+# ---- 2. METADATOS TAXONÓMICOS ----
 metadata <- read.delim(METADATA_FILE, sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 .extract_rank <- function(tx, prefix) {
@@ -318,9 +310,7 @@ aggregate_to_order <- function(df) {
     summarise(across(everything(), ~ mean(., na.rm = TRUE)), .groups = "drop")
 }
 
-# =============================================================================
-# 3. ETIQUETAS DE RASGO EN INGLÉS
-# =============================================================================
+# ---- 3. ETIQUETAS DE RASGO EN INGLÉS ----
 # DRAM2 writes trait names with the category run onto the front with no
 # separator: "Simple Sugars Glucose", "Short-Chain Fatty Acids (SCFA)
 # Propionate". On an x axis those read badly. prettify_trait() only reformats:
@@ -389,9 +379,7 @@ prettify_trait <- function(x) {
   }, character(1), USE.NAMES = FALSE)
 }
 
-# =============================================================================
-# 4. CONSTRUCCIÓN DE LA MATRIZ Orden × rasgo
-# =============================================================================
+# ---- 4. CONSTRUCCIÓN DE LA MATRIZ Orden × rasgo ----
 # Returns list(mat = proportions, order by trait; n = MAGs per order). A trait
 # absent from every MAG, meaning its column sums to zero, is dropped, as in
 # make_trait_order_heatmap() in the original script.
@@ -699,9 +687,7 @@ trait_heatmap <- function(mat, name, col_width_mm = 10, row_height_mm = 10,
   )
 }
 
-# =============================================================================
-# 5. CARGA DE traits.xlsx
-# =============================================================================
+# ---- 5. CARGA DE traits.xlsx ----
 cat("Leyendo traits.xlsx...\n")
 traits_energy <- read_excel(TRAITS_FILE, sheet = "energy")
 traits_carbon <- read_excel(TRAITS_FILE, sheet = "carbon")
@@ -710,9 +696,7 @@ E <- build_order_matrix(traits_energy, "energy")
 C <- build_order_matrix(traits_carbon, "carbon")
 cat("\n")
 
-# =============================================================================
-# ---- 6-7. disabled: figures 1 and 2, energy and carbon as standalone panels ----
-# =============================================================================
+# ---- ---- 6-7. disabled: figures 1 and 2, energy and carbon as standalone panels ----
 # Energy and carbon traits are no longer emitted separately; the only trait
 # figure that goes on the poster is the combined side-by-side one in section 9.
 # These stay commented because E and C are still built in section 5, so
@@ -734,9 +718,7 @@ cat("\n")
 #                 merge_legend = TRUE, padding = unit(rep(2, 4), "mm"))
 # }
 
-# =============================================================================
-# 8. ORDEN DE FILAS COMPARTIDO POR LOS DOS PANELES
-# =============================================================================
+# ---- 8. ORDEN DE FILAS COMPARTIDO POR LOS DOS PANELES ----
 # Both panels cover the same four orders. For the combined figure to read as one
 # unit, both are ordered by the same dendrogram, computed over the concatenated
 # energy and carbon matrix so every trait counts
@@ -747,9 +729,7 @@ combined_mat  <- cbind(E$mat[common_orders, , drop = FALSE],
                        C$mat[common_orders, , drop = FALSE])
 row_hc <- hclust(dist(combined_mat, method = "euclidean"), method = "ward.D2")
 
-# =============================================================================
-# ---- 9. figure 3: panels side by side ----
-# =============================================================================
+# ---- ---- 9. figure 3: panels side by side ----
 # Un solo bloque: dendrograma de filas a la izquierda, energy y carbon lado a
 # lado compartiendo filas, barplot de No. MAGs y nombres de Orden a la derecha,
 # one shared legend. Each order name carries its sample size as "n = X".
@@ -781,9 +761,7 @@ cat("=== Figura 3: combinada, paneles lado a lado ===\n")
                 padding = unit(rep(2, 4), "mm"))
 }
 
-# =============================================================================
-# 9b. FIGURA 3v — LA MISMA COMBINADA, EN VERTICAL
-# =============================================================================
+# ---- 9b. FIGURA 3v — LA MISMA COMBINADA, EN VERTICAL ----
 # The same information transposed: orders move to the x axis as four columns,
 # traits to the y axis, and the two panels stack with %v% instead of sitting
 # side by side. The result is tall and narrow, which is the shape a poster
@@ -913,9 +891,7 @@ trait_heatmap_t <- function(mat_t, name, col_width_mm = 11.5, row_height_mm = 5,
                 padding = unit(rep(2, 4), "mm"))
 }
 
-# =============================================================================
-# 10. CALIDAD DE ANOTACIÓN — CLASIFICACIÓN DE GENES
-# =============================================================================
+# ---- 10. CALIDAD DE ANOTACIÓN — CLASIFICACIÓN DE GENES ----
 # Ported verbatim from section 2 of DRAM2_output_analysis.R, so figures 4 and 5
 # report exactly the same numbers as their Spanish counterparts.
 #
@@ -996,9 +972,7 @@ cat("  Genes con anotación funcional curada:",
     summary_table$Curated_Functional_Annotation,
     sprintf("(%.1f%%)\n\n", 100 * summary_table$Curated_Functional_Annotation / summary_table$Total_Genes))
 
-# =============================================================================
-# ---- 11. figure 4: genes annotated per tool, horizontal ----
-# =============================================================================
+# ---- ---- 11. figure 4: genes annotated per tool, horizontal ----
 # plot_03_annotation_by_tool.png under coord_flip(): the tool labels no longer
 # need a 45 degree rotation, and the count moves to the right end of each bar on
 # a single line.
@@ -1049,9 +1023,7 @@ cat("=== Figura 4: annotated genes by tool (horizontal) ===\n")
   ggsave_frames(out, p_tool, width = 9, height = 5)
 }
 
-# =============================================================================
-# 12. FIGURA 5 — TASA DE ANOTACIÓN POR ORDEN TAXONÓMICO
-# =============================================================================
+# ---- 12. FIGURA 5 — TASA DE ANOTACIÓN POR ORDEN TAXONÓMICO ----
 # plot_03c_annotation_rate_per_order.png. Bars are the per-order mean percentage
 # of genes with curated functional annotation, error bars are SD, the red line
 # discontinua = media global.
@@ -1165,9 +1137,7 @@ cat("=== Figura 5: annotation rate per order ===\n")
   ggsave_frames(out, p_order, width = 10, height = h_in)
 }
 
-# =============================================================================
-# 13. FIGURA 6 — PANEL CNPS: METADATOS + TAXONOMÍA POR ORDEN
-# =============================================================================
+# ---- 13. FIGURA 6 — PANEL CNPS: METADATOS + TAXONOMÍA POR ORDEN ----
 # Ported from section G of CNPS.cycle.R, make_combined_meta_tax_g("Order"),
 # which produces Panel_Meta_Tax_Orden.png. One ggplot faceted by
 # facet_grid(Cycle ~ Panel): metadata on the left, station and depth, taxonomic
@@ -1450,9 +1420,7 @@ clean_pathway_label <- function(x) {
               p_panel, width = w_panel, height = h_panel)
 }
 
-# =============================================================================
-# 14. FIGURA 7 — MAGs RECUPERADOS POR PROFUNDIDAD, DESGLOSADOS POR ORDEN
-# =============================================================================
+# ---- 14. FIGURA 7 — MAGs RECUPERADOS POR PROFUNDIDAD, DESGLOSADOS POR ORDEN ----
 # Horizontal stacked bars, one per depth (ROMZ, 1000 m, Bottom), divided by the
 # order each MAG classified into. The source is
 # MAGs_metadata.tsv: columna Depth y el rango o__ de FullTaxonomy, exactamente
@@ -1562,9 +1530,7 @@ ORDER_COLORS <- darken(ORDER_COLORS_LIGHT, factor = 0.75)
                 build_depth_plot(FALSE), width = 9, height = 4.4)
 }
 
-# =============================================================================
-# 15. FIGURAS 8-10 — ANI INTRA-GRUPO EN LOS GRUPOS SIN ESPECIE ASIGNADA (N/A)
-# =============================================================================
+# ---- 15. FIGURAS 8-10 — ANI INTRA-GRUPO EN LOS GRUPOS SIN ESPECIE ASIGNADA (N/A) ----
 # Portado de ANI_intraspecies.R (Fig1b_ANI_distribucion_grupos_NA.png). Se
 # This reproduces that script's data loading, the sparse skani edge list plus
 # the pairs rescued from the novel_vs_all run, so the sample sizes shown as
@@ -1989,9 +1955,7 @@ TRACK_COLORS <- c(
   #             p_ani_tracks, width = 9, height = 5.6)
 }
 
-# =============================================================================
-# 16. FIGURA 11 — CLASES PANGENÓMICAS POR ESPECIE (BARRAS 100 % APILADAS)
-# =============================================================================
+# ---- 16. FIGURA 11 — CLASES PANGENÓMICAS POR ESPECIE (BARRAS 100 % APILADAS) ----
 # The same information as Fig_panel_pan_classes.png from
 # 27_pangenome_classification.R, in one horizontal chart: a bar per species from
 # 0 to 100%, divided by pangenome class. Against the three-subplot panel, this
