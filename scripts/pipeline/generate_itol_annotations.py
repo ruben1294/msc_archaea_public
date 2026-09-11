@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""
-generate_itol_annotations.py
+"""Write the iTOL annotation files for the 10-MAG tree from pipeline step 20.
 
-Genera 9 archivos de anotación iTOL para el árbol filogenómico de 10 MAGs arqueales
-(Poseidoniales / Thalassarchaeaceae: MGIIb-Q1, UBA36; Nitrosopumilaceae: Nitrosopelagicus).
+The tree covers Poseidoniales (Thalassarchaeaceae: MGIIb-Q1 and UBA36) and
+Nitrosopumilaceae (Nitrosopelagicus). iTOL takes one file per annotation track,
+so each of these lands in OUTPUT_DIR and gets dragged onto the tree separately:
 
-Archivos generados en OUTPUT_DIR:
-01_source_colorstrip.txt      DATASET_COLORSTRIP   Origen (MAG / referencia)
-02_taxonomy_colorstrip.txt    DATASET_COLORSTRIP   Grupo taxonómico
-03_completeness_bar.txt       DATASET_SIMPLEBAR    Completitud CheckM2 (%)
-04_contamination_bar.txt      DATASET_SIMPLEBAR    Contaminación CheckM2 (%)
-06_label_styles.txt           DATASET_STYLE        Formato de etiquetas
-07_dram2_binary.txt           DATASET_BINARY       Potencial metabólico DRAM2
-08_branch_support_colors.txt  TREE_COLORS          Resaltado de clados (rangos MRCA)
-09_station_colorstrip.txt     DATASET_COLORSTRIP   Estación de muestreo
-10_depth_colorstrip.txt       DATASET_COLORSTRIP   Profundidad de muestreo
+    01_source_colorstrip.txt      DATASET_COLORSTRIP   MAG or reference
+    02_taxonomy_colorstrip.txt    DATASET_COLORSTRIP   taxonomic group
+    03_completeness_bar.txt       DATASET_SIMPLEBAR    CheckM2 completeness
+    04_contamination_bar.txt      DATASET_SIMPLEBAR    CheckM2 contamination
+    06_label_styles.txt           DATASET_STYLE        label formatting
+    07_dram2_binary.txt           DATASET_BINARY       DRAM2 metabolic potential
+    08_branch_support_colors.txt  TREE_COLORS          clade highlighting by MRCA
+    09_station_colorstrip.txt     DATASET_COLORSTRIP   sampling station
+    10_depth_colorstrip.txt       DATASET_COLORSTRIP   sampling depth
 
-Uso:
-python generate_itol_annotations.py
+Leaf labels have to match the tree exactly, which is why the renaming tables
+below are written out rather than derived: the tree was relabelled in step 20
+and these follow that same mapping.
 """
 
 import os
@@ -26,10 +26,9 @@ import csv
 import re
 from collections import defaultdict
 
-# ──────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
-# ──────────────────────────────────────────────────────────────────────────────
-PROJECT_DIR = "/home/ruben/msc_archaea"
+# Project root, from the environment or the usual location.
+PROJECT_DIR = os.environ.get("MSC_ARCHAEA_DIR", os.path.join(os.path.expanduser("~"), "msc_archaea"))
 
 TAXONOMY_TSV = os.path.join(PROJECT_DIR, "results", "03_taxonomy_assigned", "tax_.ar53.summary.tsv")
 PRODUCT_TSV = os.path.join(PROJECT_DIR, "results", "08_MAG_distill", "VISUALIZE", "product.tsv")
@@ -37,9 +36,7 @@ METADATA_TSV = os.path.join(PROJECT_DIR, "MAGs_metadata.tsv")
 QUALITY_TSV = os.path.join(PROJECT_DIR, "results", "02_mags_quality", "20251222_valentin_quality_report.tsv")
 OUTPUT_DIR = os.path.join(PROJECT_DIR, "results", "itol_annotations")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# HOJAS DEL ÁRBOL (identificadores internos, sin renombrar)
-# ──────────────────────────────────────────────────────────────────────────────
+# Tree leaves, by their internal identifiers before relabelling
 TARGET_MAGS = [
     'A4.1000.megahit.bin.28',
     'A4.BTM.megahit.bin.15',
@@ -53,7 +50,7 @@ TARGET_MAGS = [
     'A6.BTM.megahit.bin.9',
 ]
 
-# Referencias según el treefile renamed (extrayendo nombres de 10mags_pmsf.renamed.treefile)
+# Reference names as they appear in 10mags_pmsf.renamed.treefile
 REFERENCE_LEAVES = [
     'REF_GCA_012964335.1',  # Thalassarchaeaceae sp.
     'REF_GCA_002505495.1',  # Thalassarchaeaceae sp.
@@ -78,11 +75,9 @@ REFERENCE_LEAVES = [
 ALL_LEAVES = TARGET_MAGS + REFERENCE_LEAVES
 BACTERIAL_OUTGROUPS = {'REF_GCF_000008545.1', 'REF_GCA_000008545.1'}
 
-# ──────────────────────────────────────────────────────────────────────────────
 # MAPEO A NOMBRES RENOMBRADOS (según 10mags_pmsf.renamed.treefile)
-# ──────────────────────────────────────────────────────────────────────────────
 
-# Mapeo explícito de nombres internos a nombres renombrados (para MAGs)
+# Internal name to relabelled name, for the MAGs
 MAG_DISPLAY_NAMES = {
     'A4.1000.megahit.bin.28':  'MGIIb-Q1_A4_1000_28',
     'A4.BTM.megahit.bin.15':   'MGIIb-Q1_A4_BTM_15',
@@ -96,7 +91,7 @@ MAG_DISPLAY_NAMES = {
     'A6.BTM.megahit.bin.9':    'UBA36_A6_BTM_9',
 }
 
-# Diccionario de nombres renombrados para referencias (según 10mags_pmsf.renamed.treefile)
+# The same mapping for the reference genomes
 REF_DISPLAY_NAMES = {
     # Thalassarchaeaceae / MGIIb-Q1
     'REF_GCA_012964335.1': 'Thalassarchaeaceae_sp._GCA_012964335.1',
@@ -118,28 +113,23 @@ REF_DISPLAY_NAMES = {
     'REF_GCA_000008545.1': 'REF_GCA_000008545.1',
     'REF_GCF_000008625.1': 'Aquifex_aeolicus_VF5',
     'REF_GCA_000008625.1': 'REF_GCA_000008625.1',
-    # Otros sin renombrar
+    # Anything else keeps its name
     'REF_GCA_000402075.1': 'REF_GCA_000402075.1',
     'REF_GCA_000009345.1': 'REF_GCA_000009345.1',
     'REF_GCA_000011805.1': 'REF_GCA_000011805.1',
     'REF_GCA_900232055.1': 'REF_GCA_900232055.1',
 }
 
-
-# Este diccionario global se rellena en main() con:
-# - MAGs: NameWithoutExtension → DisplayName (espacios → guiones bajos)
+# main() fills this in with:
+#   MAGs: NameWithoutExtension to DisplayName, spaces become underscores
 # - Referencias: REF_DISPLAY_NAMES
 LEAF_NAME_MAP = {}
-
 
 def translate_leaf(name: str) -> str:
     """Devuelve el nombre renombrado que usa el treefile/iTOL."""
     return LEAF_NAME_MAP.get(name, name)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
 # DATOS HARDCODEADOS (CheckM2, validados)
-# ──────────────────────────────────────────────────────────────────────────────
 ANI_EXPECTED = {
     'A6.BTM.megahit.bin.3': 93.23,
     'A4.BTM.megahit.bin.15': 93.02,
@@ -153,7 +143,8 @@ ANI_EXPECTED = {
     'A6.BTM.megahit.bin.9': 93.12,
 }
 
-# Valores esperados DRAM2 para validación (14 campos; ver DRAM2_FIELDS más abajo)
+# Expected DRAM2 values, checked on load. The 14 fields are listed in
+# DRAM2_FIELDS below.
 DRAM2_EXPECTED = {
     'A4.1000.megahit.bin.28': [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
     'A4.BTM.megahit.bin.15': [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
@@ -167,9 +158,8 @@ DRAM2_EXPECTED = {
     'A6.BTM.megahit.bin.9':  [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# MAPA TAXONÓMICO (estático, basado en topología del árbol conocida)
-# ──────────────────────────────────────────────────────────────────────────────
+# Taxonomic assignment per leaf. Written out rather than derived, because it
+# follows the topology of this particular tree.
 TAXONOMY_MAP = {
     # MGIIb-Q1 (Poseidoniales / Thalassarchaeaceae)
     'A4.1000.megahit.bin.28': ('#e76f51', 'MGIIb-Q1'),
@@ -207,9 +197,7 @@ TAXONOMY_MAP = {
     'REF_GCF_000008625.1':    ('#adb5bd', 'Bacteria'),
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
 # CAMPOS DRAM2 (07_dram2_binary.txt) - Traducidos al español
-# ──────────────────────────────────────────────────────────────────────────────
 DRAM2_FIELDS = [
     ('Fijación de carbono (CBB)',
      ['Reductive pentose phosphate cycle (Calvin cycle)'], 0.5),
@@ -273,9 +261,7 @@ DRAM2_FIELD_COLORS = [
     '#e76f51',  # Phototrophy
 ]
 
-# ──────────────────────────────────────────────────────────────────────────────
 # RANGOS DE CLADOS (08_branch_support_colors.txt)
-# ──────────────────────────────────────────────────────────────────────────────
 CLADE_RANGES = [
     ('A4.BTM.megahit.bin.15', 'REF_GCA_012964335.1', '#fde8e0', 'MGIIb-Q1 sublinaje A'),
     ('Y6.1000.megahit.bin.23', 'REF_GCA_963580235.1', '#fde8e0', 'MGIIb-Q1 sublinaje B'),
@@ -284,9 +270,7 @@ CLADE_RANGES = [
     ('REF_GCF_000008545.1',   'REF_GCF_000008625.1', '#e9ecef', 'Bacteria (grupo externo)'),
 ]
 
-# ──────────────────────────────────────────────────────────────────────────────
 # COLORES DE ESTACIÓN Y PROFUNDIDAD
-# ──────────────────────────────────────────────────────────────────────────────
 STATION_COLORS = {
     'A4':  '#e63946',
     'A6':  '#2a9d8f',
@@ -310,8 +294,8 @@ def parse_quality(path):
     Los nombres en el archivo usan guiones bajos (A4_BTM_megahit_bin.58); se convierten
     al formato de puntos con tsv_name_to_dot().
     Devuelve:
-      completeness : dict dot_name → float
-      contamination : dict dot_name → float
+      completeness : dict dot_name to float
+      contamination : dict dot_name to float
     """
     completeness, contamination = {}, {}
     target_set = set(TARGET_MAGS)
@@ -333,15 +317,14 @@ def parse_quality(path):
             print(f" WARNING [quality]: {m} no encontrado en quality report", file=sys.stderr)
     return completeness, contamination
 
-
 def parse_metadata(path):
     """
     Lee MAGs_metadata.tsv.
     Devuelve:
       order : lista de NameWithoutExtension en orden de aparición (sin header)
-      stations : dict NameWithoutExtension → Station
-      depths   : dict NameWithoutExtension → Depth
-      display_names_tree : dict NameWithoutExtension → DisplayName_formato_arbol
+      stations : dict NameWithoutExtension to Station
+      depths   : dict NameWithoutExtension to Depth
+      display_names_tree : dict NameWithoutExtension to DisplayName_formato_arbol
     """
     order, stations, depths = [], {}, {}
     display_names_tree = {}
@@ -353,27 +336,26 @@ def parse_metadata(path):
                 continue
             order.append(name)
 
-            # Station y Depth: si no existe la columna, extraer del nombre
+            # Station and Depth fall back to the filename when the column is absent
             stations[name] = row.get('Station', '').strip() or name.split('.')[0]
             depth_val = row.get('Depth', '').strip()
             if not depth_val and '.' in name:
-                depth_val = name.split('.')[1]  # A4.BTM.megahit... → BTM
+                depth_val = name.split('.')[1]  # A4.BTM.megahit... to BTM
             depths[name] = depth_val
 
-            # DisplayName → versión para árbol (espacios → guiones bajos)
+            # Tree labels cannot contain spaces
             disp = row.get('DisplayName', '').strip()
             if disp:
                 display_names_tree[name] = disp.replace(' ', '_')
 
     return order, stations, depths, display_names_tree
 
-
 def tsv_name_to_dot(tsv_name):
     """
     Convierte nombre estilo TSV (guiones bajos entre campos principales) al
     formato del árbol (puntos):
-      A4_BTM_megahit_bin.28  → A4.BTM.megahit.bin.28
-      A4_1000_megahit_bin.28 → A4.1000.megahit.bin.28
+      A4_BTM_megahit_bin.28  to A4.BTM.megahit.bin.28
+      A4_1000_megahit_bin.28 to A4.1000.megahit.bin.28
     Solo reemplaza los guiones bajos entre STATION, DEPTH y ASSEMBLER.
     El punto antes del BinID se mantiene.
     """
@@ -381,14 +363,13 @@ def tsv_name_to_dot(tsv_name):
     m = re.match(r'^([^_]+)_([^_]+)_([^_]+)_bin\.(.+)$', tsv_name)
     if m:
         return f"{m.group(1)}.{m.group(2)}.{m.group(3)}.bin.{m.group(4)}"
-    return tsv_name  # no match → devolver sin cambios
-
+    return tsv_name  # no match to devolver sin cambios
 
 def parse_ani(path, target_set):
     """
     Lee tax_.ar53.summary.tsv y extrae el ANI más relevante para cada MAG objetivo.
-    Prioridad: closest_genome_ani → closest_placement_ani → -1 (sin hit).
-    Devuelve dict: dot_name → float (ANI) o -1.
+    Prioridad: closest_genome_ani to closest_placement_ani to -1 (sin hit).
+    Devuelve dict: dot_name to float (ANI) o -1.
     """
     ani = {}
     with open(path, newline='', encoding='utf-8') as fh:
@@ -410,11 +391,10 @@ def parse_ani(path, target_set):
             ani[dot_name] = val
     return ani
 
-
 def parse_product(product_path, metadata_order):
     """
     Lee product.tsv (sin columna de índice; filas alineadas con metadata_order).
-    Devuelve dict: mag_name → dict{column_name → value_string}
+    Devuelve dict: mag_name to dict{column_name to value_string}
     Solo incluye MAGs en TARGET_MAGS.
     """
     data = {}
@@ -429,13 +409,12 @@ def parse_product(product_path, metadata_order):
                 data[mag_name] = dict(row)
     return data
 
-
 def eval_field(mag_row, columns, threshold):
     """
     Evalúa si un campo metabólico está presente para un MAG dado.
     OR lógico sobre la lista de columnas:
-      - threshold=None → columna booleana: True / '1' → 1, False / '0' → 0
-      - threshold=float → columna numérica (0-1): >= threshold → 1
+      - threshold=None to columna booleana: True / '1' to 1, False / '0' to 0
+      - threshold=float to columna numérica (0-1): >= threshold to 1
     Devuelve 1 o 0.
     """
     for col in columns:
@@ -452,7 +431,6 @@ def eval_field(mag_row, columns, threshold):
             except ValueError:
                 pass
     return 0
-
 
 def get_dram2_active_fields():
     """
@@ -473,7 +451,6 @@ def get_dram2_active_fields():
     
     return active
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # GENERADORES DE ARCHIVOS iTOL
 # ══════════════════════════════════════════════════════════════════════════════
@@ -481,7 +458,6 @@ def get_dram2_active_fields():
 def _open(outdir, filename):
     """Abre un archivo de salida con newline Unix."""
     return open(os.path.join(outdir, filename), 'w', newline='\n', encoding='utf-8')
-
 
 def write_01_source_colorstrip(outdir):
     fname = '01_source_colorstrip.txt'
@@ -507,10 +483,9 @@ def write_01_source_colorstrip(outdir):
             f.write(f"{translate_leaf(leaf)}\t#457b9d\tReference\n")
     return fname
 
-
 def write_02_taxonomy_colorstrip(outdir):
     fname = '02_taxonomy_colorstrip.txt'
-    # Construir leyenda con colores únicos en orden
+    # One legend entry per distinct colour, in the order they first appear
     seen, legend_colors, legend_labels = [], [], []
     for leaf in ALL_LEAVES:
         if leaf in TAXONOMY_MAP:
@@ -544,7 +519,6 @@ def write_02_taxonomy_colorstrip(outdir):
                 f.write(f"{out_leaf}\t#cccccc\tUnknown\n")
     return fname
 
-
 def write_03_completeness_bar(outdir, completeness, contamination):
     fname = '03_completeness_bar.txt'
     with _open(outdir, fname) as f:
@@ -577,7 +551,6 @@ def write_03_completeness_bar(outdir, completeness, contamination):
             f.write(f"{translate_leaf(mag)}\t{val}\t{color}\n")
     return fname
 
-
 def write_04_contamination_bar(outdir, contamination):
     fname = '04_contamination_bar.txt'
     with _open(outdir, fname) as f:
@@ -608,7 +581,6 @@ def write_04_contamination_bar(outdir, contamination):
                 color = '#e63946'  # calidad baja (red)
             f.write(f"{translate_leaf(mag)}\t{val}\t{color}\n")
     return fname
-
 
 def write_05_ani_heatmap(outdir, ani_data):
     fname = '05_ani_heatmap.txt'
@@ -646,11 +618,10 @@ def write_05_ani_heatmap(outdir, ani_data):
         for mag in TARGET_MAGS:
             val = ani_data.get(mag, -1)
             if val == -1:
-                f.write(f"{translate_leaf(mag)}\t\n")  # vacío → NaN → COLOR_NAN
+                f.write(f"{translate_leaf(mag)}\t\n")  # vacío to NaN to COLOR_NAN
             else:
                 f.write(f"{translate_leaf(mag)}\t{val:.2f}\n")
     return fname
-
 
 def write_06_label_styles(outdir):
     fname = '06_label_styles.txt'
@@ -662,7 +633,7 @@ def write_06_label_styles(outdir):
         f.write("DATA\n")
         for leaf in TARGET_MAGS:
             out_leaf = translate_leaf(leaf)
-            # MAGs: rojo, bold, tamaño 1.2, sin itálica
+            # MAGs stand out: red, bold, slightly larger, upright
             f.write(f"{out_leaf}\tlabel\tnode\t#e63946\t1.2\tbold\t\n")
         for leaf in REFERENCE_LEAVES:
             out_leaf = translate_leaf(leaf)
@@ -673,7 +644,6 @@ def write_06_label_styles(outdir):
             # Referencias: itálica
             f.write(f"{out_leaf}\tlabel\tnode\t{color}\t{size}\titalic\t\n")
     return fname
-
 
 def write_07_dram2_binary(outdir, product_data):
     fname = '07_dram2_binary.txt'
@@ -687,7 +657,7 @@ def write_07_dram2_binary(outdir, product_data):
     field_labels = [f[0] for f in active_dram2_fields]
     n_fields = len(active_dram2_fields)
 
-    # Calcular valores binarios (solo para campos activos)
+    # Binary values, for the active fields only
     results = {}
     missing_cols = set()
     for mag in TARGET_MAGS:
@@ -698,7 +668,7 @@ def write_07_dram2_binary(outdir, product_data):
         row = product_data[mag]
         vals = []
         for _, cols, threshold in active_dram2_fields:
-            # Registrar columnas no encontradas (solo una vez)
+            # Report each missing column once, not per leaf
             for c in cols:
                 if c not in row and c not in missing_cols:
                     print(
@@ -709,10 +679,10 @@ def write_07_dram2_binary(outdir, product_data):
             vals.append(eval_field(row, cols, threshold))
         results[mag] = vals
 
-    # Validar contra valores esperados (con mapeo de índices activos)
+    # Check against the expected values, remapped onto the active indices
     n_mismatches = 0
     for mag, expected_full in DRAM2_EXPECTED.items():
-        # Filtrar expected para incluir solo campos activos
+        # Keep only the active fields
         expected = [expected_full[i] for i in active_field_indices]
         observed = results.get(mag)
         if observed is not None and observed != expected:
@@ -751,7 +721,6 @@ def write_07_dram2_binary(outdir, product_data):
             f.write(translate_leaf(mag) + "\t" + "\t".join(str(v) for v in vals) + "\n")
     return fname
 
-
 def write_08_branch_support_colors(outdir):
     fname = '08_branch_support_colors.txt'
     with _open(outdir, fname) as f:
@@ -772,10 +741,9 @@ def write_08_branch_support_colors(outdir):
             f.write(f"{out1}|{out2}\trange\t{color}\t{label}\n")
     return fname
 
-
 def write_09_station_colorstrip(outdir, stations):
     fname = '09_station_colorstrip.txt'
-    # Determinar estaciones presentes en los 10 MAGs
+    # Which stations the 10 MAGs actually come from
     present = sorted({stations.get(m, m.split('.')[0]) for m in TARGET_MAGS})
     leg_colors = [STATION_COLORS.get(s, '#999999') for s in present]
 
@@ -800,10 +768,9 @@ def write_09_station_colorstrip(outdir, stations):
             f.write(f"{translate_leaf(mag)}\t{color}\t{station}\n")
     return fname
 
-
 def write_10_depth_colorstrip(outdir, depths):
     fname = '10_depth_colorstrip.txt'
-    # Determinar profundidades presentes en los 10 MAGs
+    # Which depths the 10 MAGs actually come from
     present_depths = []
     seen_d = set()
     for mag in TARGET_MAGS:
@@ -836,7 +803,6 @@ def write_10_depth_colorstrip(outdir, depths):
             f.write(f"{translate_leaf(mag)}\t{color}\t{label}\n")
     return fname
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # VALIDACIÓN POST-GENERACIÓN
 # ══════════════════════════════════════════════════════════════════════════════
@@ -848,7 +814,7 @@ def validate_leaf_coverage(outdir):
     (10mags_pmsf.renamed.treefile).
     """
     all_leaf_set = {translate_leaf(x) for x in ALL_LEAVES}
-    print("\n─── Validación de cobertura de hojas ───")
+    print("\nLeaf coverage check")
     for fname in sorted(os.listdir(outdir)):
         if not fname.endswith('.txt'):
             continue
@@ -861,9 +827,9 @@ def validate_leaf_coverage(outdir):
                     in_data = True
                     continue
                 if in_data and line and not line.startswith('#'):
-                    # El nombre de hoja es el primer campo
+                    # The leaf name is the first field
                     leaf = line.split('\t')[0]
-                    # Para TREE_COLORS, el campo puede ser leaf1|leaf2
+                    # TREE_COLORS may address a clade as leaf1|leaf2
                     for part in leaf.split('|'):
                         referenced.add(part.strip())
 
@@ -881,8 +847,7 @@ def validate_leaf_coverage(outdir):
         if extra_in_file:
             for e in sorted(extra_in_file):
                 print(f"  EXTRA (no está en árbol): {e}")
-    print("────────────────────────────────────────\n")
-
+    print()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
@@ -902,7 +867,7 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     print(f"Directorio de salida: {OUTPUT_DIR}")
 
-    # Parseo (una sola vez)
+    # Parse once, reuse everywhere below
     print("Parseando archivos de entrada...")
     metadata_order, stations, depths, display_names_tree = parse_metadata(METADATA_TSV)
     completeness, contamination = parse_quality(QUALITY_TSV)
@@ -917,7 +882,9 @@ def main():
     global LEAF_NAME_MAP
     LEAF_NAME_MAP = {}
 
-    # MAGs: usar primero MAG_DISPLAY_NAMES (extraído del treefile renamed), luego display_names_tree del metadata
+    # MAG labels come from MAG_DISPLAY_NAMES first, since that was read off the
+    # relabelled treefile and therefore matches the tree exactly. The metadata
+    # table is the fallback.
     for mag in TARGET_MAGS:
         if mag in MAG_DISPLAY_NAMES:
             LEAF_NAME_MAP[mag] = MAG_DISPLAY_NAMES[mag]
@@ -957,7 +924,7 @@ def main():
         fname = fn(*args)
         path = os.path.join(OUTPUT_DIR, fname)
         size = os.path.getsize(path)
-        print(f" ✓ {fname} ({size:,} bytes)")
+        print(f" [OK] {fname} ({size:,} bytes)")
         generated.append(fname)
 
     validate_leaf_coverage(OUTPUT_DIR)
@@ -969,7 +936,6 @@ def main():
     print("  2. Arrastra cada archivo .txt al árbol para activar la anotación.")
     print("  3. Ajusta CLADE_RANGES en 08_branch_support_colors.txt si los pares de")
     print("     hojas no delimitan correctamente los clados en tu árbol específico.")
-
 
 if __name__ == '__main__':
     main()

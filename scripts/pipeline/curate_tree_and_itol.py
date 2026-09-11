@@ -14,13 +14,12 @@ Curates the GTDB-Tk de_novo_wf phylogenomic tree for 54 archaeal MAGs:
      generate_itol_annotations.py (files 01–10) for the full 54-MAG set.
 
 Leaf-name convention (same in tree AND annotation files):
-  MAGs  → DisplayName from MAGs_metadata.tsv with spaces → underscores,
+  MAGs  to DisplayName from MAGs_metadata.tsv with spaces become underscores,
            e.g. "MGIIb-Q1_A4_1000_28"  (no Newick quoting needed)
-  Refs  → REF_DISPLAY label, e.g. "Thalassarchaeum_betae_B"
+  Refs  to REF_DISPLAY label, e.g. "Thalassarchaeum_betae_B"
            (underscores throughout)
 
 Reference Selection Methodology
-─────────────────────────────────
 Based on Parks et al. (2022) GTDB r207 and Chaumeil et al. (2022) GTDB-Tk v2:
   • Per genus: 2–3 GTDB references with highest ANI to the MAGs of that genus,
     prioritising species cluster representatives and named type strains.
@@ -50,11 +49,9 @@ import subprocess
 import sys
 from collections import defaultdict, OrderedDict
 
-# ─────────────────────────────────────────────────────────────────────────────
 # SELF-BOOTSTRAP: re-exec inside the gtdbtk-2.6.1 conda env if needed.
 # This lets the script run directly from VS Code (any Python interpreter)
 # without manually activating the environment first.
-# ─────────────────────────────────────────────────────────────────────────────
 _CONDA_ENV = "gtdbtk-2.6.1"
 
 def _ensure_conda_env() -> None:
@@ -81,9 +78,7 @@ def _ensure_conda_env() -> None:
 
 _ensure_conda_env()
 
-# ─────────────────────────────────────────────────────────────────────────────
 # LOGGING
-# ─────────────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s  %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -92,9 +87,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
 # PATHS (resolved relative to --project-dir)
-# ─────────────────────────────────────────────────────────────────────────────
 DEFAULT_PROJECT_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
@@ -119,9 +112,7 @@ def build_paths(project_dir: str) -> dict:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # REFERENCE SELECTION
-# ─────────────────────────────────────────────────────────────────────────────
 # Each tuple: (GTDB_leaf_in_de_novo_tree, display_label, genus, justification)
 #
 # GTDB-Tk prefixes: GB_GCA_* (GenBank) or RS_GCF_* (RefSeq).
@@ -129,14 +120,14 @@ def build_paths(project_dir: str) -> dict:
 # "other_related_references"; the closest_genome_reference column is also used.
 #
 # Literature basis:
-#   Parks et al. (2022) Nat Biotechnol – GTDB classification method
-#   Chaumeil et al. (2022) Bioinformatics – GTDB-Tk v2
-#   Rinke et al. (2019) Nat Microbiol – Marine Group II/III Euryarchaeota
-#   Orellana et al. (2022) ISME J – Thalassarchaeum betae type species
-#   Vanni et al. (2022) eLife – MAG annotation best practices
+#   Parks et al. (2022) Nat Biotechnol, GTDB classification method
+#   Chaumeil et al. (2022) Bioinformatics, GTDB-Tk v2
+#   Rinke et al. (2019) Nat Microbiol, Marine Group II/III Euryarchaeota
+#   Orellana et al. (2022) ISME J, Thalassarchaeum betae type species
+#   Vanni et al. (2022) eLife, MAG annotation best practices
 
 SELECTED_REFERENCES = [
-    # ── Thalassarchaeum (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae)
+    # ---- Thalassarchaeum (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
     # 16 MAGs; closest by ANI for the majority (~92–93 %).
     # GCF_022448665.1 = Thalassarchaeum sp002507125 (RefSeq, highest completeness)
     ("RS_GCF_022448665.1",
@@ -152,9 +143,9 @@ SELECTED_REFERENCES = [
      "Second-closest ANI (~92–93 %); represents the betae_B species cluster, "
      "ensuring within-genus diversity coverage"),
 
-    # ── MGIIb-Q1 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae)
+    # ---- MGIIb-Q1 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
     # 7 MAGs; no species assignment (novel species cluster).
-    # GCA_963580235.1 – closest placement reference (cp_ref) for A4_1000_bin.28
+    # GCA_963580235.1, closest placement reference (cp_ref) for A4_1000_bin.28
     # NOTE: GCA_002505495.1 and GCA_012964335.1 absent from GTDB r226 MSA;
     #       GCA_003193925.1 (Thalassarchaeum_betae) also absent from MSA.
     #       MGIIb-O1 sole ref (GCA_002498525.1) likewise absent from MSA.
@@ -164,7 +155,7 @@ SELECTED_REFERENCES = [
      "Closest placement reference (ANI 93–95 %) for 3 of 7 MGIIb-Q1 MAGs "
      "(A4_1000_bin.28, A6_BTM_bin.49, Y6_1000_bin.23)"),
 
-    # ── JAKUTA01 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae)
+    # ---- JAKUTA01 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
     # 2 MAGs; newly described genus in Thalassarchaeaceae.
     ("GB_GCA_950068635.1",
      "JAKUTA01_sp950068635",
@@ -178,7 +169,7 @@ SELECTED_REFERENCES = [
      "Second-closest ANI (~93 %) for JAKUTA01 MAGs; represents an "
      "independent JAKUTA01 lineage for within-genus resolution"),
 
-    # ── UBA36 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae)
+    # ---- UBA36 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
     # 2 MAGs; genus within Thalassarchaeaceae (Parks et al. 2022).
     ("GB_GCA_036153975.1",
      "UBA36_sp036153975",
@@ -192,7 +183,7 @@ SELECTED_REFERENCES = [
      "Second-closest ANI (~92 %); independent UBA36 species cluster, "
      "ensures within-genus diversity"),
 
-    # ── UBA8886 (Thermoplasmatota / Poseidoniia / MGIII / CG-Epi1)
+    # ---- UBA8886 (Thermoplasmatota / Poseidoniia / MGIII / CG-Epi1) ----
     # 6 MAGs; related to Marine Group III (MGIII) archaea.
     # NOTE: GCA_003193815.1 (UBA8886_sp003193815) absent from GTDB r226 MSA.
     ("GB_GCA_030754655.1",
@@ -207,7 +198,7 @@ SELECTED_REFERENCES = [
      "Second-highest ANI (~92–93 %) across UBA8886 MAGs; "
      "independent species cluster"),
 
-    # ── UBA57 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA57)
+    # ---- UBA57 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA57) ----
     # 4 MAGs; novel family within Nitrososphaerales.
     # NOTE: GCA_013306035.1 (UBA57_sp013306035) and GCA_013378385.1
     #       (UBA57_sp013378385) absent from GTDB r226 MSA.
@@ -217,7 +208,7 @@ SELECTED_REFERENCES = [
      "Highest ANI (~94–95 %) for 3 of 4 UBA57 MAGs; "
      "best available UBA57 representative in GTDB r226 MSA"),
 
-    # ── UBA60 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA60)
+    # ---- UBA60 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA60) ----
     # 4 MAGs; sister to UBA57 within Nitrososphaerales.
     # NOTE: GCA_002503395.1 (UBA60_sp002503395) absent from GTDB r226 MSA.
     ("GB_GCA_028283345.1",
@@ -226,13 +217,13 @@ SELECTED_REFERENCES = [
      "Best available UBA60 reference in GTDB r226 MSA (~89–92 % ANI); "
      "GCA_002503395.1 (primary cg_ref) is absent from this MSA"),
 
-    # ── Nitrosopelagicus / Undinarchaeum
+    # ---- Nitrosopelagicus / Undinarchaeum ----
     # NOTE: All Nitrosopelagicus refs (GCA_013390375.1, GCA_000402075.1) and
     #       all Undinarchaeum refs (GCA_014189675.1, GCA_002495465.1) are absent
     #       from the GTDB r226 de_novo_wf MSA. Their 3+3 MAGs appear in the
     #       tree without a reference genome from their own genus.
 
-    # ── Outgroup (Halobacteriota / Halobacteria / Halobacteriales)
+    # ---- Outgroup (Halobacteriota / Halobacteria / Halobacteriales) ----
     # Halobacterium salinarum NRC-1: well-characterised, complete genome,
     # widely used as outgroup for Thermoplasmatota/Thermoproteota trees.
     # In the de_novo_wf this phylum defines the root (--outgroup_taxon
@@ -248,16 +239,14 @@ SELECTED_REFERENCES = [
 # Set of GTDB leaf IDs (as they appear in the tree) for quick lookup
 SELECTED_REF_IDS = {r[0] for r in SELECTED_REFERENCES}
 
-# Display name map: GTDB_leaf_id → display_label
+# Display name map: GTDB_leaf_id to display_label
 REF_DISPLAY = {r[0]: r[1] for r in SELECTED_REFERENCES}
 
-# Genus map: GTDB_leaf_id → genus
+# Genus map: GTDB_leaf_id to genus
 REF_GENUS = {r[0]: r[2] for r in SELECTED_REFERENCES}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # COLORS AND TAXONOMY
-# ─────────────────────────────────────────────────────────────────────────────
 # Genus-level color palette (consistent with DRAM2 analysis heatmaps)
 GENUS_COLORS = {
     # Thalassarchaeaceae / Poseidoniales
@@ -288,7 +277,7 @@ STATION_COLORS = {
     "C22": "#f4a261",
 }
 
-# Depth colors: code → (hex, Spanish label)
+# Depth colors: code to (hex, Spanish label)
 # Note: OMZ samples have Depth="ROMZ" in MAGs_metadata.tsv (ROMZ = Región de
 # mínima de oxígeno / oxygen minimum zone), not "OMZ".
 DEPTH_COLORS = {
@@ -297,7 +286,7 @@ DEPTH_COLORS = {
     "ROMZ": ("#e9c46a", "ZMOR"),
 }
 
-# ── DRAM2 metabolic field definitions (from product.tsv)
+# ---- DRAM2 metabolic field definitions (from product.tsv) ----
 DRAM2_FIELDS = [
     ("Fijación de carbono (CBB)",
      ["Reductive pentose phosphate cycle (Calvin cycle)"], 0.5),
@@ -363,12 +352,10 @@ DRAM2_FIELD_COLORS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # UTILITIES
-# ─────────────────────────────────────────────────────────────────────────────
 
 def tsv_name_to_dot(tsv_name: str) -> str:
-    """A4_BTM_megahit_bin.28  →  A4.BTM.megahit.bin.28"""
+    """A4_BTM_megahit_bin.28  to  A4.BTM.megahit.bin.28"""
     m = re.match(r'^([^_]+)_([^_]+)_([^_]+)_bin\.(.+)$', tsv_name)
     if m:
         return f"{m.group(1)}.{m.group(2)}.{m.group(3)}.bin.{m.group(4)}"
@@ -376,7 +363,7 @@ def tsv_name_to_dot(tsv_name: str) -> str:
 
 
 def dot_name_to_display(dot_name: str, display_map: dict) -> str:
-    """Returns the display name (spaces→underscores) from metadata, or dot_name."""
+    """Returns the display name (spaces become underscores) from metadata, or dot_name."""
     return display_map.get(dot_name, dot_name.replace(".", "_"))
 
 
@@ -384,17 +371,15 @@ def _open_out(path: str):
     return open(path, "w", newline="\n", encoding="utf-8")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # DATA LOADING
-# ─────────────────────────────────────────────────────────────────────────────
 
 def load_metadata(path: str):
     """
     Returns:
-        mag_order  : list[str]  – NameWithoutExtension in file order
+        mag_order  : list[str] , NameWithoutExtension in file order
         stations   : dict[str, str]
         depths     : dict[str, str]
-        display    : dict[str, str]  – display name with spaces→underscores
+        display    : dict[str, str] , display name with spaces become underscores
         genera     : dict[str, str]
     """
     mag_order, stations, depths, display, genera = [], {}, {}, {}, {}
@@ -430,7 +415,7 @@ def load_quality(path: str, target: set):
 
 
 def load_ani(path: str, target: set):
-    """Best ANI from closest_genome_ani → closest_placement_ani, else -1."""
+    """Best ANI from closest_genome_ani to closest_placement_ani, else -1."""
     ani = {}
     with open(path, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh, delimiter="\t"):
@@ -451,7 +436,7 @@ def load_ani(path: str, target: set):
 
 
 def load_product(path: str, mag_order: list, target: set):
-    """Returns dict mag_name → {col: value} for target MAGs."""
+    """Returns dict mag_name to {col: value} for target MAGs."""
     data = {}
     with open(path, newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
@@ -481,9 +466,7 @@ def eval_field(row: dict, columns: list, threshold) -> int:
     return 0
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # REFERENCE SELECTION REPORT
-# ─────────────────────────────────────────────────────────────────────────────
 
 def write_reference_selection_table(out_path: str):
     """Writes a TSV documenting the selected references and their justification."""
@@ -491,12 +474,10 @@ def write_reference_selection_table(out_path: str):
         fh.write("gtdb_leaf_id\tdisplay_label\tgenus\tjustification\n")
         for leaf_id, label, genus, reason in SELECTED_REFERENCES:
             fh.write(f"{leaf_id}\t{label}\t{genus}\t{reason}\n")
-    log.info("Reference selection table → %s", out_path)
+    log.info("Reference selection table to %s", out_path)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # MSA EXTRACTION
-# ─────────────────────────────────────────────────────────────────────────────
 
 def extract_msa(msa_gz_path: str, keep_ids: set, out_fasta_path: str) -> int:
     """
@@ -534,9 +515,7 @@ def extract_msa(msa_gz_path: str, keep_ids: set, out_fasta_path: str) -> int:
     return written
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # TREE INFERENCE (FastTree)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def run_fasttree(msa_fasta: str, out_tree: str, log_file: str,
                  n_threads: int = 4, prot_model: str = "LG") -> None:
@@ -564,13 +543,11 @@ def run_fasttree(msa_fasta: str, out_tree: str, log_file: str,
     if proc.returncode != 0:
         log.error("FastTree failed (exit %d). See %s", proc.returncode, log_file)
         sys.exit(proc.returncode)
-    log.info("FastTree completed → %s", out_tree)
+    log.info("FastTree completed to %s", out_tree)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TREE PRUNING (DendroPy) – used to create a GTDB-topology pruned tree
+# TREE PRUNING (DendroPy), used to create a GTDB-topology pruned tree
 # as a complement/validation of the re-inferred FastTree
-# ─────────────────────────────────────────────────────────────────────────────
 
 def prune_decorated_tree(decorated_tree_path: str, keep_ids: set,
                           out_path: str) -> None:
@@ -607,19 +584,17 @@ def prune_decorated_tree(decorated_tree_path: str, keep_ids: set,
     tree.purge_taxon_namespace()
 
     tree.write(path=out_path, schema="newick")
-    log.info("Pruned GTDB-topology tree → %s", out_path)
+    log.info("Pruned GTDB-topology tree to %s", out_path)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # DISPLAY NAME MAPPING for iTOL
-# ─────────────────────────────────────────────────────────────────────────────
 
 def build_leaf_display_map(mag_order: list, display: dict) -> dict:
     """
-    Returns dot_name → leaf_id for all leaves.
-    MAGs: dot_name → DisplayName with spaces replaced by underscores,
-          e.g. A4.1000.megahit.bin.28 → MGIIb-Q1_A4_1000_28.
-    Refs: GTDB_leaf_id → REF_DISPLAY label (already uses underscores).
+    Returns dot_name to leaf_id for all leaves.
+    MAGs: dot_name to DisplayName with spaces replaced by underscores,
+          e.g. A4.1000.megahit.bin.28 to MGIIb-Q1_A4_1000_28.
+    Refs: GTDB_leaf_id to REF_DISPLAY label (already uses underscores).
     The same IDs are used in both the tree and annotation files (iTOL requirement).
     """
     m = {mag: display[mag].replace(" ", "_") for mag in mag_order}
@@ -631,8 +606,8 @@ def rename_tree_leaves(tree_path: str, out_path: str,
                        dot_to_display: dict) -> None:
     """
     Renames leaf labels in a Newick file using the provided mapping:
-      - MAGs: dot-notation (A4.1000.megahit.bin.28) → underscore ID (MGIIb-Q1_A4_1000_28)
-      - Refs: GTDB prefix (GB_GCA_022447095.1) → REF_DISPLAY label (Thalassarchaeum_betae_B)
+      - MAGs: dot-notation (A4.1000.megahit.bin.28) to underscore ID (MGIIb-Q1_A4_1000_28)
+      - Refs: GTDB prefix (GB_GCA_022447095.1) to REF_DISPLAY label (Thalassarchaeum_betae_B)
 
     All output labels use underscores (no spaces), so no Newick quoting is needed
     and IDs match the annotation files exactly (iTOL requirement).
@@ -644,16 +619,14 @@ def rename_tree_leaves(tree_path: str, out_path: str,
         tree_str = tree_str.replace(f"{dot_name}:", f"{leaf_id}:")
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(tree_str)
-    log.info("Leaf labels renamed → %s", out_path)
+    log.info("Leaf labels renamed to %s", out_path)
 
 
 def translate(name: str, leaf_map: dict) -> str:
     return leaf_map.get(name, name)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # iTOL FILE WRITERS
-# ─────────────────────────────────────────────────────────────────────────────
 
 def write_01_source_colorstrip(out_dir: str, mag_order: list,
                                 leaf_map: dict) -> str:
@@ -990,9 +963,7 @@ def write_10_depth_colorstrip(out_dir: str, mag_order: list,
     return path
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # VALIDATION
-# ─────────────────────────────────────────────────────────────────────────────
 
 def validate_itol_coverage(itol_dir: str,
                             mag_leaves: set,
@@ -1001,12 +972,12 @@ def validate_itol_coverage(itol_dir: str,
     Validates iTOL file coverage.
 
     File-type expectations:
-      • 01, 02, 06       → must cover ALL leaves (MAGs + refs)
-      • 03–05, 07, 09–10 → must cover MAG-only leaves (refs have no data)
-      • 08               → TREE_COLORS range file; only lists clade-boundary
+      • 01, 02, 06       to must cover ALL leaves (MAGs + refs)
+      • 03–05, 07, 09–10 to must cover MAG-only leaves (refs have no data)
+      • 08               to TREE_COLORS range file; only lists clade-boundary
                            leaf pairs — skip completeness check, just report counts
     """
-    log.info("── iTOL coverage validation ──────────────────────────────")
+    log.info("iTOL coverage validation")
     for fname in sorted(os.listdir(itol_dir)):
         if not fname.endswith(".txt"):
             continue
@@ -1016,7 +987,7 @@ def validate_itol_coverage(itol_dir: str,
         if prefix in ("01", "02"):
             expected = all_leaves
         elif prefix == "08":
-            expected = None   # range file – no full-coverage expectation
+            expected = None   # range file, no full-coverage expectation
         else:
             expected = mag_leaves
 
@@ -1049,12 +1020,9 @@ def validate_itol_coverage(itol_dir: str,
             log.warning("    MISSING in file: %s", m)
         for e in sorted(extra):
             log.warning("    EXTRA in file (not in expected leaf set): %s", e)
-    log.info("──────────────────────────────────────────────────────────")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # MAIN
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -1084,7 +1052,7 @@ def main() -> None:
     os.makedirs(P["output_dir"], exist_ok=True)
     os.makedirs(P["itol_dir"],   exist_ok=True)
 
-    # ── Validate inputs ────────────────────────────────────────────────────
+    # ---- Validate inputs ----
     required = ["msa_full_gz", "taxonomy_tsv", "metadata_tsv",
                 "quality_tsv", "product_tsv"]
     missing_files = [P[k] for k in required if not os.path.isfile(P[k])]
@@ -1093,34 +1061,34 @@ def main() -> None:
             log.error("Input file not found: %s", f)
         sys.exit(1)
 
-    # ── Write reference selection report ──────────────────────────────────
+    # ---- Write reference selection report ----
     write_reference_selection_table(
         os.path.join(P["output_dir"], "reference_selection.tsv"))
 
-    # ── Load metadata ─────────────────────────────────────────────────────
+    # ---- Load metadata ----
     log.info("Loading metadata …")
     mag_order, stations, depths, display, genera = load_metadata(P["metadata_tsv"])
     target_set = set(mag_order)
     log.info("  %d MAGs loaded from metadata", len(mag_order))
 
-    # ── Load quality / ANI / DRAM2 ────────────────────────────────────────
+    # ---- Load quality / ANI / DRAM2 ----
     log.info("Loading quality metrics …")
     comp, cont = load_quality(P["quality_tsv"], target_set)
     ani         = load_ani(P["taxonomy_tsv"], target_set)
     product     = load_product(P["product_tsv"], mag_order, target_set)
 
-    # ── Build leaf display map ────────────────────────────────────────────
+    # ---- Build leaf display map ----
     leaf_map = build_leaf_display_map(mag_order, display)
     # Set of display names used in iTOL files (for validation)
     itol_mag_leaves = {leaf_map[m] for m in mag_order}
     itol_ref_leaves = {leaf_map[r] for r in SELECTED_REF_IDS}
 
-    # ── Define keep_ids for MSA extraction & tree pruning ─────────────────
+    # ---- Define keep_ids for MSA extraction & tree pruning ----
     # MAG IDs as they appear in the GTDB-Tk MSA headers (dot-notation)
     # Ref IDs as GB_/RS_ prefixed GTDB leaf IDs
     keep_ids = set(mag_order) | SELECTED_REF_IDS
 
-    # ── Extract curated MSA ───────────────────────────────────────────────
+    # ---- Extract curated MSA ----
     curated_msa = os.path.join(P["output_dir"], "curated_54mags.msa.fasta")
     log.info("Extracting curated MSA (%d taxa) …", len(keep_ids))
     n_written = extract_msa(P["msa_full_gz"], keep_ids, curated_msa)
@@ -1131,12 +1099,12 @@ def main() -> None:
             n_written, len(keep_ids),
         )
 
-    # Mapping used to rename tree leaves: covers MAGs (dot-notation → DisplayName)
-    # AND refs (GB_/RS_ GTDB prefix → REF_DISPLAY label).  Both tree files and
+    # Mapping used to rename tree leaves: covers MAGs (dot-notation to DisplayName)
+    # AND refs (GB_/RS_ GTDB prefix to REF_DISPLAY label).  Both tree files and
     # all iTOL annotation files use these final labels, so they must match exactly.
     full_rename_map = {**{mag: display[mag].replace(" ", "_") for mag in mag_order}, **REF_DISPLAY}
 
-    # ── Re-infer tree with FastTree ────────────────────────────────────────
+    # ---- Re-infer tree with FastTree ----
     fasttree_nwk = os.path.join(P["output_dir"], "curated_54mags.fasttree.nwk")
     fasttree_log = os.path.join(P["output_dir"], "curated_54mags.fasttree.log")
     if not args.skip_fasttree:
@@ -1145,7 +1113,7 @@ def main() -> None:
     else:
         log.info("--skip-fasttree: skipping tree re-inference.")
 
-    # ── Prune GTDB-topology decorated tree ───────────────────────────────
+    # ---- Prune GTDB-topology decorated tree ----
     pruned_nwk = os.path.join(P["output_dir"], "curated_54mags.gtdb_pruned.nwk")
     if not args.skip_prune:
         decorated = os.path.join(P["de_novo_tree"],
@@ -1155,7 +1123,7 @@ def main() -> None:
     else:
         log.info("--skip-prune: skipping DendroPy pruning.")
 
-    # ── Generate iTOL annotation files ───────────────────────────────────
+    # ---- Generate iTOL annotation files ----
     # Remove any stale .txt files from previous runs so the validator
     # only sees files generated by the current configuration.
     for _old in os.listdir(P["itol_dir"]):
@@ -1177,13 +1145,13 @@ def main() -> None:
     for w in writers:
         log.info("  ✔ %s", os.path.relpath(w, args.project_dir))
 
-    # ── Validate iTOL coverage ────────────────────────────────────────────
+    # ---- Validate iTOL coverage ----
     # 01/02 must cover all leaves; 07/09-10 MAGs only; 08 is range-only
     # 03-06 are commented out (not generated)
     all_itol_leaves = itol_mag_leaves | itol_ref_leaves
     validate_itol_coverage(P["itol_dir"], itol_mag_leaves, all_itol_leaves)
 
-    # ── Summary ──────────────────────────────────────────────────────────
+    # ---- Summary ----
     log.info("══════════════════════════════════════════════════════════")
     log.info("Done.")
     log.info("  MAGs in tree         : %d", len(mag_order))
