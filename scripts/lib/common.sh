@@ -56,6 +56,23 @@ require_vars() {
     fi
 }
 
+# Checks that every external tool a script needs is reachable, and names all the
+# missing ones at once. Without this a script gets partway through and stops on
+# "command not found", after it has already written output.
+require_commands() {
+    local missing=()
+    local cmd
+    for cmd in "$@"; do
+        command -v "$cmd" > /dev/null 2>&1 || missing+=("$cmd")
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        log_error "Not found on PATH: ${missing[*]}"
+        log_error "Load the module or activate the conda environment that provides them."
+        return 1
+    fi
+}
+
 # Job context for the SLURM log. The defaults keep the script usable outside a
 # scheduler, where none of these variables exist.
 log_job_header() {

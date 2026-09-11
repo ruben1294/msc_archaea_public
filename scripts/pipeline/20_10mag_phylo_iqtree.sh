@@ -29,9 +29,7 @@ log_info "  Job ID:    ${SLURM_JOB_ID:-N/A}"
 log_info "  Job Name:  ${SLURM_JOB_NAME:-interactive}"
 log_info "  Node:      ${SLURMD_NODENAME:-$(hostname)}"
 log_info "  Start:     $(date '+%Y-%m-%d %H:%M:%S')"
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+# ---- configuration ----
 load_project_config
 
 WORK_DIR="${PROJECT_DIR}/18_10mag_phylogeny"
@@ -53,9 +51,7 @@ log_info "IQ-TREE2: $IQTREE_VERSION"
 SUPERMATRIX="${FASCONCAT_DIR}/output/${PREFIX}_supermatrix.fas"
 PARTITION_FILE="${FASCONCAT_DIR}/output/${PREFIX}_partition.txt"
 
-# ---------------------------------------------------------------------------
-# Step 0, validate inputs
-# ---------------------------------------------------------------------------
+# ---- Step 0, validate inputs ----
 log_info "Step 0: Validating inputs"
 [[ -f "$SUPERMATRIX" ]] || {
     log_error "Supermatrix not found: $SUPERMATRIX"
@@ -78,9 +74,7 @@ mkdir -p "${IQTREE_DIR}/guide_tree"
 mkdir -p "${IQTREE_DIR}/pmsf_final"
 mkdir -p "${IQTREE_DIR}/partition_tree"
 
-# ---------------------------------------------------------------------------
-# Step A, Guide tree: LG+F+G
-# ---------------------------------------------------------------------------
+# ---- Step A, Guide tree: LG+F+G ----
 log_info "Step A: Guide tree (LG+F+G) with UFBoot2 + SH-aLRT"
 GUIDE_DIR="${IQTREE_DIR}/guide_tree"
 
@@ -116,9 +110,7 @@ fi
 
 log_info "  Guide tree done: $(date '+%Y-%m-%d %H:%M:%S')"
 
-# ---------------------------------------------------------------------------
-# Step B, PMSF final tree: LG+C60+F+G
-# ---------------------------------------------------------------------------
+# ---- Step B, PMSF final tree: LG+C60+F+G ----
 log_info "Step B: PMSF final tree (LG+C60+F+G) with UFBoot2 + SH-aLRT"
 log_info "  Using guide tree: $GUIDE_TREEFILE"
 log_info "  The -ft flag computes posterior mean site frequencies from the guide"
@@ -160,9 +152,7 @@ fi
 
 log_info "  PMSF tree done: $(date '+%Y-%m-%d %H:%M:%S')"
 
-# ---------------------------------------------------------------------------
-# Step C, Partition tree: ModelFinder per partition + UFBoot2 + SH-aLRT
-# ---------------------------------------------------------------------------
+# ---- Step C, Partition tree: ModelFinder per partition + UFBoot2 + SH-aLRT ----
 log_info "Step C: Partition tree (MFP per partition) with UFBoot2 + SH-aLRT"
 log_info "  Partition file: $PARTITION_FILE"
 log_info "  Model:          -p (per-partition ModelFinder)"
@@ -202,9 +192,7 @@ fi
 
 log_info "  Partition tree done: $(date '+%Y-%m-%d %H:%M:%S')"
 
-# ---------------------------------------------------------------------------
-# Step D, rename taxa: NameWithoutExtension to DisplayName
-# ---------------------------------------------------------------------------
+# ---- Step D, rename taxa: NameWithoutExtension to DisplayName ----
 log_info "Step D: Renaming taxa (NameWithoutExtension to DisplayName)"
 METADATA="${PROJECT_DIR}/MAGs_metadata.tsv"
 REF_TAXONOMY="${WORK_DIR}/reference_taxonomy.tsv"
@@ -321,9 +309,7 @@ PYEOF
     [[ -f "$PART_CONTREE"  ]] && rename_tree "$PART_CONTREE"  "$PART_CONTREE_RENAMED"   && log_info "  [OK] Renamed partition contree: $PART_CONTREE_RENAMED"
 fi
 
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
+# ---- summary ----
 log_info "Pipeline completed successfully"
 log_info "  Output structure:"
 log_info "    ${IQTREE_DIR}/"

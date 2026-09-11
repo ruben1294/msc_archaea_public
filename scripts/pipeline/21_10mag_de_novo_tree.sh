@@ -62,9 +62,7 @@ TARGET_MAGS=(
 
 log_debug "MAG source: $MAG_SOURCE"
 
-# ---------------------------------------------------------------------------
-# Step 0, validate MAG inputs
-# ---------------------------------------------------------------------------
+# ---- Step 0, validate MAG inputs ----
 log_info "Step 0: Validating target MAG files"
 [[ -d "$MAG_SOURCE" ]] || { log_error "MAG source not found: $MAG_SOURCE"; exit 1; }
 
@@ -81,9 +79,7 @@ done
 [[ $missing_mags -eq 0 ]] || { log_error "$missing_mags MAG file(s) missing. Aborting."; exit 1; }
 log_info "All 10 target MAGs found."
 
-# ---------------------------------------------------------------------------
-# Step 1, build filtered input directory
-# ---------------------------------------------------------------------------
+# ---- Step 1, build filtered input directory ----
 log_info "Step 1: Building filtered input directory"
 mkdir -p "${INPUT_DIR}"
 
@@ -102,9 +98,7 @@ done
 total_genomes=$(find "${INPUT_DIR}" -maxdepth 1 -name "*.fa" | wc -l)
 log_info "Total genomes in input dir: $total_genomes"
 
-# ---------------------------------------------------------------------------
-# Step 2, GTDB-Tk de novo workflow (one run per outgroup)
-# ---------------------------------------------------------------------------
+# ---- Step 2, GTDB-Tk de novo workflow (one run per outgroup) ----
 log_info "Step 2: Running GTDB-Tk de novo workflow (${#OUTGROUPS[@]} outgroups)"
 OVERALL_EXIT=0
 

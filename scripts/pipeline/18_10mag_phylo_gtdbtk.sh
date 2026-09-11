@@ -24,9 +24,7 @@ log_info "  Job ID:    ${SLURM_JOB_ID:-N/A}"
 log_info "  Job Name:  ${SLURM_JOB_NAME:-interactive}"
 log_info "  Node:      ${SLURMD_NODENAME:-$(hostname)}"
 log_info "  Start:     $(date '+%Y-%m-%d %H:%M:%S')"
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+# ---- configuration ----
 load_project_config
 
 # Paths
@@ -64,9 +62,7 @@ TARGET_MAGS=(
     "A6.BTM.megahit.bin.9"
 )
 
-# ---------------------------------------------------------------------------
-# Reference genome list
-# ---------------------------------------------------------------------------
+# ---- reference genome list ----
 # Accessions marked as closest hits come straight from the GTDB-Tk classify_wf
 # output. The rest are established archaeal references chosen for context.
 # Comment out a line to drop that genome from the tree.
@@ -158,9 +154,7 @@ ALL_REFS=(
     "${REFS_OUTGROUPS[@]}"
 )
 
-# ---------------------------------------------------------------------------
-# Download function
-# ---------------------------------------------------------------------------
+# ---- download function ----
 # Uses ncbi-datasets-cli if available; falls back to NCBI REST API via wget.
 download_genome() {
     local accession="$1"
@@ -277,9 +271,7 @@ _wget_download() {
     fi
 }
 
-# ---------------------------------------------------------------------------
-# Step 0, validate MAG inputs
-# ---------------------------------------------------------------------------
+# ---- Step 0, validate MAG inputs ----
 log_info "Step 0: Validating target MAG files"
 [[ -d "$MAG_SOURCE" ]] || { log_error "MAG source not found: $MAG_SOURCE"; exit 1; }
 
@@ -296,9 +288,7 @@ done
 [[ $missing_mags -eq 0 ]] || { log_error "$missing_mags MAG file(s) missing. Aborting."; exit 1; }
 log_info "All 10 target MAGs found."
 
-# ---------------------------------------------------------------------------
-# Step 1, download reference genomes
-# ---------------------------------------------------------------------------
+# ---- Step 1, download reference genomes ----
 log_info "Step 1: Downloading reference genomes (${#ALL_REFS[@]} accessions)"
 mkdir -p "${REF_SOURCE}"
 
@@ -357,9 +347,7 @@ REF_TAXONOMY_FILE="${WORK_DIR}/reference_taxonomy.tsv"
 } > "$REF_TAXONOMY_FILE"
 log_info "Reference taxonomy file written: $REF_TAXONOMY_FILE"
 
-# ---------------------------------------------------------------------------
-# Step 2, build combined input directory
-# ---------------------------------------------------------------------------
+# ---- Step 2, build combined input directory ----
 log_info "Step 2: Building combined input directory"
 mkdir -p "${COMBINED_DIR}"
 
@@ -405,9 +393,7 @@ log_info "  Linked $linked_refs reference genomes"
 total_genomes=$(find "${COMBINED_DIR}" -maxdepth 1 -name "*.fa" | wc -l)
 log_info "Total genomes in combined dir: $total_genomes (10 MAGs + ${linked_refs} references)"
 
-# ---------------------------------------------------------------------------
-# Step 3, GTDB-Tk identify
-# ---------------------------------------------------------------------------
+# ---- Step 3, GTDB-Tk identify ----
 log_info "Step 3: GTDB-Tk identify (ar53 markers)"
 mkdir -p "${IDENTIFY_DIR}"
 
@@ -426,9 +412,7 @@ gtdbtk identify \
 
 log_info "GTDB-Tk identify completed."
 
-# ---------------------------------------------------------------------------
-# Step 4, GTDB-Tk align
-# ---------------------------------------------------------------------------
+# ---- Step 4, GTDB-Tk align ----
 log_info "Step 4: GTDB-Tk align (ar53 markers)"
 mkdir -p "${ALIGN_DIR}"
 
@@ -460,9 +444,7 @@ if [[ -d "$MARKERS_DIR" ]]; then
     log_info "  These will be used by script 19 for trimAl + FASconCAT-G"
 fi
 
-# ---------------------------------------------------------------------------
-# Cleanup temp
-# ---------------------------------------------------------------------------
+# ---- cleanup temp ----
 rm -rf "${TMPDIR}"
 log_info "Temp dir removed: ${TMPDIR}"
 log_info "Pipeline completed successfully"

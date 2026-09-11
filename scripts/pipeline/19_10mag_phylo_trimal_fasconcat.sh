@@ -41,9 +41,7 @@ log_info "  Job ID:    ${SLURM_JOB_ID:-N/A}"
 log_info "  Job Name:  ${SLURM_JOB_NAME:-interactive}"
 log_info "  Node:      ${SLURMD_NODENAME:-$(hostname)}"
 log_info "  Start:     $(date '+%Y-%m-%d %H:%M:%S')"
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+# ---- configuration ----
 load_project_config
 
 WORK_DIR="${PROJECT_DIR}/18_10mag_phylogeny"
@@ -64,9 +62,7 @@ MIN_SEQUENCES=5
 
 THREADS="${SLURM_CPUS_PER_TASK:-16}"
 
-# ---------------------------------------------------------------------------
-# Tool resolution
-# ---------------------------------------------------------------------------
+# ---- tool resolution ----
 
 # MAFFT
 # MAFFT_PATH in server.env names a specific build; otherwise take what is on PATH.
@@ -108,9 +104,7 @@ log_info "FASconCAT-G: $FASCONCAT_EXEC"
 
 log_info "Threads:     $THREADS"
 
-# ---------------------------------------------------------------------------
-# Step 0, validate inputs
-# ---------------------------------------------------------------------------
+# ---- Step 0, validate inputs ----
 log_info "Step 0: Validating inputs"
 [[ -d "$MARKERS_DIR" ]] || {
     log_error "GTDB-Tk identify intermediates not found: $MARKERS_DIR"
@@ -125,9 +119,7 @@ log_info "  [OK] Genome directories found: $n_genomes"
 
 mkdir -p "$EXTRACT_DIR" "$MAFFT_DIR"
 
-# ---------------------------------------------------------------------------
-# Step 1, extract raw per-marker protein sequences from identify intermediates
-# ---------------------------------------------------------------------------
+# ---- Step 1, extract raw per-marker protein sequences from identify intermediates ----
 log_info "Step 1: Extracting per-marker sequences from GTDB-Tk identify intermediates"
 log_info "  Input (markers dir): $MARKERS_DIR"
 log_info "  Output (raw .faa):   $EXTRACT_DIR"
@@ -269,7 +261,6 @@ fi
 log_info "  Per-marker files extracted: $n_markers_extracted"
 [[ "$n_markers_extracted" -gt 0 ]] || { log_error "No marker files produced. Aborting."; exit 1; }
 
-# ---------------------------------------------------------------------------
 # Step 2, MAFFT L-INS-i per-marker alignment
 #
 # Method: --localpair --maxiterate 1000 (L-INS-i)
@@ -278,7 +269,6 @@ log_info "  Per-marker files extracted: $n_markers_extracted"
 #   Seitz et al. 2019 Nat Commun doi:10.1038/s41467-019-09364-x
 #   Spang et al. 2018 Nat Microbiol doi:10.1038/s41564-018-0176-9
 #   Farag et al. 2023 ISME J      doi:10.1038/s41396-023-01501-1
-# ---------------------------------------------------------------------------
 log_info "Step 2: MAFFT L-INS-i alignment (${n_markers_extracted} markers)"
 mafft_ok=0
 mafft_fail=0
@@ -317,9 +307,7 @@ log_info "  MAFFT summary: $mafft_ok OK, $mafft_fail failed"
 [[ $mafft_fail -eq 0 ]] || { log_error "Some MAFFT alignments failed."; exit 1; }
 [[ $mafft_ok   -gt 0 ]] || { log_error "No MAFFT alignments produced.";  exit 1; }
 
-# ---------------------------------------------------------------------------
-# Step 3, trimAl -automated1 on each MAFFT-aligned marker
-# ---------------------------------------------------------------------------
+# ---- Step 3, trimAl -automated1 on each MAFFT-aligned marker ----
 log_info "Step 3: trimAl -automated1 (${mafft_ok} alignments)"
 mkdir -p "${TRIMAL_DIR}/trimmed"
 mkdir -p "${TRIMAL_DIR}/reports"
@@ -366,9 +354,7 @@ log_info "  Stats:  $STATS_FILE"
 [[ $total_fail -eq 0 ]] || { log_error "Some markers failed trimming."; exit 1; }
 [[ $total_ok   -gt 0 ]] || { log_error "No markers trimmed. Aborting.";  exit 1; }
 
-# ---------------------------------------------------------------------------
-# Step 4, FASconCAT-G: concatenate trimmed markers + generate partition file
-# ---------------------------------------------------------------------------
+# ---- Step 4, FASconCAT-G: concatenate trimmed markers + generate partition file ----
 log_info "Step 4: FASconCAT-G concatenation (-s -l)"
 mkdir -p "${FASCONCAT_DIR}/input"
 mkdir -p "${FASCONCAT_DIR}/output"
@@ -432,9 +418,7 @@ else
     exit 1
 fi
 
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
+# ---- summary ----
 log_info "Pipeline completed successfully"
 log_info "  Output structure:"
 log_info "    ${WORK_DIR}/"
