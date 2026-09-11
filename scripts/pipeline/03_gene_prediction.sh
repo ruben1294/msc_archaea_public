@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 3. Calls genes on every filtered MAG with Prodigal and writes one
 # subdirectory per MAG under 04_gene_prediction/, each holding .faa proteins,
 # .fna nucleotide CDS and a .gff. The .faa files feed both eggNOG-mapper
@@ -12,18 +14,7 @@ set -euo pipefail
 #
 # Hyatt et al. (2010) BMC Bioinformatics 11:119.
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
-echo "Loaded configuration from $CONFIG_FILE"
-echo ""
+load_project_config
 
 INPUT_DIR="${PROJECT_DIR}/${FILTERED_SUBDIR}"
 OUTPUT_DIR="${PROJECT_DIR}/${GENE_PREDICTION_SUBDIR}"
@@ -160,6 +151,7 @@ for mag_file in "$INPUT_DIR"/*.fa; do
 
         # grep -c would exit 1 on an empty file and trip pipefail; counting the
         # lines separately keeps the failure local to this MAG.
+        # shellcheck disable=SC2126
         n_genes=$(grep "^>" "${mag_output_dir}/${mag_name}.faa" 2>/dev/null | wc -l)
 
         if [[ $n_genes -eq 0 ]]; then

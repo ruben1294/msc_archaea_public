@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 6 has no automation. KO assignment ran through the KofamKOALA web server
 # rather than a local kofam_scan install, so this file documents the manual step
 # and checks that its output landed where step 7 expects it.
@@ -20,16 +22,7 @@ set -euo pipefail
 #
 # Running this script verifies step 4 produced that file.
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
+load_project_config
 
 KO_DIR="${PROJECT_DIR}/${KO_ASSIGNMENT_SUBDIR}"
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 4. Annotates the Prodigal proteins with eggNOG-mapper v2, one output
 # directory per MAG under 05_functional_annotation/, and writes a summary table
 # with the per-MAG annotation rate.
@@ -13,16 +15,7 @@ set -euo pipefail
 # paired with a minimum seed ortholog bit score of 60, which carries most of the
 # filtering.
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
+load_project_config
 
 INPUT_DIR="${PROJECT_DIR}/${GENE_PREDICTION_SUBDIR}"
 OUTPUT_DIR="${PROJECT_DIR}/${FUNCTIONAL_ANNOTATION_SUBDIR}"

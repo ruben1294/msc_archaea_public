@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 2. Classifies the filtered MAGs against GTDB with gtdbtk classify_wf and
 # writes the summary tables under 03_taxonomy_assigned/. The downstream R
 # scripts read classify/tax_.ar53.summary.tsv from there for every taxonomic
@@ -48,17 +50,7 @@ for arg in "$@"; do
     esac
 done
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
-echo "Loaded configuration from $CONFIG_FILE"
+load_project_config
 
 EXTENSION="${EXTENSION:-fa}"
 MIN_PERC_AA="${MIN_PERC_AA:-10}"

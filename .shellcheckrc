@@ -1,0 +1,5 @@
+# The pipeline scripts source scripts/lib/common.sh through a path built from
+# BASH_SOURCE, which shellcheck cannot resolve on its own. SCRIPTDIR tells it to
+# look relative to each script being checked.
+source-path=SCRIPTDIR
+source-path=SCRIPTDIR/../lib

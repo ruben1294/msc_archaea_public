@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 1. Runs CheckM2 over the raw MAGs and writes quality_report.tsv under
 # 02_mags_quality/. Before that it strips duplicate contig IDs, which CheckM2
 # rejects outright and which show up when MAGs binned from separate assemblies
@@ -73,19 +75,7 @@ for arg in "$@"; do
     esac
 done
 
-# The config sits two levels up from scripts/pipeline/, so the script finds it
-# whatever directory it runs from.
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
-echo "Loaded configuration from $CONFIG_FILE"
+load_project_config
 
 CPU_CORES="${SLURM_CPUS_PER_TASK:-4}"
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 5. Annotates each MAG with DRAM v1 and, at the end, runs DRAM distill
 # over the whole set to produce metabolism_summary.xlsx and product.html.
 #
@@ -18,16 +20,7 @@ set -euo pipefail
 
 DRAM_MODE="${DRAM_MODE:-annotate}"
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "No configuration at $CONFIG_FILE" >&2
-    echo "Copy configs/server.env.example to configs/server.env and edit it." >&2
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
+load_project_config
 
 if ! command -v DRAM.py &> /dev/null; then
     echo "DRAM.py not found in PATH" >&2

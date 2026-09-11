@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+
 # Step 7. Turns the KO table from step 6 into pathway completeness matrices with
 # KEGG-Decoder, then optionally extends them with KEGG-Expander and merges both
 # into a single heatmap.
@@ -16,24 +18,9 @@ set -euo pipefail
 # The Expander branch is optional and skips itself when the concatenated protein
 # file, the HMM database or hmmsearch are missing.
 
-log_info()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $*"; }
-log_error() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $*" >&2; }
-log_warn()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $*"; }
-log_debug() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEBUG] $*"; }
-
 trap 'log_error "Failed at line $LINENO with exit code $?"; exit 1' ERR
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
-
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    log_error "No configuration at $CONFIG_FILE"
-    log_error "Copy configs/server.env.example to configs/server.env and edit it."
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
-log_info "Loaded configuration from $CONFIG_FILE"
+load_project_config
 
 OUTPUT_DIR="${PROJECT_DIR}/${METABOLIC_RECONSTRUCTION_SUBDIR}"
 LOG_DIR="${PROJECT_DIR}/${LOGS_SUBDIR}"
