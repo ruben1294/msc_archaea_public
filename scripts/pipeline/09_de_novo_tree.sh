@@ -34,8 +34,11 @@ OUTGROUP_TAX="p__Euryarchaeota"
 CPUS="${SLURM_CPUS_PER_TASK:-24}"
 
 # Keep this path short. A deep TMPDIR is what triggers the AF_UNIX error above.
-TMPDIR="${TMPDIR:-/tmp/gtdbtk_$$}"
-mkdir -p "$TMPDIR"
+# mktemp rather than reusing an inherited TMPDIR: the cleanup below must only
+# ever remove a directory this script created. SLURM wrappers export TMPDIR
+# pointing into the project tree.
+TMPDIR="$(mktemp -d /tmp/gtdbtk_XXXXXXXX)"
+export TMPDIR
 trap 'rm -rf "${TMPDIR:?}"' EXIT
 
 log_info "Input MAGs:  $RAW_DIR"
