@@ -1,0 +1,56 @@
+# Pipeline output. The scripts regenerate results/ from scratch; the large
+# intermediates go to Zenodo instead (see Data availability in README.md).
+results/
+logs/
+temp/
+tmp/
+work/
+.nextflow/
+.nextflow.log*
+
+# Genome and read data. The 54 MAGs live in a public sequence archive.
+*.fa
+*.fasta
+*.fastq
+*.fastq.gz
+*.bam
+*.sam
+*.db
+
+# Local configuration. Copy the .example files and edit the copies, which carry
+# cluster hostnames and absolute paths tied to one machine.
+configs/*.env
+!configs/*.env.example
+
+# The input tables under data/ are small and belong in the repo, so they need an
+# exception to the blanket spreadsheet rules.
+*.xlsx
+*.csv
+!data/*.xlsx
+!data/*.csv
+
+# Scheduler and tool noise
+*.out
+*.err
+*.log
+slurm-*.out
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*~
+*:Zone.Identifier
