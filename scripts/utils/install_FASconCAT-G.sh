@@ -4,8 +4,9 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Clones FASconCAT-G and writes fasconcat_config.env next to it, which is the
-# file pipeline steps 12 and 19 source to find the interpreter script.
+# Clones FASconCAT-G at the commit the thesis ran and writes
+# fasconcat_config.env next to it, which is the file pipeline steps 14 and 17
+# source to find the interpreter script.
 #
 # FASconCAT-G ships as a single Perl script with no installer, so "installing"
 # it means putting it somewhere stable and recording where that is.
@@ -15,12 +16,15 @@ log_success() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [SUCCESS] $*"; }
 log_info "FASconCAT-G Setup Script"
 
 load_project_config
-require_vars PROJECT_DIR
+require_vars PROJECT_DIR RESULTS_DIR
 
 # Define installation directory
-INSTALL_DIR="${PROJECT_DIR}/12_marker_concatenation"
+INSTALL_DIR="${RESULTS_DIR}/${MARKER_CONCAT_SUBDIR:-14_marker_concatenation}"
 FASCONCAT_DIR="${INSTALL_DIR}/FASconCAT-G"
 REPO_URL="https://github.com/PatrickKueck/FASconCAT-G.git"
+# FASconCAT-G 1.06.1, the version the concatenations of steps 14 and 17 used.
+# Set FASCONCAT_REVISION to install another.
+FASCONCAT_REVISION="${FASCONCAT_REVISION:-05da152e3afd1e64bd464bf1f792a64171286ab4}"
 
 log_info "Installation directory: $INSTALL_DIR"
 
@@ -90,7 +94,12 @@ if [[ ! -d "$FASCONCAT_DIR" ]]; then
     fi
 else
     log_info "Using existing installation at: $FASCONCAT_DIR"
+    git -C "$FASCONCAT_DIR" fetch --quiet origin \
+        || log_warn "Could not fetch; using the commits already cloned"
 fi
+
+log_info "Checking out commit $FASCONCAT_REVISION"
+git -C "$FASCONCAT_DIR" -c advice.detachedHead=false checkout --quiet "$FASCONCAT_REVISION"
 
 # Navigate to FASconCAT-G directory
 cd "$FASCONCAT_DIR"

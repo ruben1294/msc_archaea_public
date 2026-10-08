@@ -33,15 +33,31 @@ if (!has_micropan) {
   message("micropan no instalado; Heaps' law no se calculará. Instala con: install.packages('micropan')")
 }
 
-# --- Rutas --------------------------------------------------------------------
-# Linux usa la ruta directa.
-PROJECT_DIR <- resolve_project_dir()
+# --- Paths --------------------------------------------------------------------
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 SO_03_DIR <- file.path(PROJECT_DIR, "results", "SO_03")
 DERIVED_DIR <- file.path(SO_03_DIR, "derived")
 OUTPUT_DIR <- file.path(SO_03_DIR, "classification")
 QUALITY_TSV <- file.path(
-  PROJECT_DIR, "results", "02_mags_quality",
-  "20251222_valentin_quality_report.tsv"
+  PROJECT_DIR, "results", "01_mag_quality", "quality_report.tsv"
 )
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -102,7 +118,7 @@ heaps_gamma <- function(bin_mat, n_perm = 100) {
   list(gamma = unname(res["alpha"]), intercept = unname(res["intercept"]))
 }
 
-# --- Cargar quality (CheckM2) -------------------------------------------------
+# --- Load quality (CheckM2) ---------------------------------------------------
 quality <- tibble(NameWithoutExtension = character(0), Completeness = numeric(0))
 if (file.exists(QUALITY_TSV)) {
   quality <- read_tsv(QUALITY_TSV, show_col_types = FALSE) %>%
@@ -119,14 +135,14 @@ if (file.exists(QUALITY_TSV)) {
   )
 }
 
-# Must match the sanitisation in pipeline step 14
+# Must match the sanitisation in pipeline step 20
 sanitize <- function(x) gsub("[^a-zA-Z0-9_]", "_", x)
 
 # ---- one species at a time ----
 heaps_summary <- list()
 class_counts <- list()
-panel_classes <- list() # subplots para Fig_panel_pan_classes
-panel_curves <- list() # subplots para Fig_panel_pan_curves
+panel_classes <- list() # subplots for Fig_panel_pan_classes
+panel_curves <- list() # subplots for Fig_panel_pan_curves
 
 canonical_species <- names(species_pretty)
 
@@ -191,7 +207,7 @@ for (bin_file in bin_files) {
     )
   )
 
-  # --- Figura: barras core/soft-core/shell/cloud ------------------------------
+  # --- Figure: core/soft-core/shell/cloud bars ---------------------------------
   cls_counts_plot <- cls_counts %>%
     mutate(class = factor(class, levels = pan_class_levels)) %>%
     tidyr::complete(class, fill = list(n = 0L))
@@ -271,7 +287,7 @@ for (bin_file in bin_files) {
     panel_curves[[sp_name]] <- fig_curves
   }
 
-  # --- Verificaciones cruzadas (cbb3 / HndC) ----------------------------------
+  # --- Cross-checks (cbb3 / HndC) ---------------------------------------------
   if (!is.null(fn_df) && "KOfam" %in% colnames(fn_df)) {
     cbb3_kos <- c("K00404", "K00405", "K00406", "K00407")
     hnd_kos <- c("K18006")

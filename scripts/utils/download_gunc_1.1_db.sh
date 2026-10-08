@@ -1,86 +1,97 @@
-#!/bin/bash
-# Downloads GUNC v1.1 databases with resume support.
-# Monkey-patches GUNC's built-in downloader (no resume) with a Python/requests
-# implementation that uses HTTP Range headers to continue partial downloads.
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Activate the environment that provides gunc before running this.
-conda activate GUNC_v1.1
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Set GUNC_DB in configs/server.env to this same path afterwards.
-DB_DIR="${GUNC_DB:-${PROJECT_DIR}/databases/GUNC_v1.1.0}"
-mkdir -p "$DB_DIR"
+# Downloads the two GUNC 1.1 reference databases that step 02 runs against,
+# ProGenomes3 and GTDB r214, into GUNC_DB. Run it inside the GUNC_v1.1
+# environment of env/gunc.yml:
+#
+#   conda activate GUNC_v1.1
+#   bash scripts/utils/download_gunc_1.1_db.sh
+#
+# GUNC's own downloader cannot resume, and the files are large enough that a
+# dropped connection is likely, so this swaps in one that continues a partial
+# file with an HTTP Range request. GUNC then checks each file against the md5
+# sum the server publishes and deletes it on a mismatch, so a resumed download
+# that went wrong is caught rather than used.
+#
+# A database already in place is skipped, which makes the script safe to rerun
+# after an interruption.
+
+load_project_config
+require_vars GUNC_DB
+require_commands python3
+
+if ! python3 -c "import gunc.gunc_database" 2> /dev/null; then
+    log_error "GUNC is not importable from python3. Activate the GUNC_v1.1 environment first."
+    exit 1
+fi
+
+mkdir -p "$GUNC_DB"
 
 download_gunc_db() {
-    local DB_NAME=$1
-    echo "$(date '+%T') : Downloading GUNC DB: ${DB_NAME}"
+    local db_name=$1
+    local dmnd=$2
 
-    python - "$DB_NAME" "$DB_DIR" <<'EOF'
-import sys
+    if [[ -s "${GUNC_DB}/${dmnd}" ]]; then
+        log_info "${dmnd} already in ${GUNC_DB}, skipping"
+        return 0
+    fi
+
+    log_info "Downloading GUNC database ${db_name} into ${GUNC_DB}"
+
+    python3 - "$db_name" "$GUNC_DB" <<'EOF'
 import os
+import sys
+import time
+
+import requests
 import gunc.gunc_database as gd
 
-db_name = sys.argv[1]
-db_path = sys.argv[2]
+MAX_RETRIES = 20
+WAIT_SECONDS = 300  # between attempts, so the server does not block the address
 
-def resumable_wget(url, dest):
-    import requests
-    import urllib3
-    import time
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    # Try HTTPS first, then HTTP fallback
-    urls_to_try = [url, url.replace("https://", "http://", 1)]
+def resumable_download(url, dest):
+    for attempt in range(1, MAX_RETRIES + 1):
+        start = os.path.getsize(dest) if os.path.exists(dest) else 0
+        headers = {"Range": f"bytes={start}-"} if start else {}
+        print(f"  Attempt {attempt}/{MAX_RETRIES}: {url}", flush=True)
+        if start:
+            print(f"  Resuming from byte {start:,}", flush=True)
+        try:
+            with requests.get(url, headers=headers, stream=True, timeout=120) as r:
+                if start and r.status_code == 416:
+                    # Nothing past what is on disk; the md5 check decides
+                    # whether that is the whole file.
+                    return
+                r.raise_for_status()
+                # A 200 to a ranged request means the server ignored the range
+                # and is sending the whole file, so start over, never append.
+                mode = "ab" if start and r.status_code == 206 else "wb"
+                with open(dest, mode) as f:
+                    for chunk in r.iter_content(chunk_size=8 * 1024 * 1024):
+                        f.write(chunk)
+            return
+        except requests.exceptions.RequestException as e:
+            print(f"  Failed ({type(e).__name__}): {e}", flush=True)
+            if attempt < MAX_RETRIES:
+                print(f"  Waiting {WAIT_SECONDS}s before the next attempt", flush=True)
+                time.sleep(WAIT_SECONDS)
+    sys.exit(f"All {MAX_RETRIES} attempts failed for {url}")
 
-    start_byte = os.path.getsize(dest) if os.path.exists(dest) else 0
-    headers = {"Range": f"bytes={start_byte}-"} if start_byte > 0 else {}
 
-    max_retries = 20
-    wait_seconds = 300  # 5 min between retries (avoid server IP block)
-
-    for attempt in range(1, max_retries + 1):
-        for try_url in urls_to_try:
-            print(f"  Attempt {attempt}/{max_retries}  URL: {try_url}")
-            if start_byte > 0:
-                print(f"  Resuming from byte {start_byte:,}")
-            try:
-                with requests.get(try_url, headers=headers, stream=True,
-                                  verify=False, timeout=120) as r:
-                    r.raise_for_status()
-                    mode = "ab" if start_byte > 0 else "wb"
-                    with open(dest, mode) as f:
-                        for chunk in r.iter_content(chunk_size=8 * 1024 * 1024):
-                            f.write(chunk)
-                print(f"  Download complete.")
-                return  # success
-            except Exception as e:
-                print(f"  Failed ({type(e).__name__}): {e}")
-                # Update start_byte in case partial progress was made
-                start_byte = os.path.getsize(dest) if os.path.exists(dest) else 0
-                headers = {"Range": f"bytes={start_byte}-"} if start_byte > 0 else {}
-
-        if attempt < max_retries:
-            print(f"  Waiting {wait_seconds}s before next attempt...")
-            time.sleep(wait_seconds)
-
-    raise RuntimeError(f"All {max_retries} download attempts failed for {url}")
-
-gd.download_file = resumable_wget
-gd.get_db(db_path, db_name)
+gd.download_file = resumable_download
+gd.get_db(sys.argv[2], sys.argv[1])
 EOF
 
-    local EXIT=$?
-    if [[ $EXIT -ne 0 ]]; then
-        echo "$(date '+%T') : ERROR downloading ${DB_NAME} (exit ${EXIT})"
-        return 1
-    fi
-    echo "$(date '+%T') : Done: ${DB_NAME}"
+    log_info "Done: ${GUNC_DB}/${dmnd}"
 }
 
-echo "$(date '+%T') : START $(date '+%Y-%m-%d')"
+log_info "GUNC databases into ${GUNC_DB}"
 
-download_gunc_db "progenomes_3"
-download_gunc_db "gtdb_214"
+download_gunc_db "progenomes_3" "gunc_db_progenomes3.dmnd"
+download_gunc_db "gtdb_214" "gunc_db_gtdb214.dmnd"
 
-echo ""
-echo "$(date '+%T') : Final files:"
-ls -lh "${DB_DIR}"/*.dmnd 2>/dev/null || echo "  No .dmnd files found."
+ls -lh "${GUNC_DB}"/*.dmnd

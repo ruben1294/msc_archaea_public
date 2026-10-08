@@ -9,8 +9,10 @@ Description: Combine Physicochemical_properties.xlsx (depth-aggregated means)
              Sheet1 "Physicochemical_by_depth"  -> joined by Depth
              Sheet2 "Stations_depths"           -> joined by Station + Depth
 
-             Output overwrites the input Physicochemical_properties.xlsx.
-             A backup of the original is created next to it.
+             Output overwrites the input Physicochemical_properties.xlsx,
+             which is the version in data/; a backup of the previous one goes
+             to the project's temp/ directory. Depths.xlsx keeps only the six
+             stations the MAGs come from.
 
 Requires pandas and openpyxl.
 """
@@ -23,12 +25,17 @@ import pandas as pd
 
 from pathlib import Path
 
-# Project root, from the environment or the usual location.
-PROJECT_DIR = Path(os.environ.get("MSC_ARCHAEA_DIR", Path.home() / "msc_archaea"))
+# The environmental tables are part of the repository, under data/. Backups go
+# to temp/ under PROJECT_DIR, which git ignores.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_DIR = Path(os.environ.get("PROJECT_DIR")
+                   or os.environ.get("MSC_ARCHAEA_DIR")
+                   or REPO_ROOT)
+DATA_DIR = Path(os.environ.get("DATA_DIR") or REPO_ROOT / "data")
+BACKUP_DIR = PROJECT_DIR / os.environ.get("TEMP_SUBDIR", "temp")
 
-# The environmental tables live under data/ in the published tree.
-PHYSCHEM_XLSX = str(PROJECT_DIR / "data" / "Physicochemical_properties.xlsx")
-DEPTHS_XLSX = str(PROJECT_DIR / "data" / "Depths.xlsx")
+PHYSCHEM_XLSX = str(DATA_DIR / "Physicochemical_properties.xlsx")
+DEPTHS_XLSX = str(DATA_DIR / "Depths.xlsx")
 OUTPUT_XLSX = PHYSCHEM_XLSX  # overwrite
 
 SHEET1_NAME = "Physicochemical_by_depth"
@@ -92,7 +99,8 @@ def backup(path):
     if not os.path.exists(path):
         return None
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    bak = f"{path}.bak_{ts}"
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    bak = str(BACKUP_DIR / f"{os.path.basename(path)}.bak_{ts}")
     shutil.copy2(path, bak)
     print(f"[backup] {path} -> {bak}")
     return bak

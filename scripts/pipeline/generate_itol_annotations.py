@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write the iTOL annotation files for the 10-MAG tree from pipeline step 20.
+"""Write the iTOL annotation files for the 10-MAG tree from pipeline step 18.
 
 The tree covers Poseidoniales (Thalassarchaeaceae: MGIIb-Q1 and UBA36) and
 Nitrosopumilaceae (Nitrosopelagicus). iTOL takes one file per annotation track,
@@ -16,7 +16,7 @@ so each of these lands in OUTPUT_DIR and gets dragged onto the tree separately:
     10_depth_colorstrip.txt       DATASET_COLORSTRIP   sampling depth
 
 Leaf labels have to match the tree exactly, which is why the renaming tables
-below are written out rather than derived: the tree was relabelled in step 20
+below are written out rather than derived: the tree was relabelled in step 18
 and these follow that same mapping.
 """
 
@@ -26,14 +26,19 @@ import csv
 import re
 
 # CONFIGURATION
-# Project root, from the environment or the usual location.
-PROJECT_DIR = os.environ.get("MSC_ARCHAEA_DIR", os.path.join(os.path.expanduser("~"), "msc_archaea"))
+# Project root: PROJECT_DIR or MSC_ARCHAEA_DIR when set, otherwise this clone.
+# The metadata table is part of the repository, so it is always read from there.
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+PROJECT_DIR = (os.environ.get("PROJECT_DIR")
+               or os.environ.get("MSC_ARCHAEA_DIR")
+               or REPO_ROOT)
+RESULTS_DIR = os.environ.get("RESULTS_DIR") or os.path.join(PROJECT_DIR, "results")
 
-TAXONOMY_TSV = os.path.join(PROJECT_DIR, "results", "03_taxonomy_assigned", "tax_.ar53.summary.tsv")
-PRODUCT_TSV = os.path.join(PROJECT_DIR, "results", "08_MAG_distill", "VISUALIZE", "product.tsv")
-METADATA_TSV = os.path.join(PROJECT_DIR, "MAGs_metadata.tsv")
-QUALITY_TSV = os.path.join(PROJECT_DIR, "results", "02_mags_quality", "20251222_valentin_quality_report.tsv")
-OUTPUT_DIR = os.path.join(PROJECT_DIR, "results", "itol_annotations")
+TAXONOMY_TSV = os.path.join(RESULTS_DIR, "03_taxonomy_assigned", "classify", "tax_.ar53.summary.tsv")
+PRODUCT_TSV = os.path.join(RESULTS_DIR, "10_MAG_distill", "VISUALIZE", "product.tsv")
+METADATA_TSV = os.path.join(REPO_ROOT, "data", "MAGs_metadata.tsv")
+QUALITY_TSV = os.path.join(RESULTS_DIR, "01_mag_quality", "quality_report.tsv")
+OUTPUT_DIR = os.path.join(RESULTS_DIR, "itol_annotations")
 
 # Tree leaves, by their internal identifiers before relabelling
 TARGET_MAGS = [
@@ -63,12 +68,12 @@ REFERENCE_LEAVES = [
     'REF_GCA_000091665.1',  # Methanocaldococcus jannaschii
     'REF_GCF_000008545.1',  # Thermotoga maritima (outgroup)
     'REF_GCF_000008625.1',  # Aquifex aeolicus (outgroup)
-    'REF_GCA_000402075.1',  # Sin renombrar (en treefile)
-    'REF_GCA_000008545.1',  # Sin renombrar (en treefile)
-    'REF_GCA_000008625.1',  # Sin renombrar (en treefile)
-    'REF_GCA_000009345.1',  # Sin renombrar (en treefile)
-    'REF_GCA_000011805.1',  # Sin renombrar (en treefile)
-    'REF_GCA_900232055.1',  # Sin renombrar (en treefile)
+    'REF_GCA_000402075.1',  # not renamed (as in the treefile)
+    'REF_GCA_000008545.1',  # not renamed (as in the treefile)
+    'REF_GCA_000008625.1',  # not renamed (as in the treefile)
+    'REF_GCA_000009345.1',  # not renamed (as in the treefile)
+    'REF_GCA_000011805.1',  # not renamed (as in the treefile)
+    'REF_GCA_900232055.1',  # not renamed (as in the treefile)
 ]
 
 ALL_LEAVES = TARGET_MAGS + REFERENCE_LEAVES
@@ -107,7 +112,7 @@ REF_DISPLAY_NAMES = {
     'REF_GCA_000012285.1': 'Sulfolobus_acidocaldarius_DSM_639',
     # Methanocaldococcus
     'REF_GCA_000091665.1': 'Methanocaldococcus_jannaschii_DSM_2661',
-    # Bacterias outgroup
+    # Bacterial outgroup
     'REF_GCF_000008545.1': 'Thermotoga_maritima_MSB8',
     'REF_GCA_000008545.1': 'REF_GCA_000008545.1',
     'REF_GCF_000008625.1': 'Aquifex_aeolicus_VF5',
@@ -126,10 +131,10 @@ LEAF_NAME_MAP = {}
 
 
 def translate_leaf(name: str) -> str:
-    """Devuelve el nombre renombrado que usa el treefile/iTOL."""
+    """Returns the renamed label that the treefile and iTOL use."""
     return LEAF_NAME_MAP.get(name, name)
 
-# DATOS HARDCODEADOS (CheckM2, validados)
+# HARD-CODED VALUES (CheckM2, checked)
 ANI_EXPECTED = {
     'A6.BTM.megahit.bin.3': 93.23,
     'A4.BTM.megahit.bin.15': 93.02,
@@ -261,7 +266,7 @@ DRAM2_FIELD_COLORS = [
     '#e76f51',  # Phototrophy
 ]
 
-# RANGOS DE CLADOS (08_branch_support_colors.txt)
+# CLADE RANGES (08_branch_support_colors.txt)
 CLADE_RANGES = [
     ('A4.BTM.megahit.bin.15', 'REF_GCA_012964335.1', '#fde8e0', 'MGIIb-Q1 sublinaje A'),
     ('Y6.1000.megahit.bin.23', 'REF_GCA_963580235.1', '#fde8e0', 'MGIIb-Q1 sublinaje B'),
@@ -270,7 +275,7 @@ CLADE_RANGES = [
     ('REF_GCF_000008545.1',   'REF_GCF_000008625.1', '#e9ecef', 'Bacteria (grupo externo)'),
 ]
 
-# COLORES DE ESTACIÓN Y PROFUNDIDAD
+# STATION AND DEPTH COLOURS
 STATION_COLORS = {
     'A4':  '#e63946',
     'A6':  '#2a9d8f',
@@ -285,16 +290,17 @@ DEPTH_COLORS = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FUNCIONES DE PARSEO
+# PARSERS
 # ══════════════════════════════════════════════════════════════════════════════
 
 
 def parse_quality(path):
     """
-    Lee el reporte de calidad CheckM2 (columnas Name, Completeness, Contamination).
-    Los nombres en el archivo usan guiones bajos (A4_BTM_megahit_bin.58); se convierten
-    al formato de puntos con tsv_name_to_dot().
-    Devuelve:
+    Reads the CheckM2 report (columns Name, Completeness, Contamination).
+    Names written before utils/05_rename_mags.sh use underscores
+    (A4_BTM_megahit_bin.58) and go through tsv_name_to_dot(); renamed ones
+    already have dots and pass through unchanged.
+    Returns:
       completeness : dict dot_name to float
       contamination : dict dot_name to float
     """
@@ -321,12 +327,12 @@ def parse_quality(path):
 
 def parse_metadata(path):
     """
-    Lee MAGs_metadata.tsv.
-    Devuelve:
+    Reads MAGs_metadata.tsv.
+    Returns:
       order : NameWithoutExtension values in the order they appear, no header
       stations : dict NameWithoutExtension to Station
       depths   : dict NameWithoutExtension to Depth
-      display_names_tree : dict NameWithoutExtension to DisplayName_formato_arbol
+      display_names_tree : dict NameWithoutExtension to the DisplayName as written in the tree
     """
     order, stations, depths = [], {}, {}
     display_names_tree = {}
@@ -355,25 +361,25 @@ def parse_metadata(path):
 
 def tsv_name_to_dot(tsv_name):
     """
-    Convierte nombre estilo TSV (guiones bajos entre campos principales) al
+    Converts a TSV-style name (underscores between the main fields) to the
     tree format, dot separated:
       A4_BTM_megahit_bin.28  to A4.BTM.megahit.bin.28
       A4_1000_megahit_bin.28 to A4.1000.megahit.bin.28
-    Solo reemplaza los guiones bajos entre STATION, DEPTH y ASSEMBLER.
-    El punto antes del BinID se mantiene.
+    Only the underscores between STATION, DEPTH and ASSEMBLER are replaced;
+    the dot before the BinID stays.
     """
-    # Patron: (station)_(depth)_(assembler)_bin.(id)
+    # Pattern: (station)_(depth)_(assembler)_bin.(id)
     m = re.match(r'^([^_]+)_([^_]+)_([^_]+)_bin\.(.+)$', tsv_name)
     if m:
         return f"{m.group(1)}.{m.group(2)}.{m.group(3)}.bin.{m.group(4)}"
-    return tsv_name  # no match to devolver sin cambios
+    return tsv_name  # no match: return it unchanged
 
 
 def parse_ani(path, target_set):
     """
     Reads tax_.ar53.summary.tsv and pulls the most relevant ANI per target MAG.
-    Prioridad: closest_genome_ani to closest_placement_ani to -1 (sin hit).
-    Devuelve dict: dot_name to float (ANI) o -1.
+    Priority: closest_genome_ani, then closest_placement_ani, then -1 (no hit).
+    Returns dict: dot_name to float (ANI) or -1.
     """
     ani = {}
     with open(path, newline='', encoding='utf-8') as fh:
@@ -399,8 +405,8 @@ def parse_ani(path, target_set):
 def parse_product(product_path, metadata_order):
     """
     Reads product.tsv. It has no index column, and its rows align with metadata_order.
-    Devuelve dict: mag_name to dict{column_name to value_string}
-    Solo incluye MAGs en TARGET_MAGS.
+    Returns dict: mag_name to dict{column_name to value_string}
+    Only MAGs in TARGET_MAGS are included.
     """
     data = {}
     target_set = set(TARGET_MAGS)
@@ -419,10 +425,10 @@ def eval_field(mag_row, columns, threshold):
     """
     Whether a metabolic field is present for one MAG.
     Logical OR across the listed columns:
-      - threshold=None to columna booleana: True / '1' to 1, False / '0' to 0
+      - threshold=None: a boolean column, True or '1' gives 1, False or '0' gives 0
       threshold as a float treats the column as numeric 0 to 1, and counts it
       as present at or above that value
-    Devuelve 1 o 0.
+    Returns 1 or 0.
     """
     for col in columns:
         raw = mag_row.get(col, '').strip()
@@ -460,12 +466,12 @@ def get_dram2_active_fields():
     return active
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GENERADORES DE ARCHIVOS iTOL
+# iTOL FILE WRITERS
 # ══════════════════════════════════════════════════════════════════════════════
 
 
 def _open(outdir, filename):
-    """Abre un archivo de salida con newline Unix."""
+    """Opens an output file with Unix newlines."""
     return open(os.path.join(outdir, filename), 'w', newline='\n', encoding='utf-8')
 
 
@@ -587,18 +593,18 @@ def write_04_contamination_bar(outdir, contamination):
             # MIMAG bands (https://www.nature.com/articles/nbt.3893)
             # High-quality MAGs: ≤5%, Medium-quality MAGs: ≤10%
             if val <= 5:
-                color = '#2a9d8f'  # calidad alta (green)
+                color = '#2a9d8f'  # high quality (green)
             elif val <= 10:
-                color = '#f4a261'  # calidad media (orange)
+                color = '#f4a261'  # medium quality (orange)
             else:
-                color = '#e63946'  # calidad baja (red)
+                color = '#e63946'  # low quality (red)
             f.write(f"{translate_leaf(mag)}\t{val}\t{color}\n")
     return fname
 
 
 def write_05_ani_heatmap(outdir, ani_data):
     fname = '05_ani_heatmap.txt'
-    # Validar contra valores esperados
+    # Check against the expected values
     for mag, expected in ANI_EXPECTED.items():
         observed = ani_data.get(mag, None)
         if observed is None:
@@ -667,7 +673,7 @@ def write_07_dram2_binary(outdir, product_data):
     # Indices of the fields that carry data
     active_field_indices = get_dram2_active_fields()
 
-    # Filtrar DRAM2_FIELDS, colores y etiquetas
+    # Filter DRAM2_FIELDS, colours and labels
     active_dram2_fields = [DRAM2_FIELDS[i] for i in active_field_indices]
     active_dram2_colors = [DRAM2_FIELD_COLORS[i] for i in active_field_indices]
     field_labels = [f[0] for f in active_dram2_fields]
@@ -823,7 +829,7 @@ def write_10_depth_colorstrip(outdir, depths):
     return fname
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VALIDACIÓN POST-GENERACIÓN
+# POST-GENERATION CHECKS
 # ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -875,7 +881,7 @@ def validate_leaf_coverage(outdir):
 
 
 def main():
-    # Validar archivos de entrada
+    # Check the input files
     missing = [
         p for p in (TAXONOMY_TSV, PRODUCT_TSV, METADATA_TSV, QUALITY_TSV)
         if not os.path.isfile(p)
@@ -899,7 +905,7 @@ def main():
     print(f" ANI data: {len(ani_data)} hits encontrados para {len(TARGET_MAGS)} MAGs objetivo")
     print(f" DRAM2 data: {len(product_data)} MAGs objetivo encontrados en product.tsv")
 
-    # Construir mapa global de nombres de hoja (renombrados)
+    # Build the global map of (renamed) leaf names
     global LEAF_NAME_MAP
     LEAF_NAME_MAP = {}
 
@@ -917,7 +923,7 @@ def main():
                 file=sys.stderr,
             )
 
-    # Referencias: usar REF_DISPLAY_NAMES hardcodeado
+    # References: use the hard-coded REF_DISPLAY_NAMES
     for ref in REFERENCE_LEAVES:
         new_name = REF_DISPLAY_NAMES.get(ref)
         if new_name:

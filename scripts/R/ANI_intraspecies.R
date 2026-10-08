@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Script: ANI_intraspecies.R
 # Within-species ANI across the 54 MAGs, from the skani output of pipeline
-# step 16. Several figures, each looking at the same matrix differently.
+# step 04. Several figures, each looking at the same matrix differently.
 #
 #   Species with an assignment:
 #     Fig1   ANI distribution per species, boxplot with jitter
@@ -24,27 +24,34 @@
 # Rscript scripts/R/ANI_intraspecies.R
 
 # ---- ---- 1. project root and paths ----
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
 PROJECT_ROOT <- resolve_project_dir()
-sparse_path <- file.path(PROJECT_ROOT, "results/16_sketching_ani/all_mags/ani_triangle_sparse.tsv")
-full_path <- file.path(PROJECT_ROOT, "results/16_sketching_ani/all_mags/ani_triangle_full.tsv")
-novel_path <- file.path(PROJECT_ROOT, "results/16_sketching_ani/novel_mags/novel10_vs_all54.tsv")
-metadata_path <- file.path(PROJECT_ROOT, "MAGs_metadata.tsv")
+sparse_path <- file.path(PROJECT_ROOT, "results/04_sketching_ani/all_mags/ani_triangle_sparse.tsv")
+full_path <- file.path(PROJECT_ROOT, "results/04_sketching_ani/all_mags/ani_triangle_full.tsv")
+novel_path <- file.path(PROJECT_ROOT, "results/04_sketching_ani/novel_mags/novel10_vs_all54.tsv")
+metadata_path <- file.path(PROJECT_ROOT, "data", "MAGs_metadata.tsv")
 output_dir <- file.path(PROJECT_ROOT, "results/SO_01/ANI")
 
 # Minimum aligned fraction, min(AF_ref, AF_query), for an ANI value from the
@@ -55,20 +62,20 @@ NOVEL_AF_MIN <- 5
 
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-# ---- 2. Paquetes ----
+# ---- 2. Packages ----
 cat("\n=== Cargando paquetes ===\n")
 required_packages <- c(
   "tidyverse", # dplyr, ggplot2, readr, tidyr, stringr, forcats
-  "patchwork", # composición de múltiples figuras
-  "scales", # format de ejes
-  "ggrepel", # etiquetas sin solapamiento
-  "ggtext", # element_markdown() para texto con formato en ejes
-  "RColorBrewer", # paletas de color
-  "ComplexHeatmap", # heatmap 54×54 anotado (Fig4)
-  "circlize", # colorRamp2 para escalas de color
-  "grid", # gráficos base (requerido por ComplexHeatmap)
-  "showtext", # soporte para fuentes personalizadas
-  "sysfonts" # detección de fuentes del sistema
+  "patchwork", # composing several figures
+  "scales", # axis formatting
+  "ggrepel", # non-overlapping labels
+  "ggtext", # element_markdown() for formatted axis text
+  "RColorBrewer", # colour palettes
+  "ComplexHeatmap", # annotated 54 x 54 heatmap (Fig4)
+  "circlize", # colorRamp2 for colour scales
+  "grid", # base graphics (needed by ComplexHeatmap)
+  "showtext", # custom font support
+  "sysfonts" # system font detection
 )
 
 for (pkg in required_packages) {
@@ -177,13 +184,13 @@ save_fig <- function(p, path, width, height, dpi = 300) {
 
 # ---- ---- 5. project palettes ----
 
-# Profundidad — ORDEN: ZMOR to 1000 m to Fondo ( to  OMZ al final)
+# Depth order: ZMOR, 1000 m, Fondo (OMZ last)
 # Matching tax_analysis.R and the rest of the project.
 depth_label_map <- c("ROMZ" = "ZMOR", "1000" = "1000 m", "BTM" = "Fondo", "OMZ" = "OMZ")
 depth_factor_levels <- c("ZMOR", "1000 m", "Fondo", "OMZ")
 depth_colors <- c("ZMOR" = "#4A90D9", "1000 m" = "#E67E22", "Fondo" = "#8E44AD", "OMZ" = "#27AE60")
 
-# Estaciones
+# Stations
 station_levels <- c("A4", "A6", "C22", "F37", "PO1", "Y6")
 station_colors <- setNames(RColorBrewer::brewer.pal(6, "Set1"), station_levels)
 
@@ -199,7 +206,7 @@ species_palette <- c(
   "UBA60 sp002503395"           = "#CA6F1E",
   "Undinarchaeum marinum"       = "#7D3C98",
   "JAKUTA01 sp950068635"        = "#17A589",
-  # Grupos N/A (posibles nuevas especies)
+  # N/A groups (possible new species)
   "MGIIb-Q1 N/A"                = "#AED6F1",
   "Nitrosopelagicus N/A"        = "#A9DFBF",
   "UBA36 N/A"                   = "#BFC9CA"
@@ -221,8 +228,8 @@ should_italicize_level <- function(level) {
 # Italicises a taxon name per CDC style: genus, species and below go italic
 # word by word, while GTDB codes carrying digits (sp002507125, UBA60, MGIII)
 # stay upright.
-#   - level en {Family, Order, Class, Phylum, Domain} to texto plano completo.
-# Ejemplo: "Thalassarchaeum sp002507125" to "*Thalassarchaeum* sp002507125"
+#   - level in {Family, Order, Class, Phylum, Domain}: the whole name in plain text.
+# Example: "Thalassarchaeum sp002507125" to "*Thalassarchaeum* sp002507125"
 taxon_italic <- function(x, level = "Species") {
   if (!should_italicize_level(level)) {
     return(ifelse(is.na(x), x, as.character(x)))
@@ -264,7 +271,7 @@ level_abbrev <- list(
   Domain  = "d."
 )
 
-# Construye un lookup: valor_hijo to list(name, level, abbrev)
+# Builds a lookup: child value to list(name, level, abbrev)
 # Climbs the hierarchy until it finds an ancestor whose name differs from the
 # child. At species level the comparison uses only the first word, the genus,
 # since "Thalassarchaeum betae" against "Thalassarchaeum" is not a difference.
@@ -407,13 +414,13 @@ meta_df <- bind_cols(meta_raw, taxonomy_cols) |>
 cat("  [OK] Metadata:", nrow(meta_df), "MAGs\n")
 
 # Parent lookup at species level
-# (requiere columnas Genus, Family, Order, Class, Phylum, Domain en meta_df)
+# (needs the Genus, Family, Order, Class, Phylum and Domain columns in meta_df)
 species_parent_lookup <- get_parent_lookup(meta_df, "Species")
 cat("  [OK] Parent lookup para", length(species_parent_lookup), "especies\n")
 
 # ---- sparse ANI: edge list of pairs above 75% ----
 # skani sparse output columns: Ref_file, Query_file, ANI, Align_fraction_ref,
-# Align_fraction_query, Ref_name, Query_name. Las dos primeras columnas son
+# Align_fraction_query, Ref_name, Query_name. The first two columns are file paths:
 # skani reports absolute .fa paths, so the basename without extension is what
 # joins against meta_df$NameWithoutExtension.
 sparse_raw <- read_tsv(sparse_path, show_col_types = FALSE)
@@ -451,7 +458,7 @@ cat("  [OK] Sparse ANI:", nrow(sparse_df), "pares totales\n")
 cat("  [OK] Pares intra-especie (asignados):", sum(sparse_df$intraspecies, na.rm = TRUE), "\n")
 cat("  [OK] Pares intra-género N/A:         ", sum(sparse_df$intragroup_na, na.rm = TRUE), "\n")
 
-# — Matriz completa (formato phylip 54×54) —
+# Full matrix (PHYLIP format, 54 x 54)
 cat("  Leyendo matriz completa 54×54...\n")
 full_lines <- readLines(full_path)
 n_mags <- as.integer(trimws(full_lines[1]))
@@ -516,7 +523,7 @@ if (file.exists(novel_path)) {
   # sparse_df is extended too, so Fig1b and the distributions include the
   # rescued pairs with their full metadata. The pair key is unordered, which is
   # what stops a pair already present from being duplicated under
-  # Ref/Query intercambiados.
+  # swapped Ref and Query.
   unord_key <- function(a, b) ifelse(a < b, paste(a, b, sep = "|"),
                                      paste(b, a, sep = "|"))
   existing_keys <- unord_key(sparse_raw$Ref_MAG, sparse_raw$Query_MAG)
@@ -742,7 +749,7 @@ if (nrow(fig1b_data) > 0) {
   )
 
   # ----------------------------------------------------------
-  # Fig1c — Panel combinado: (a) Fig1 + (b) Fig1b
+  # Fig1c: combined panel, (a) Fig1 and (b) Fig1b
   # Both subplots the same size, tagged a and b
   # ----------------------------------------------------------
   cat("=== Fig1c: Panel combinado (a) Fig1 + (b) Fig1b ===\n")
@@ -1088,7 +1095,7 @@ meta_ordered <- meta_df |>
   filter(Species != "N/A") |>
   mutate(
     Species_group = factor(Species_group, levels = group_order_fig4),
-    # Factor de profundidad ya definido correctamente (ZMOR to 1000 m to Fondo to OMZ)
+    # Depth factor already in the right order (ZMOR, 1000 m, Fondo, OMZ)
     Depth_label   = factor(Depth_label, levels = depth_factor_levels)
   ) |>
   arrange(Species_group, Depth_label, Station)
@@ -1120,7 +1127,7 @@ station_ordered <- meta_ordered |>
   arrange(match(NameWithoutExtension, ordered_mags)) |>
   pull(Station)
 
-# Colores de profundidad en orden correcto (ZMOR to 1000 m to Fondo to OMZ)
+# Depth colours in the same order (ZMOR, 1000 m, Fondo, OMZ)
 depth_colors_fig4 <- depth_colors[intersect(depth_factor_levels, unique(as.character(depth_lbls_ordered)))]
 
 ha_row <- rowAnnotation(
@@ -1157,9 +1164,9 @@ fig4_common_params <- list(
   column_gap = unit(2, "mm"),
   # Species titles at 45 degrees
   row_title_gp  = gpar(fontsize = 7.5, fontface = "italic"),
-  row_title_rot = 0,       # horizontal para los bloques de fila
+  row_title_rot = 0,       # horizontal for the row blocks
   column_title_gp  = gpar(fontsize = 7.5, fontface = "italic"),
-  column_title_rot = 45,   # 45° para los bloques de columna (parte superior)
+  column_title_rot = 45,   # 45 degrees for the column blocks (top)
   # MAG labels unrotated
   row_names_gp    = gpar(fontsize = 7),
   column_names_gp = gpar(fontsize = 7),
@@ -1357,7 +1364,7 @@ save_fig(p_fig5b, file.path(output_dir, "Fig5b_ANI_contribucion_por_MAG_estacion
 #      interval, rather than on significance.
 cat("=== Análisis estadístico: procedencia vs. ANI ===\n")
 
-# ---- Paquete adicional: lme4 --------------------------------
+# ---- Additional package: lme4 ------------------------------
 if (!requireNamespace("lme4", quietly = TRUE))
   install.packages("lme4", dependencies = TRUE, quiet = TRUE)
 suppressMessages(library(lme4))
@@ -1480,7 +1487,7 @@ wilcox_species <- function(ctx_var, same_label, variable_label) {
 res_depth   <- wilcox_species("ctx_depth",   "Misma profundidad", "Profundidad")
 res_station <- wilcox_species("ctx_station", "Misma estación",    "Estación")
 
-# ---- 4. Guardar TSVs ----------------------------------------
+# ---- 4. Write the TSVs ------------------------------------
 if (!is.null(res_depth) || !is.null(res_station)) {
   write_tsv(
     bind_rows(res_depth, res_station),
@@ -1491,7 +1498,7 @@ if (!is.null(res_depth) || !is.null(res_station)) {
 write_tsv(lmm_results, file.path(output_dir, "stat_ANI_LMM_global.tsv"))
 cat("  [OK] stat_ANI_LMM_global.tsv\n")
 
-# ---- 5. Figura: forest plots + scatter ----------------------
+# ---- 5. Figure: forest plots and scatter -------------------
 # Panel (a): depth delta per species
 # Panel (b): station delta per species
 # Panel (c): depth delta against station delta, to see whether they track each other
@@ -1606,11 +1613,11 @@ if (!is.null(res_depth) && !is.null(res_station)) {
                color = "gray50", linewidth = 0.55) +
     geom_point(size = 4.5, stroke = 0.5) +
     ggrepel::geom_label_repel(
-      aes(label = gsub("[*_]", "", sp_fmt)),  # richtext no soportado en ggrepel
+      aes(label = gsub("[*_]", "", sp_fmt)),  # ggrepel does not support richtext
       size = 3, fill = "white", label.size = 0.2,
       box.padding = 0.4, point.padding = 0.3,
       max.overlaps = 20, show.legend = FALSE,
-      fontface = "italic"   # toda la etiqueta en cursiva como aproximación
+      fontface = "italic"   # the whole label in italics, as an approximation
     ) +
     scale_color_manual(values = sig_colors_c,
                        name = "Significancia\n(FDR < 0.05)") +
@@ -1853,7 +1860,7 @@ save_fig(p_fig6, file.path(output_dir, "Fig6_ANI_MAGs_noveles.png"),
 )
 } # fin if (FALSE) — Fig6
 
-# ---- Resumen final ----
+# ---- Final summary ----
 cat("\n=== Resumen de resultados ===\n")
 cat("Directorio de salida:", output_dir, "\n\n")
 

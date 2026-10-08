@@ -7,7 +7,6 @@ authors:
   - family-names: Castañeda-Martínez
     given-names: Rubén
     orcid: "https://orcid.org/0000-0001-9272-7968"
-
     affiliation: >-
       Centro de Investigación Científica y de Educación Superior de Ensenada
       (CICESE)
@@ -17,9 +16,10 @@ license: MIT
 abstract: >-
   Pipeline and analysis code for 54 archaeal metagenome-assembled genomes from
   six stations and three depths in the deep Gulf of Mexico. Covers quality
-  assessment, GTDB taxonomic classification, functional annotation with DRAM2
-  and eggNOG-mapper, marker-based phylogenomics, ANI, chimerism screening, and
-  anvi'o pangenomics across the species with enough genomes to support it.
+  assessment and chimerism screening, GTDB taxonomic classification, functional
+  annotation with DRAM2 and eggNOG-mapper, marker-based phylogenomics, ANI, and
+  anvi'o pangenomics across the species with enough genomes to support it. The
+  MAGs come from the contig assembly and binning of Osorio Pando (2025).
 keywords:
   - archaea
   - metagenome-assembled genomes
@@ -29,3 +29,24 @@ keywords:
   - functional annotation
   - Poseidoniales
   - Nitrososphaerales
+references:
+  - type: thesis
+    title: >-
+      Estructura y función de las comunidades de bacterias y arqueas en las
+      zonas mesopelágica y batipelágica del golfo de México
+    authors:
+      - family-names: Osorio Pando
+        given-names: Lizt Selene Sibila
+    year: 2025
+    thesis-type: >-
+      Doctoral thesis, Doctorado en Ciencias en Ciencias de la Vida con
+      orientación en Microbiología
+    institution:
+      name: >-
+        Centro de Investigación Científica y de Educación Superior de Ensenada,
+        Baja California (CICESE)
+      city: Ensenada
+      country: MX
+    notes: >-
+      Contig assembly and binning of the MAGs analysed here, and the source of
+      the environmental tables in data/ (its Tablas 2 and 9).

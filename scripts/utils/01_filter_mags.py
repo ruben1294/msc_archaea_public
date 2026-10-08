@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy the MAGs that clear the MIMAG thresholds into 01_raw_files/filtered.
+"""Copy the MAGs that clear the MIMAG thresholds into results/01_mag_quality/filtered.
 
 Reads the CheckM2 quality_report.tsv from pipeline step 01 and sorts each MAG
 into one of three MIMAG bands:
@@ -10,9 +10,14 @@ into one of three MIMAG bands:
 
 Everything from step 02 onward reads the filtered directory, so this is what
 fixes the cohort. Of the 64 MAGs originally recovered, 54 clear the medium bar.
+Run utils/05_rename_mags.sh right after it, before step 02.
 
-Paths default to the project layout and can be overridden on the command line
-or through MSC_ARCHAEA_DIR.
+Paths follow the project layout: the input MAGs in data/mags and the results
+under results/, both relative to the repository root. PROJECT_DIR, MAGS_DIR and
+RESULTS_DIR from configs/server.env move them when the configuration is loaded,
+MSC_ARCHAEA_DIR moves the root, and every path can be given on the command line.
+The thresholds come from the same configuration, with the MIMAG values as the
+fallback.
 """
 
 import argparse
@@ -28,34 +33,50 @@ import pandas as pd
 # MIMAG bands (Bowers et al. 2017 Nat Biotechnol). Medium quality takes strictly
 # less than 10% contamination, which is why a MAG at 9.9% is kept and one at
 # exactly 10% is not.
-MIN_COMP_HIGH = 90
-MAX_CONT_HIGH = 5
-MIN_COMP_MEDIUM = 50
-MAX_CONT_MEDIUM = 10
+MIN_COMP_HIGH = float(os.environ.get("HIGH_QUALITY_COMPLETENESS", 90))
+MAX_CONT_HIGH = float(os.environ.get("HIGH_QUALITY_CONTAMINATION", 5))
+MIN_COMP_MEDIUM = float(os.environ.get("MIN_COMPLETENESS", 50))
+MAX_CONT_MEDIUM = float(os.environ.get("MAX_CONTAMINATION", 10))
+
+# scripts/utils/ sits two levels below the repository root.
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 logger = logging.getLogger("filter_mags")
 
 
 def parse_args():
-    default_base = Path(os.environ.get("MSC_ARCHAEA_DIR", Path.home() / "msc_archaea"))
-
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--base", type=Path, default=default_base,
-                        help="project root (default: $MSC_ARCHAEA_DIR or ~/msc_archaea)")
+    parser.add_argument("--base", type=Path,
+                        help="project root (default: $PROJECT_DIR, $MSC_ARCHAEA_DIR "
+                             "or the repository this script lives in)")
     parser.add_argument("--raw-dir", type=Path,
-                        help="directory holding the unfiltered MAGs")
+                        help="directory holding the unfiltered MAGs "
+                             "(default: <base>/data/mags)")
     parser.add_argument("--out-dir", type=Path,
-                        help="destination for the MAGs that pass")
+                        help="destination for the MAGs that pass "
+                             "(default: <base>/results/01_mag_quality/filtered)")
     parser.add_argument("--report", type=Path,
-                        help="CheckM2 quality_report.tsv")
+                        help="CheckM2 quality_report.tsv "
+                             "(default: <base>/results/01_mag_quality/quality_report.tsv)")
     parser.add_argument("--log-dir", type=Path,
-                        help="where to write the run log")
+                        help="where to write the run log (default: <base>/logs)")
 
     args = parser.parse_args()
-    args.raw_dir = args.raw_dir or args.base / "01_raw_files"
-    args.out_dir = args.out_dir or args.raw_dir / "filtered"
-    args.report = args.report or args.base / "02_mags_quality" / "quality_report.tsv"
-    args.log_dir = args.log_dir or args.base / "logs"
+    if args.base is not None:
+        # An explicit root wins over the configuration.
+        results = args.base / "results"
+        mags = args.base / "data" / "mags"
+    else:
+        args.base = Path(os.environ.get("PROJECT_DIR")
+                         or os.environ.get("MSC_ARCHAEA_DIR")
+                         or REPO_ROOT)
+        results = Path(os.environ.get("RESULTS_DIR") or args.base / "results")
+        mags = Path(os.environ.get("MAGS_DIR") or args.base / "data" / "mags")
+    quality_dir = results / os.environ.get("QUALITY_SUBDIR", "01_mag_quality")
+    args.raw_dir = args.raw_dir or mags
+    args.out_dir = args.out_dir or results / os.environ.get("FILTERED_SUBDIR", "01_mag_quality/filtered")
+    args.report = args.report or quality_dir / "quality_report.tsv"
+    args.log_dir = args.log_dir or args.base / os.environ.get("LOGS_SUBDIR", "logs")
     return args
 
 

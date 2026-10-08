@@ -1,4 +1,4 @@
-# Step 04. eggNOG-mapper annotates the Prodigal proteins.
+# Step 06. eggNOG-mapper annotates the Prodigal proteins of step 05.
 #
 # The eggNOG data directory is downloaded separately with download_eggnog_data.py
 # and its path goes into EGGNOG_DATA_DIR in configs/server.env.
@@ -9,6 +9,6 @@ channels:
   - defaults
 dependencies:
   - python=3.9
-  - eggnog-mapper=2.1.13
+  - eggnog-mapper=2.1.12
   - diamond
   - hmmer

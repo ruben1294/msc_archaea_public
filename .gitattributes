@@ -1,0 +1,11 @@
+# Store text with LF line endings whatever platform commits it. The metadata
+# table once arrived from Windows with CRLF, which the shell scripts that read
+# it do not expect.
+* text=auto eol=lf
+
+# Binary formats, never converted
+*.xlsx binary
+*.png  binary
+*.pdf  binary
+*.gz   binary
+*.zip  binary

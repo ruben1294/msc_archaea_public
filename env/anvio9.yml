@@ -1,3 +1,17 @@
+# Steps 20 to 26. anvi'o 9 builds, annotates and summarises the
+# pangenomes.
+#
+# conda provides the dependencies only. anvi'o itself installs from its release
+# tarball, as its installation guide describes:
+#
+#   conda env create -f env/anvio9.yml
+#   conda activate anvio-9
+#   curl -L https://github.com/merenlab/anvio/releases/download/v9/anvio-9.tar.gz \
+#       --output anvio-9.tar.gz
+#   pip install anvio-9.tar.gz
+#
+# anvi'o 9 requires Python 3.10. After the install, scripts/utils/setup_anvio9.sh
+# downloads the COG, KEGG and Pfam data that steps 20 and 21 use.
 name: anvio-9
 channels:
   - conda-forge
@@ -5,7 +19,7 @@ channels:
   - defaults
 
 dependencies:
-  - python=3.9
+  - python=3.10
 
   - sqlite=3.46
   - gcc
@@ -42,9 +56,6 @@ dependencies:
   - meme
   - ghostscript
   - nodejs=20.12.2
-
-#  - llvmlite
-#  - numba
 
   - pip
   - setuptools<70

@@ -6,18 +6,21 @@
 
 cran <- c(
   # data handling
-  "dplyr", "tidyr", "tibble", "readr", "readxl", "openxlsx", "reshape2",
-  "stringr", "rlang", "xfun", "pacman",
+  "tidyverse", "dplyr", "tidyr", "tibble", "readr", "readxl", "openxlsx",
+  "reshape2", "stringr", "rlang", "xfun", "pacman", "devtools",
 
   # figures
   "ggplot2", "ggtext", "ggalluvial", "patchwork", "scales", "RColorBrewer",
   "pheatmap", "circlize", "showtext", "sysfonts", "gridtext", "magick",
+  "ggrepel", "ggbeeswarm", "ggpubr", "ggthemes", "viridis", "corrplot",
+  "svglite",
 
-  # tables for the thesis appendix
+  # tables for the thesis appendix; webshot2 lets flextable save images
   "flextable", "officer", "webshot2",
 
   # statistics
-  "vegan", "lme4", "ape", "micropan",
+  "vegan", "lme4", "ape", "phangorn", "dendextend", "micropan", "broom",
+  "rstatix",
 
   # the DeepL client used for the Spanish figure labels
   "deeplr"

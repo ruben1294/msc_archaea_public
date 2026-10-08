@@ -8,10 +8,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 load_project_config
+require_vars RESULTS_DIR GENE_PREDICTION_SUBDIR
 
 # Configuration
-INPUT_DIR="${1:-${PROJECT_DIR}/${GENE_PREDICTION_SUBDIR}}"
-INPUT_FILE="$INPUT_DIR/CMRA_all_proteins_final.faa"  # Cambia al nombre de tu archivo
+INPUT_DIR="${1:-${RESULTS_DIR}/${GENE_PREDICTION_SUBDIR}}"
+INPUT_FILE="$INPUT_DIR/CMRA_all_proteins_final.faa"  # change to your file name
 OUTPUT_FILE="$INPUT_DIR/header_counts.txt"
 DUPLICATES_FILE="$INPUT_DIR/duplicate_headers.txt"
 

@@ -1,159 +1,62 @@
-#!/bin/bash
-set -e
-set -u
+#!/usr/bin/env bash
+set -euo pipefail
 
-export DRAM2_UUID="97ed64b9-dea0-4eb5-a7e0-0b50ac94e889"
-export CICESE_HPC_UUID="262feade-f044-11f0-9f57-0affd850fd3b"
-# Override DRAM2_DB_DIR to put the databases somewhere else. They are large.
-export DRAM2_dbs="${DRAM2_DB_DIR:-${PROJECT_DIR}/databases/DRAM2}"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Timestamped log file
-LOG_FILE="DRAM2_download_$(date +%Y%m%d_%H%M%S).log"
-SUMMARY_FILE="DRAM2_download_summary_$(date +%Y%m%d_%H%M%S).txt"
+# Requests the DRAM2 databases that step 10 uses from the public DRAM2 Globus
+# collection into DRAM2_DB_DIR on your own Globus endpoint. Needs the Globus CLI,
+# logged in (globus login), and the UUID of the destination collection:
+#
+#   export GLOBUS_DEST_UUID=<your collection UUID>
+#   bash scripts/utils/DRAM2_HPC_download_dbs.sh
+#
+# globus transfer only submits a task, which then runs on Globus's side, so a
+# successful run here means every transfer was accepted, not that it finished.
+# Follow them with `globus task list` and `globus task show <TASK_ID>`.
+#
+# KEGG is not among them: it is licensed, and the thesis used a licensed copy
+# (see "KEGG licensing" in README.md). Without one, set use_kegg to false in the
+# DRAM2 configuration.
+#
+# DRAM2_SOURCE_UUID overrides the source collection, in case the DRAM2 team
+# moves it.
 
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
+load_project_config
+require_vars DRAM2_DB_DIR GLOBUS_DEST_UUID
+require_commands globus
 
-# Iniciar log
-log "=== Iniciando descarga de bases de datos DRAM2 ==="
-log "DRAM2_UUID: $DRAM2_UUID"
-log "CICESE_HPC_UUID: $CICESE_HPC_UUID"
-log "Directorio destino: $DRAM2_dbs"
-log ""
+DRAM2_SOURCE_UUID="${DRAM2_SOURCE_UUID:-97ed64b9-dea0-4eb5-a7e0-0b50ac94e889}"
+DATABASES=(db_descriptions camper dbcan fegenie kofam metals methyl pfam sulfur uniref)
 
-# Per-database outcome, reported at the end
-declare -a DATABASES=("db_descriptions" "camper" "dbcan" "fegenie" "kofam" "metals" "methyl" "pfam" "sulfur" "uniref")
-declare -a SUCCESS=()
-declare -a FAILED=()
+LOG_DIR="${PROJECT_DIR}/${LOGS_SUBDIR:-logs}"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${LOG_DIR}/DRAM2_download_$(date +%Y%m%d_%H%M%S).log"
 
-transfer_db() {
-    local db_name=$1
-    log "----------------------------------------"
-    log "Iniciando transferencia: $db_name"
-    
-    if globus transfer \
-        "$DRAM2_UUID:/databases/$db_name/" \
-        "$CICESE_HPC_UUID:$DRAM2_dbs/$db_name/" \
-        --recursive \
-        --label "DRAM2_${db_name}_$(date +%Y%m%d)" 2>&1 | tee -a "$LOG_FILE"; then
-        
-        log "[OK] Transferencia enviada exitosamente: $db_name"
-        SUCCESS+=("$db_name")
-    else
-        log "[FAIL] transfer of $db_name failed"
-        FAILED+=("$db_name")
-    fi
-    log ""
-}
+log_info "DRAM2 databases: ${DRAM2_SOURCE_UUID} -> ${GLOBUS_DEST_UUID}:${DRAM2_DB_DIR}" | tee -a "$LOG_FILE"
 
-# Transferir cada base de datos
+SUBMITTED=()
+FAILED=()
+
 for db in "${DATABASES[@]}"; do
-    transfer_db "$db"
+    log_info "Submitting transfer: $db" | tee -a "$LOG_FILE"
+    # pipefail makes the if test globus's exit status, not tee's.
+    if globus transfer \
+        "${DRAM2_SOURCE_UUID}:/databases/${db}/" \
+        "${GLOBUS_DEST_UUID}:${DRAM2_DB_DIR}/${db}/" \
+        --recursive \
+        --label "DRAM2_${db}_$(date +%Y%m%d)" 2>&1 | tee -a "$LOG_FILE"; then
+        SUBMITTED+=("$db")
+    else
+        log_error "Transfer of $db was not accepted" 2>&1 | tee -a "$LOG_FILE"
+        FAILED+=("$db")
+    fi
 done
 
-# Generar resumen
-log "=== RESUMEN DE TRANSFERENCIAS ==="
-log "Total de bases de datos: ${#DATABASES[@]}"
-log "Transferencias exitosas: ${#SUCCESS[@]}"
-log "Transferencias fallidas: ${#FAILED[@]}"
-log ""
-
-# What succeeded
-if [ ${#SUCCESS[@]} -gt 0 ]; then
-    log "Bases de datos transferidas exitosamente:"
-    for db in "${SUCCESS[@]}"; do
-        log "  [OK] $db"
-    done
-    log ""
+log_info "Submitted ${#SUBMITTED[@]} of ${#DATABASES[@]}: ${SUBMITTED[*]:-none}" | tee -a "$LOG_FILE"
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+    log_error "Not accepted: ${FAILED[*]}" 2>&1 | tee -a "$LOG_FILE"
 fi
+log_info "Follow the transfers with: globus task list" | tee -a "$LOG_FILE"
+log_info "Log: $LOG_FILE"
 
-# What failed
-if [ ${#FAILED[@]} -gt 0 ]; then
-    log "Bases de datos que fallaron:"
-    for db in "${FAILED[@]}"; do
-        log "  [FAIL] $db"
-    done
-    log ""
-    log "[WARN] some transfers failed; see the log for detail."
-else
-    log "Todas las transferencias fueron enviadas exitosamente."
-fi
-
-log ""
-log "Para monitorear el progreso de las transferencias, ejecuta:"
-log "  globus task list"
-log ""
-log "To inspect one transfer:"
-log "  globus task show <TASK_ID>"
-log ""
-log "Archivo de log guardado en: $LOG_FILE"
-
-# Human-readable summary alongside the log
-cat > "$SUMMARY_FILE" << EOF
-=================================================
-RESUMEN DE DESCARGA DE BASES DE DATOS DRAM2
-=================================================
-Fecha: $(date '+%Y-%m-%d %H:%M:%S')
-Directorio destino: $DRAM2_dbs
-
-ESTADÍSTICAS:
--------------
-Total de bases de datos: ${#DATABASES[@]}
-Transferencias exitosas: ${#SUCCESS[@]}
-Transferencias fallidas: ${#FAILED[@]}
-
-BASES DE DATOS EXITOSAS:
--------------------------
-EOF
-
-if [ ${#SUCCESS[@]} -gt 0 ]; then
-    for db in "${SUCCESS[@]}"; do
-        echo "[OK] $db" >> "$SUMMARY_FILE"
-    done
-else
-    echo "(ninguna)" >> "$SUMMARY_FILE"
-fi
-
-cat >> "$SUMMARY_FILE" << EOF
-
-BASES DE DATOS FALLIDAS:
-------------------------
-EOF
-
-if [ ${#FAILED[@]} -gt 0 ]; then
-    for db in "${FAILED[@]}"; do
-        echo "[FAIL] $db" >> "$SUMMARY_FILE"
-    done
-else
-    echo "(ninguna)" >> "$SUMMARY_FILE"
-fi
-
-cat >> "$SUMMARY_FILE" << EOF
-
-COMANDOS ÚTILES:
-----------------
-Monitorear todas las transferencias:
-  globus task list
-
-Ver detalles de una transferencia:
-  globus task show <TASK_ID>
-
-Cancelar una transferencia:
-  globus task cancel <TASK_ID>
-
-=================================================
-EOF
-
-log "Resumen guardado en: $SUMMARY_FILE"
-
-# Mostrar resumen en consola
-echo ""
-cat "$SUMMARY_FILE"
-
-# Exit non-zero if any database failed to download
-if [ ${#FAILED[@]} -gt 0 ]; then
-    exit 1
-else
-    exit 0
-fi
+[[ ${#FAILED[@]} -eq 0 ]]

@@ -7,33 +7,40 @@
 # Created: 2026-03-23
 # Version: 1.0
 
-### Para correr en RStudio: usa Source o Ctrl+Shift +Enter.
+### To run in RStudio: use Source, or Ctrl+Shift+Enter.
 ###
 # To run from the terminal:
-# Rscript scripts/analysis/tax_analysis.R
+# Rscript scripts/R/tax_analysis.R
 
 # ---- project root ----
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
 PROJECT_ROOT <- resolve_project_dir()
 
-# === Rutas de entrada/salida ===
+# === Input and output paths ===
 input_gtdb_summary <- file.path(PROJECT_ROOT, "results/03_taxonomy_assigned/classify/tax_.ar53.summary.tsv")
-input_metadata <- file.path(PROJECT_ROOT, "MAGs_metadata.tsv")
+input_metadata <- file.path(PROJECT_ROOT, "data", "MAGs_metadata.tsv")
 output_dir <- file.path(PROJECT_ROOT, "results/SO_01/tax")
 
 # ---- packages ----
@@ -74,19 +81,19 @@ if (requireNamespace("ggplot2", quietly = TRUE) && packageVersion("ggplot2") < "
 }
 
 required_packages <- c(
-  "ggplot2", # Debe cargarse actualizado antes que patchwork
-  "tidyverse", # Manipulación y visualización de datos
-  "patchwork", # Combinar plots
-  "scales", # Escalas para visualización
-  "ggrepel", # Mejor posicionamiento de texto
-  "RColorBrewer", # Paletas de color
-  "ggtext", # Texto enriquecido (markdown/HTML) en ggplot2
+  "ggplot2", # must load, up to date, before patchwork
+  "tidyverse", # data handling and plotting
+  "patchwork", # combining plots
+  "scales", # plot scales
+  "ggrepel", # better text placement
+  "RColorBrewer", # colour palettes
+  "ggtext", # rich text (markdown/HTML) in ggplot2
   "ComplexHeatmap", # Mapas de calor (estilo DRAM2)
-  "circlize", # colorRamp2 para escalas de color en heatmaps
-  "grid", # Gráficos de cuadrícula (requerido por ComplexHeatmap)
-  "readxl", # Lectura de archivos Excel (metabolism_summary.xlsx)
-  "showtext", # Soporte para fuentes personalizadas
-  "sysfonts" # Detección de fuentes del sistema
+  "circlize", # colorRamp2 for heatmap colour scales
+  "grid", # grid graphics (needed by ComplexHeatmap)
+  "readxl", # reading Excel files (metabolism_summary.xlsx)
+  "showtext", # custom font support
+  "sysfonts" # system font detection
 )
 
 for (pkg in required_packages) {
@@ -131,7 +138,7 @@ font_priority <- c(
   "Helvetica", "Helvetica Neue"
 )
 
-# Cargar fuentes locales directamente (prioridad: Lato > Source Sans 3)
+# Load local fonts directly (priority: Lato, then Source Sans 3)
 font_found <- FALSE
 local_font_dir <- path.expand("~/.local/share/fonts")
 local_direct <- list(
@@ -327,10 +334,17 @@ tax_parsed <- gtdb_raw %>%
   mutate(parse_gtdb_taxonomy(classification)) %>%
   ungroup()
 
-# Align MAG names: GTDB uses underscores (A4_1000_megahit_bin.28),
-# metadata OriginalName also uses underscores. Join on that key.
+# Align MAG names. GTDB-Tk reports the names it was given: the original
+# underscores (A4_1000_megahit_bin.28) in the thesis run, dots when it runs after
+# utils/05_rename_mags.sh as the pipeline now has it. Either form maps onto the
+# metadata OriginalName through NameWithoutExtension, and the join uses that.
 df <- tax_parsed %>%
   rename(OriginalName = user_genome) %>%
+  mutate(OriginalName = coalesce(
+    meta_raw$OriginalName[match(gsub("_", ".", OriginalName, fixed = TRUE),
+                                meta_raw$NameWithoutExtension)],
+    OriginalName
+  )) %>%
   left_join(
     meta_raw %>% select(OriginalName, NameWithoutExtension, Station, Depth),
     by = "OriginalName"
@@ -761,10 +775,10 @@ for (tl in taxon_levels) {
   if (prefix == "especie") p_panel_c <- pD
 }
 
-# === SECTION 1c: Panel combinado filo / orden / especie ===
-# a (arriba-izq): Fig1C_barras_filo_estacion_x_profundidad
-# b (arriba-der): Fig1C_barras_orden_estacion_x_profundidad
-# c (abajo, full-width): Fig1D_barras_especie_profundidad_x_estacion
+# === SECTION 1c: combined phylum / order / species panel ===
+# a (top left): Fig1C_barras_filo_estacion_x_profundidad
+# b (top right): Fig1C_barras_orden_estacion_x_profundidad
+# c (bottom, full width): Fig1D_barras_especie_profundidad_x_estacion
 cat("\n=== Sección 1c: Panel combinado filo/orden/especie ===\n")
 
 {
@@ -1082,8 +1096,8 @@ make_excl_station_df <- function(df_in, taxon_col, n_total_stations = 6) {
 df_excl_genero <- make_excl_station_df(df, "Genus")
 
 # ---- section 9b: station exclusivity at phylum, class, order and family ----
-# Extending the exclusivity analysis above the genus rank
-# superiores permite evaluar si linajes completos (filos, clases) tienen
+# Extending the exclusivity analysis above the genus rank tests whether whole
+# lineages (phyla, classes) have restricted or cosmopolitan distributions, which
 # separates restricted from cosmopolitan distributions, which is what
 # environmental gradients and water-mass connectivity act on.
 cat("\n=== Sección 9b: Exclusividad por estación (Filo, Clase, Orden, Familia) ===\n")
@@ -1143,9 +1157,9 @@ cat("========================================\n\n")
 # ---- ---- quality and taxonomy table for the unassigned MAGs ----
 cat("=== GENERANDO TABLA DE CALIDAD/TAXONOMÍA (MAGs sin especie) ===\n")
 
-quality_report_file <- file.path(PROJECT_ROOT, "results/02_mags_quality/20251222_valentin_quality_report.tsv")
-genome_stats_file <- file.path(PROJECT_ROOT, "results/08_MAG_distill/SUMMARIZE/genome_stats.tsv")
-metabolism_file <- file.path(PROJECT_ROOT, "results/08_MAG_distill/SUMMARIZE/metabolism_summary.xlsx")
+quality_report_file <- file.path(PROJECT_ROOT, "results/01_mag_quality/quality_report.tsv")
+genome_stats_file <- file.path(PROJECT_ROOT, "results/10_MAG_distill/SUMMARIZE/genome_stats.tsv")
+metabolism_file <- file.path(PROJECT_ROOT, "results/10_MAG_distill/SUMMARIZE/metabolism_summary.xlsx")
 
 mags_no_species <- df %>%
   filter(Novel_Species) %>%
@@ -1159,10 +1173,10 @@ if (length(mags_no_species) == 0) {
   tryCatch(
     {
       # ---- 1. completeness and contamination, from the quality report ----
-      meta_orig <- meta_raw %>% select(NameWithoutExtension, OriginalName)
-
+      # Dotted names after utils/05_rename_mags.sh, underscores before it;
+      # both reduce to NameWithoutExtension.
       qual_df <- read_tsv(quality_report_file, show_col_types = FALSE) %>%
-        inner_join(meta_orig, by = c("Name" = "OriginalName")) %>%
+        mutate(NameWithoutExtension = gsub("_", ".", Name, fixed = TRUE)) %>%
         filter(NameWithoutExtension %in% mags_no_species) %>%
         select(
           genome            = NameWithoutExtension,
@@ -1228,9 +1242,7 @@ if (length(mags_no_species) == 0) {
             suppressWarnings(as.numeric(genome_af))
           )
         ) %>%
-        left_join(meta_raw %>% select(NameWithoutExtension, OriginalName),
-          by = c("orig_name" = "OriginalName")
-        ) %>%
+        mutate(NameWithoutExtension = gsub("_", ".", orig_name, fixed = TRUE)) %>%
         filter(NameWithoutExtension %in% mags_no_species) %>%
         select(genome = NameWithoutExtension, closest_ani, closest_af, msa_pct, red_value)
 
@@ -1240,7 +1252,7 @@ if (length(mags_no_species) == 0) {
         meta_raw %>% filter(NameWithoutExtension %in% mags_no_species) %>% pull(NameWithoutExtension)
       )
 
-      # --- 6. Ensamblar tabla ---
+      # --- 6. Assemble the table ---
       tabla_10 <- tibble(genome = mags_no_species) %>%
         mutate(`Nombre MAG` = as.character(display_map[genome])) %>%
         left_join(qual_df, by = "genome") %>%
@@ -1269,7 +1281,7 @@ if (length(mags_no_species) == 0) {
       writeBin(c(as.raw(c(0xEF, 0xBB, 0xBF)), raw_content), tsv_path)
       cat("  [OK] tabla_calidad_10MAGs.tsv guardada\n")
 
-      # --- 8. Guardar .png (flextable booktabs) ---
+      # --- 8. Save the .png (flextable booktabs) ---
       if (requireNamespace("flextable", quietly = TRUE) &&
         requireNamespace("officer", quietly = TRUE)) {
         library(flextable)
@@ -1342,8 +1354,8 @@ if (length(mags_no_species) == 0) {
 #   11   heatmap, ANI between the 10 novel MAGs and the whole collection
 cat("\n=== Sección 10: Análisis skani – novedad taxonómica cuantitativa ===\n")
 
-skani_gtdb_file <- file.path(PROJECT_ROOT, "results/16_sketching_ani/gtdb_search/novel10_vs_gtdb.tsv")
-skani_sparse_file <- file.path(PROJECT_ROOT, "results/16_sketching_ani/all_mags/ani_triangle_sparse.tsv")
+skani_gtdb_file <- file.path(PROJECT_ROOT, "results/04_sketching_ani/gtdb_search/novel10_vs_gtdb.tsv")
+skani_sparse_file <- file.path(PROJECT_ROOT, "results/04_sketching_ani/all_mags/ani_triangle_sparse.tsv")
 
 if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   cat("[WARN] Archivos skani no encontrados – omitiendo Sección 10\n")
@@ -1587,7 +1599,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # Fig 10B: scatter of ANI against AF_query, every GTDB hit above 5% AF.
   # The cloud is each novel MAG's signature in GTDB reference space. High AF
   # with high ANI marks a genuine relative; very low AF with high ANI
-  # indican alineamiento en genes conservados (falsos positivos). El cuadrante
+  # points to alignment on conserved genes only (false positives). The
   # top left quadrant (AF >= 50%, ANI < 95%) is confirmed new species; the
   # bottom band (AF < 50%) is a taxon GTDB R226 does not represent well.
   skani_hits_filt <- skani_gtdb %>%
@@ -1604,21 +1616,21 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # Biologically justified quadrant shading:
   #   AF >= 50% and ANI < 95%: new species in a known genus. The alignment
   #     genuinely covers over half the genome, but identity falls short.
-  #   AF < 50%               to alineamiento fragmentario en genes conservados:
+  #   AF < 50%: fragmentary alignment on conserved genes,
   #     only shared housekeeping regions, which is not evidence of kinship at
   #     species or genus level.
   # NOT shaded (not biologically forced):
   #   AF >= 50% and ANI >= 95%: GTDB-Tk left these MAGs without a species, so
   #     a skani hit in this corner is most likely a partial-coverage artefact.
   #     It is not labelled here.
-  #   AF < 50% + ANI ≥ 95%: alineamiento de alta identidad pero bajo cubrimiento
+  #   AF < 50% and ANI >= 95%: high-identity alignment with low coverage, which
   #     may reflect shared genomic islands. The reading is genuinely ambiguous,
   #     and assigning it a colour would claim more than the data supports.
   p10b <- ggplot(
     skani_hits_filt,
     aes(x = ANI, y = AF_query, fill = DisplayName)
   ) +
-    # Zone 1: nueva especie confirmada (AF ≥ 50%, ANI < 95%)
+    # Zone 1: confirmed new species (AF >= 50%, ANI < 95%)
     annotate("rect",
       xmin = 79, xmax = 95, ymin = 50, ymax = 100,
       fill = "#AED6F1", alpha = 0.35
@@ -1687,7 +1699,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # Fig 11: ANI heatmap, novel MAGs against the whole collection.
   # The all-vs-all comparison inside the collection shows whether the novel
   # MAGs are geographically spread populations of one species (same
-  # especie en distintas estaciones/profundidades, ANI ≥ 95%, AF ≥ 50%) o
+  # species at different stations or depths, ANI >= 95%, AF >= 50%)
   # or separate lineages. That distinction is what the biogeography argument
   # rests on: hydrological connectivity between stations against niche
   # specificity by depth.
@@ -1927,7 +1939,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   cat("[OK] Sección 10 completada\n\n")
 }
 
-if (FALSE) { # Sección 12 desactivada
+if (FALSE) { # section 12 disabled
 
   cat("\n=== Sección 12: Parámetros filogenómicos GTDB-Tk ===\n")
 
@@ -2158,7 +2170,7 @@ if (FALSE) { # Sección 12 desactivada
   } else {
     cat("  [WARN] Insuficientes datos para Fig12D – omitiendo\n")
   }
-} # fin if (FALSE) – Sección 12
+} # end of if (FALSE), section 12
 
 # ---- section 13: Sankey, taxonomic flow from phylum to species ----
 # The alluvial diagram shows the 54 MAGs separating as the hierarchy descends.
@@ -2233,7 +2245,7 @@ df_sankey_wide <- df_sankey_wide %>%
 df_sankey_wide <- df_sankey_wide %>%
   mutate(Genero = factor(Genero, levels = order_by_parent(., "Familia", "Genero")))
 
-# Especie: simple ascending-count order — order_by_parent() here would place
+# Species: simple ascending-count order — order_by_parent() here would place
 # "Sin especie asignada" at the first genus that uses it, leaving the other
 # genera with non-contiguous species positions and visible gaps in their bars.
 df_sankey_wide <- df_sankey_wide %>%
@@ -2370,7 +2382,7 @@ p_sankey <- ggplot(
 
 save_fig(p_sankey, "Fig13_sankey_taxonomico_filo_especie.png", width = 17, height = 11)
 
-# === SECTION 1c (v2): Panel combinado sankey / orden / especie ===
+# === SECTION 1c (v2): combined sankey / order / species panel ===
 # A variant of Fig1_panel_filo_orden_especie where subpanel (a) carries the
 # Sankey instead of the stacked phylum bars. Subpanels (b) and (c) are reused
 # unchanged from the original panel. It is assembled here rather than in section
@@ -2381,12 +2393,12 @@ cat("\n=== Sección 1c (v2): Panel sankey + orden + especie ===\n")
 
 {
   n_depths_panel <- length(unique(df_bar$Depth_label))
-  h_top <- 4 + n_depths_panel * 2 # alto natural de pC (orden)
-  h_bot <- 6 # alto natural de pD (especie)
+  h_top <- 4 + n_depths_panel * 2 # natural height of pC (order)
+  h_bot <- 6 # natural height of pD (species)
 
   n_stations_panel <- length(unique(df_bar$Station))
-  w_c_natural <- 4.5 + n_stations_panel * 1.9 # ancho natural de pD (especie)
-  w_panel_v2 <- max(w_c_natural, 17) # >= ancho natural del sankey
+  w_c_natural <- 4.5 + n_stations_panel * 1.9 # natural width of pD (species)
+  w_panel_v2 <- max(w_c_natural, 17) # at least the natural width of the sankey
 
   # The Sankey takes about 63% of the top row, 17 against 10, which is its
   # natural proportion beside the order bars. Give it less and patchwork

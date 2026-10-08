@@ -29,8 +29,9 @@ Based on Parks et al. (2022) GTDB r207 and Chaumeil et al. (2022) GTDB-Tk v2:
     RS_GCF_000025685.1), a well-characterised phylum used routinely as
     outgroup for Thermoplasmatota/Thermoproteota trees.
 
-Usage (run inside the gtdbtk-2.6.1 conda environment):
-  python3 scripts/analysis/curate_tree_and_itol.py [--project-dir PATH]
+Usage, in the gtdbtk conda environment of env/gtdbtk.yml, which provides
+FastTree:
+  python3 scripts/pipeline/curate_tree_and_itol.py [--project-dir PATH]
 
 Output tree:  results/SO_02/phylogenomics/curated_54mags.fasttree.nwk
 iTOL files:   results/SO_02/phylogenomics/itol_annotations/
@@ -48,14 +49,15 @@ import re
 import subprocess
 import sys
 
-# SELF-BOOTSTRAP: re-exec inside the gtdbtk-2.6.1 conda env if needed.
-# This lets the script run directly from VS Code (any Python interpreter)
-# without manually activating the environment first.
-_CONDA_ENV = "gtdbtk-2.6.1"
+# SELF-BOOTSTRAP: re-exec inside the conda env that provides FastTree, so the
+# script also runs from an editor's own Python interpreter. CURATE_CONDA_ENV
+# names the environment; nothing happens when FastTree is already on PATH.
+_CONDA_ENV = os.environ.get("CURATE_CONDA_ENV", "gtdbtk")
 
 
 def _ensure_conda_env() -> None:
-    if os.environ.get("CONDA_DEFAULT_ENV") == _CONDA_ENV:
+    import shutil
+    if os.environ.get("CONDA_DEFAULT_ENV") == _CONDA_ENV or shutil.which("FastTree"):
         return
     conda_exe = os.environ.get("CONDA_EXE") or ""
     if not conda_exe:
@@ -87,24 +89,26 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# PATHS (resolved relative to --project-dir)
-DEFAULT_PROJECT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
-)
+# PATHS (results resolved relative to --project-dir; the metadata table is part
+# of the repository and always read from it)
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DEFAULT_PROJECT_DIR = (os.environ.get("PROJECT_DIR")
+                       or os.environ.get("MSC_ARCHAEA_DIR")
+                       or REPO_ROOT)
 
 
 def build_paths(project_dir: str) -> dict:
     r = project_dir
     return {
-        "de_novo_tree":    os.path.join(r, "results", "09_de_novo_tree"),
-        "msa_full_gz":     os.path.join(r, "results", "09_de_novo_tree", "align",
+        "de_novo_tree":    os.path.join(r, "results", "11_de_novo_tree"),
+        "msa_full_gz":     os.path.join(r, "results", "11_de_novo_tree", "align",
                                         "54_archaea.ar53.msa.fasta.gz"),
         "taxonomy_tsv":    os.path.join(r, "results", "03_taxonomy_assigned",
                                         "tax_.ar53.summary.tsv"),
-        "metadata_tsv":    os.path.join(r, "MAGs_metadata.tsv"),
-        "quality_tsv":     os.path.join(r, "results", "02_mags_quality",
-                                        "20251222_valentin_quality_report.tsv"),
-        "product_tsv":     os.path.join(r, "results", "08_MAG_distill",
+        "metadata_tsv":    os.path.join(REPO_ROOT, "data", "MAGs_metadata.tsv"),
+        "quality_tsv":     os.path.join(r, "results", "01_mag_quality",
+                                        "quality_report.tsv"),
+        "product_tsv":     os.path.join(r, "results", "10_MAG_distill",
                                         "VISUALIZE", "product.tsv"),
         "output_dir":      os.path.join(r, "results", "SO_02", "phylogenomics"),
         "itol_dir":        os.path.join(r, "results", "SO_02", "phylogenomics",

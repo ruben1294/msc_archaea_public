@@ -36,18 +36,36 @@ suppressPackageStartupMessages({
 # Null-coalescing operator, defined up front because it is used early
 `%||%` <- function(a, b) if (is.null(a) || (length(a) == 1 && is.na(a))) b else a
 
-# --- Rutas --------------------------------------------------------------------
-PROJECT_DIR <- resolve_project_dir()
-PAN_DIR     <- file.path(PROJECT_DIR, "results", "14_pangenome")
+# --- Paths --------------------------------------------------------------------
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
+PAN_DIR     <- file.path(PROJECT_DIR, "results", "20_pangenome")
 PAN_WORK    <- file.path(PAN_DIR, "pangenome")
 SO_03_DIR   <- file.path(PROJECT_DIR, "results", "SO_03")
 DERIVED_DIR <- file.path(SO_03_DIR, "derived")
 CLASS_DIR   <- file.path(SO_03_DIR, "classification")
 OUTPUT_DIR  <- file.path(SO_03_DIR, "origin_drivers")
-ENV_XLSX    <- file.path(PROJECT_DIR, "Physicochemical_properties.xlsx")
-ANI_TRI     <- file.path(PROJECT_DIR, "results", "16_sketching_ani",
+ENV_XLSX    <- file.path(PROJECT_DIR, "data", "Physicochemical_properties.xlsx")
+ANI_TRI     <- file.path(PROJECT_DIR, "results", "04_sketching_ani",
                          "all_mags", "ani_triangle_full.tsv")
-META_TSV    <- file.path(PROJECT_DIR, "MAGs_metadata.tsv")
+META_TSV    <- file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
 
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
@@ -95,7 +113,7 @@ adapt_regex <- paste0(
   "cytochrome.c.oxidase|cbb3|aa3"
 )
 
-# --- Cargar metadata + env ----------------------------------------------------
+# --- Load metadata and environmental data -------------------------------------
 meta <- read_tsv(META_TSV, show_col_types = FALSE) %>%
   mutate(genome = sanitize(NameWithoutExtension)) %>%
   select(genome, NameWithoutExtension, Station, Depth)
@@ -119,7 +137,7 @@ env_full <- meta %>%
   left_join(env_station, by = c("Station", "Depth")) %>%
   left_join(env_depth,   by = "Depth")
 
-# --- Cargar ANI triangle (skani full) -----------------------------------------
+# --- Load the ANI triangle (skani, full) --------------------------------------
 ani_long <- NULL
 if (file.exists(ANI_TRI)) {
   ani_lines <- readLines(ANI_TRI)
@@ -476,7 +494,7 @@ for (sp_name in canonical_species) {
     panel_volcano_pr[[sp_name]] <- fig_volc
   }
 
-  # --- E) Tabla integrada de candidatos -------------------------------------
+  # --- E) Combined table of candidates --------------------------------------
   fisher_dep_file <- file.path(SO_03_DIR, "stats_categorical",
                                paste0("fisher_GCxDepth_", sp_name, ".tsv"))
   fisher_dep <- if (file.exists(fisher_dep_file)) {

@@ -1,4 +1,4 @@
-# Turns the anvi-summarize output from pipeline step 23 into the flat tables the
+# Turns the anvi-summarize output from pipeline step 22 into the flat tables the
 # rest of the pangenome analysis reads. One set per species:
 #
 #   {Sp}_GCxMAG_binary.tsv   gene cluster by MAG, presence and absence
@@ -18,26 +18,33 @@ suppressPackageStartupMessages({
   library(stringr)
 })
 
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
-PAN_DIR     <- file.path(PROJECT_DIR, "results", "14_pangenome")
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
+PAN_DIR     <- file.path(PROJECT_DIR, "results", "20_pangenome")
 PAN_WORK    <- file.path(PAN_DIR, "pangenome")
 SO_03_DIR   <- file.path(PROJECT_DIR, "results", "SO_03")
 DERIVED_DIR <- file.path(SO_03_DIR, "derived")
-META_TSV    <- file.path(PROJECT_DIR, "MAGs_metadata.tsv")
+META_TSV    <- file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
 
 dir.create(DERIVED_DIR, showWarnings = FALSE, recursive = TRUE)
 
@@ -54,7 +61,7 @@ log_warn  <- function(...) cat(sprintf("[%s] [WARN] %s\n",
                                        format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
                                        paste0(...)), file = stderr())
 
-# Must match what pipeline steps 14 and 24 do to MAG names: every character
+# Must match what pipeline steps 20 and 23 do to MAG names: every character
 # outside [a-zA-Z0-9_] becomes an underscore. Diverge here and the join against
 # the pangenome silently matches nothing.
 sanitize_genome_name <- function(x) {

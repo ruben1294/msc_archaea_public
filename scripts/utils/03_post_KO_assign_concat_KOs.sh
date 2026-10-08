@@ -10,6 +10,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 load_project_config
+require_vars RESULTS_DIR KO_ASSIGNMENT_SUBDIR
 
 # ---- Configuration ----
 
@@ -17,7 +18,7 @@ load_project_config
 # recent one is taken unless a path is given on the command line.
 INPUT_DIR="${1:-}"
 if [[ -z "$INPUT_DIR" ]]; then
-    INPUT_DIR=$(find "${PROJECT_DIR}/${KO_ASSIGNMENT_SUBDIR}" -maxdepth 1 -type d -name "*kofam_web" | sort | tail -1)
+    INPUT_DIR=$(find "${RESULTS_DIR}/${KO_ASSIGNMENT_SUBDIR}" -maxdepth 1 -type d -name "*kofam_web" | sort | tail -1)
 fi
 if [[ -z "$INPUT_DIR" || ! -d "$INPUT_DIR" ]]; then
     log_error "No KofamKOALA output directory found. Pass one as the first argument."

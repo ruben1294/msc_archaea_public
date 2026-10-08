@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 
-# Compares the trees that pipeline step 13 produced across its nine
+# Compares the trees that pipeline step 15 produced across its nine
 # combinations of alignment strategy and model.
 #
 # Every tree is rooted and made ultrametric first, because cophenetic
 # correlation is only meaningful between trees on the same footing. Pairs are
 # then ranked by that correlation, and the ten most similar get a tanglegram so
 # the disagreements can be read directly.
-# Fecha: 2026/02/03
+# Date: 2026/02/03
 
 user_lib <- Sys.getenv("R_LIBS_USER")
 if (user_lib == "") {
@@ -71,7 +71,7 @@ if (!font_found) {
 
 cat("[OK] Font configuration complete\n\n")
 
-# ---- TEMA PERSONALIZADO ----
+# ---- CUSTOM THEME ----
 theme_publication <- function(base_size = 11) {
   theme_bw(base_size = base_size) +
     theme(
@@ -90,14 +90,34 @@ theme_publication <- function(base_size = 11) {
     )
 }
 
-# ---- 1. CARGA Y PREPARACIÓN DE DATOS ----
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
+
+# ---- 1. DATA LOADING AND PREPARATION ----
 
 OUTPUT_DIR <- paste0(file.path(PROJECT_DIR, "results", "SO_02", "phylogeny"), "/",
                      fecha, "_analysis")
 dir.create(OUTPUT_DIR, recursive = TRUE, showWarnings = FALSE)
 cat("Directorio de salida:", OUTPUT_DIR, "\n")
 
-ruta <- "\\\\wsl.localhost\\Ubuntu-24.04\\home\\ruben\\msc_archaea\\results\\13_phylogeny"
+ruta <- file.path(PROJECT_DIR, "results", "15_phylogeny")
 archivos <- list.files(path = ruta,
                        pattern = "\\.treefile$",
                        full.names = TRUE,
@@ -116,7 +136,7 @@ dends <- lapply(arboles, function(tree) {
   }
   # and an ultrametric one, so branch lengths are comparable between trees
   tree_ultra <- chronos(tree, quiet = TRUE)
-  # Convertir a dendrograma
+  # Convert to a dendrogram
   as.dendrogram(as.hclust.phylo(tree_ultra))
 })
 
@@ -150,7 +170,7 @@ for(i in 1:ncol(combinaciones)) {
   coph_cor <- cor_cophenetic(dend_pair)
   baker <- cor_bakers_gamma(dend_pair)
 
-  # Guardar resultados
+  # Store the results
   resultados <- rbind(resultados, data.frame(
     arbol1 = nombre1,
     arbol2 = nombre2,
@@ -165,9 +185,9 @@ for(i in 1:ncol(combinaciones)) {
 # Most similar pairs first
 resultados_ordenados <- resultados[order(-resultados$cophenetic_cor), ]
 
-# ---- 2. GUARDAR RESULTADOS ----
+# ---- 2. WRITE THE RESULTS ----
 
-# Guardar tabla de resultados en formato TSV
+# Write the results table as TSV
 tsv_file <- file.path(OUTPUT_DIR, "comparaciones_arboles.tsv")
 write.table(resultados_ordenados, tsv_file,
             sep = "\t",
@@ -229,7 +249,7 @@ corrplot(cors, method = "circle", type = "lower",
 dev.off()
 cat("[OK] Gráfico de correlación (circle) guardado\n")
 
-# ---- 4. GENERAR Y GUARDAR TANGLEGRAMS ----
+# ---- 4. DRAW AND SAVE THE TANGLEGRAMS ----
 
 cat("\n--- Generando tanglegrams ---\n")
 
@@ -243,7 +263,7 @@ for(i in 1:n_tanglegrams) {
   nombre1 <- resultados_ordenados$arbol1[i]
   nombre2 <- resultados_ordenados$arbol2[i]
 
-  # Crear nombre de archivo limpio
+  # Build a clean file name
   nombre_archivo <- paste0("tanglegram_", sprintf("%02d", i), "_",
                            gsub("\\.treefile$", "", nombre1), "_vs_",
                            gsub("\\.treefile$", "", nombre2), ".png")
@@ -267,13 +287,13 @@ for(i in 1:n_tanglegrams) {
   nombre2_limpio <- gsub("\\.treefile$", "", nombre2)
 
   tanglegram(dend_pair,
-             main_left = "",  # Vacío, lo añadiremos manualmente
-             main_right = "", # Vacío, lo añadiremos manualmente
+             main_left = "",  # left empty; added by hand below
+             main_right = "", # left empty; added by hand below
              margin_inner = 10,
-             lab.cex = 0.5,              # Mantiene tamaño de etiquetas MAGs
+             lab.cex = 0.5,              # keeps the MAG label size
              columns_width = c(6, 1.5, 6),
-             main = "",                   # Vacío, lo añadiremos manualmente
-             cex_main = 0.8)             # Este parámetro no funciona en tanglegram
+             main = "",                   # left empty; added by hand below
+             cex_main = 0.8)             # tanglegram ignores this parameter
 
   # Title drawn by hand, since tanglegram does not size it well
   title(main = titulo_main, cex.main = 0.9)

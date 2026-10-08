@@ -1,6 +1,6 @@
-# Step 16. skani computes ANI across the MAGs and against GTDB.
+# Step 04. skani computes ANI across the MAGs and against GTDB.
 #
-# The GTDB sketch database is downloaded separately; see
+# The GTDB R226 sketch database is downloaded separately; see
 # scripts/utils/download_skani_gtdb_r226.sh. GTDB_SKETCH_DIR in
 # configs/server.env points at it, and --skip-gtdb runs the intra-study passes
 # without it.

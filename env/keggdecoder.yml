@@ -1,8 +1,8 @@
-# Step 07. KEGG-Decoder turns the KO table from step 06 into pathway
+# Step 09. KEGG-Decoder turns the KO table from step 08 into pathway
 # completeness matrices.
 #
 # KEGG-Decoder pins Python 3.6, which is why it gets an environment of its own.
-# KEGG-Expander ships inside the same package rather than on PATH; step 07 asks
+# KEGG-Expander ships inside the same package rather than on PATH; step 09 asks
 # Python where the KEGGDecoder package lives instead of assuming a prefix.
 name: keggdecoder
 channels:

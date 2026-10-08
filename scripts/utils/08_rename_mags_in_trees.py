@@ -15,12 +15,15 @@ from pathlib import Path
 
 import pandas as pd
 
-# Project root, from the environment or the usual location. Every path below
-# derives from it, so the script runs wherever the tree happens to live.
-PROJECT_DIR = Path(os.environ.get("MSC_ARCHAEA_DIR", Path.home() / "msc_archaea"))
+# Project root: PROJECT_DIR or MSC_ARCHAEA_DIR when set, otherwise this clone.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_DIR = Path(os.environ.get("PROJECT_DIR")
+                   or os.environ.get("MSC_ARCHAEA_DIR")
+                   or REPO_ROOT)
+RESULTS_DIR = Path(os.environ.get("RESULTS_DIR") or PROJECT_DIR / "results")
 
-METADATA_FILE = str(PROJECT_DIR / "MAGs_metadata.tsv")
-TREE_DIR = os.environ.get("TREE_DIR", str(PROJECT_DIR / "results" / "13_phylogeny"))
+METADATA_FILE = str(REPO_ROOT / "data" / "MAGs_metadata.tsv")
+TREE_DIR = os.environ.get("TREE_DIR", str(RESULTS_DIR / "15_phylogeny"))
 TREE_EXTENSIONS = [".contree", ".iqtree", ".treefile"]
 
 
@@ -30,7 +33,7 @@ def load_metadata(metadata_file):
 
     metadata = pd.read_csv(metadata_file, sep="\t")
 
-    # Crear diccionario: NameWithoutExtension -> DisplayName
+    # NameWithoutExtension -> DisplayName
     name_mapping = dict(zip(metadata["NameWithoutExtension"], metadata["DisplayName"]))
 
     print(f"  [OK] {len(name_mapping)} MAG names loaded")
@@ -47,20 +50,17 @@ def replace_names_in_file(file_path, name_mapping):
     original_content = content
     replacements_made = 0
 
-    # Reemplazar cada nombre
     for old_name, new_name in name_mapping.items():
-        # Match the whole identifier only. In Newick a name is followed by a
-    # colon, a closing paren, a comma, a semicolon or the end of the line, and
-    # anchoring on those keeps one MAG name from matching inside another.
+        # Match the whole identifier only, so that one MAG name never matches
+        # inside another: bin.2 must not hit bin.28.
         pattern = re.compile(rf"\b{re.escape(old_name)}\b")
 
         if pattern.search(content):
             content = pattern.sub(new_name, content)
             replacements_made += 1
 
-    # Solo escribir si hubo cambios
+    # Only files that changed are written, each after a backup
     if content != original_content:
-        # Crear backup
         backup_path = file_path.with_suffix(file_path.suffix + ".backup")
         with open(backup_path, "w") as f:
             f.write(original_content)
@@ -82,7 +82,7 @@ def process_tree_files(tree_dir, name_mapping, extensions):
     tree_dir = Path(tree_dir)
 
     if not tree_dir.exists():
-        print(f"ERROR: El directorio {tree_dir} no existe")
+        print(f"ERROR: directory {tree_dir} does not exist")
         return
 
     total_files = 0
@@ -101,24 +101,22 @@ def process_tree_files(tree_dir, name_mapping, extensions):
             total_replacements += replacements
             total_files += 1
 
-    # Resumen final
     print(f"\n{'=' * 70}")
-    print("RESUMEN")
+    print("SUMMARY")
     print(f"{'=' * 70}")
     print(f"Files rewritten: {total_files}")
-    print(f"Total de reemplazos realizados: {total_replacements}")
+    print(f"Total replacements: {total_replacements}")
     print("\n[OK] Finished")
     print("\nA .backup copy was written next to each file.")
 
-# ---- EJECUCIÓN PRINCIPAL ----
+# ---- main ----
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("RENOMBRADO DE MAGs EN ÁRBOLES FILOGENÉTICOS")
+    print("Renaming MAGs in the phylogenetic trees")
     print("=" * 70)
     print()
 
-    # Cargar metadatos
     name_mapping = load_metadata(METADATA_FILE)
 
     # Walk the tree files

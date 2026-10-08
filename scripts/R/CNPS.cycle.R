@@ -1,14 +1,14 @@
 # Biogeochemical cycles (C, N, P, S) across the archaeal MAGs.
 #
-# Datos:    54 MAGs arqueales de metagenomas marinos
+# Data:    54 archaeal MAGs from marine metagenomes
 # Groups:  station (A4, A6, C22, F37, PO1, Y6)
-#           Profundidad (ROMZ, 1000 m, BTM)
+#          depth (ROMZ, 1000 m, BTM)
 # Runs locally; the data comes from the results tree.
 #
 # Built on Yue et al. mSystems 2025, doi:10.1128/msystems.01021-25
 #
-# SALIDAS POR CICLO (C, N, S; P si hay datos):
-#   *_abundance.csv                      – tabla de abundancia de pathways
+# OUTPUT PER CYCLE (C, N, S; P when there is data):
+#   *_abundance.csv                      pathway abundance table
 #   *_stats_station.csv / *_stats_depth.csv – p-values (ANOVA/Kruskal-Wallis)
 #   *_heatmap_grouped_station.png        abun.heatmap.g by station, package version
 #   *_heatmap_grouped_depth.png          abun.heatmap.g by depth, package version
@@ -24,30 +24,31 @@
 #
 # Under 10_MAGs/ only two ComplexHeatmap variants are produced: depth, and no sidebar.
 #
-# NOTAS DE DISEÑO:
+# DESIGN NOTES:
 #   The Xcyc.abundance() functions read the global `ko` directly rather than
 #   taking it as an argument. That is how the package behaves at v1.0.1, and it
 #   is why `ko` is built in the global environment below.
 #   Package bug 1, in rbind: a KO absent from `ko` yields rep(0, ncol(ko)) with
 #   no names, which then misaligns the bind. Worked around by padding `ko` with
 #   explicit zero rows for every KO the cycle functions ask for.
-#   · Bug 2 (log10): valores ≤ 1 to log10(1) = 0 to seq(a+1,b,1) falla.
+#   Package bug 2, in log10: values of 1 or less give log10(1) = 0, and then
+#   seq(a + 1, b, 1) fails.
 #   Worked around by scaling `ko` by 100 before the cycle functions run.
 
 script_start <- Sys.time()
 cat(sprintf("=== Inicio del script: %s ===\n\n", format(script_start, "%Y-%m-%d %H:%M:%S")))
 
-# ---- 0. Paquetes ----
+# ---- 0. Packages ----
 
 library(CNPS.cycle)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(reshape2) # melt(), usado internamente por abun.heatmap.g
+library(reshape2) # melt(), used internally by abun.heatmap.g
 library(RColorBrewer)
-library(pheatmap) # usado por host.ratio()
+library(pheatmap) # used by host.ratio()
 library(grid)
-library(deeplr) # Traducciones DeepL
+library(deeplr) # DeepL translations
 library(ComplexHeatmap)
 library(circlize) # colorRamp2
 library(showtext)
@@ -67,7 +68,7 @@ font_priority <- c(
   "Helvetica", "Helvetica Neue"
 )
 
-# Cargar fuentes locales directamente (prioridad: Lato > Source Sans 3)
+# Load local fonts directly (priority: Lato, then Source Sans 3)
 font_found <- FALSE
 local_font_dir <- path.expand("~/.local/share/fonts")
 local_direct <- list(
@@ -254,43 +255,58 @@ translate_to_spanish <- function(names_vec, translation_cache_file = NULL) {
 # ---- 0c. depths: canonical order and palette ----
 
 DEPTH_LEVELS         <- c("ROMZ", "1000", "BTM")
-DEPTH_DISPLAY_LEVELS <- c("ZMOR", "1000 m", "Fondo")   # etiquetas de visualización
+DEPTH_DISPLAY_LEVELS <- c("ZMOR", "1000 m", "Fondo")   # display labels
 {
   pal <- RColorBrewer::brewer.pal(3L, "Set2")
   DEPTH_COLORS <- setNames(pal, DEPTH_LEVELS)
 }
 
-# ---- 1. Rutas ----
+# ---- 1. Paths ----
 
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
 WSL_BASE <- PROJECT_DIR
 RES_DIR <- file.path(WSL_BASE, "results")
-OUT_DIR <- file.path(RES_DIR, "15_CNPS_cycle")
+OUT_DIR <- file.path(RES_DIR, "SO_01", "CNPS_cycle")
 CNPS_CACHE_FILE <- file.path(OUT_DIR, "input_data", "translation_cache_cnps.csv")
 
-F_KO_BYMAG <- file.path(
-  RES_DIR,
-  "06_KO_assignment/20251228_kofam_web/20260102_concatenation/all_kofam_KOs.byMAG.tsv"
-)
-F_DRAM <- file.path(RES_DIR, "08_MAG_distill/ANNOTATE/raw-annotations.tsv")
-F_META <- file.path(WSL_BASE, "MAGs_metadata.tsv")
+# The KofamKOALA submission date is part of the directory name (step 08), so
+# the most recent all_kofam_KOs.byMAG.tsv under it is taken, as step 09 does.
+F_KO_BYMAG <- local({
+  hits <- sort(list.files(file.path(RES_DIR, "08_KO_assignment"),
+                          pattern = "^all_kofam_KOs\\.byMAG\\.tsv$",
+                          recursive = TRUE, full.names = TRUE))
+  if (length(hits) == 0) {
+    stop("No all_kofam_KOs.byMAG.tsv under ", file.path(RES_DIR, "08_KO_assignment"),
+         ". Run scripts/utils/03_post_KO_assign_concat_KOs.sh first.", call. = FALSE)
+  }
+  tail(hits, 1)
+})
+F_DRAM <- file.path(RES_DIR, "10_MAG_distill/ANNOTATE/raw-annotations.tsv")
+F_META <- file.path(WSL_BASE, "data", "MAGs_metadata.tsv")
 
-# ---- 2. Directorios de salida ----
+# ---- 2. Output directories ----
 
 out_subdirs <- c(
   "input_data",
@@ -311,7 +327,7 @@ for (d in file.path(OUT_DIR, out_subdirs)) {
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
 }
 
-# ---- 3. Cargar datos brutos ----
+# ---- 3. Load the raw data ----
 
 message("[1/4] Cargando metadatos...")
 meta <- read.table(F_META,
@@ -336,7 +352,7 @@ dram_ko <- dram_raw[, c("query_id", "input_fasta", "kofam_id", "kegg_id")]
 rm(dram_raw)
 gc()
 
-# ---- 4. Construir tabla `ko` ----
+# ---- 4. Build the `ko` table ----
 
 message("[4/4] Preparando tablas CNPS.cycle...")
 
@@ -382,7 +398,7 @@ if (length(kos_missing) > 0) {
 ko <- ko * 100L
 message("  ko escalado ×100")
 
-# ---- 5. Construir tabla `Gene` ----
+# ---- 5. Build the `Gene` table ----
 
 gene_ko_table <- dram_ko |>
   dplyr::mutate(KO = ifelse(kofam_id != "" & !is.na(kofam_id), kofam_id, kegg_id)) |>
@@ -401,7 +417,7 @@ write.table(gene_ko_table, file.path(OUT_DIR, "input_data", "gene_ko_entries.tsv
   sep = "\t", quote = FALSE, row.names = FALSE
 )
 
-# ---- 6. Construir tabla `tax` ----
+# ---- 6. Build the `tax` table ----
 
 mag_tax_lookup <- setNames(meta$FullTaxonomy, meta$NameWithoutExtension)
 annotated_genes <- dram_ko |>
@@ -416,7 +432,7 @@ tax <- annotated_genes |>
   dplyr::distinct(V1, .keep_all = TRUE) |>
   as.data.frame()
 
-# ---- 7. Construir tabla `abundance` ----
+# ---- 7. Build the `abundance` table ----
 
 abundance <- annotated_genes |>
   dplyr::mutate(present = 1L) |>
@@ -429,7 +445,7 @@ colnames(abundance)[1] <- "V1"
 for (m in setdiff(all_mags, colnames(abundance)[-1])) abundance[[m]] <- 0L
 abundance <- abundance[, c("V1", all_mags)]
 
-# ---- 8. Construir tablas `group` y subconjunto de 10 MAGs ----
+# ---- 8. Build the `group` tables and the 10-MAG subset ----
 
 group_station <- data.frame(
   ID = meta$NameWithoutExtension,
@@ -461,7 +477,7 @@ group_10_depth <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Guardar tablas de entrada
+# Write the input tables
 write.table(ko, file.path(OUT_DIR, "input_data", "ko.tsv"),
   sep = "\t", quote = FALSE
 )
@@ -478,7 +494,7 @@ message(sprintf(
   nrow(abundance), ncol(abundance) - 1L
 ))
 
-# ---- HELPERS DE LOOKUP ----
+# ---- LOOKUP HELPERS ----
 
 get_mag_depth <- function(mags) meta$Depth[match(mags, meta$NameWithoutExtension)]
 get_mag_station <- function(mags) meta$Station[match(mags, meta$NameWithoutExtension)]
@@ -496,7 +512,7 @@ save_host_relative <- function(result_list, out_subdir, prefix) {
   }
 }
 
-# ---- HELPER: filtrar abundance_df a un subconjunto de MAGs ----
+# ---- HELPER: restrict abundance_df to a subset of MAGs ----
 
 subset_abund <- function(abundance_df, mag_subset) {
   avail <- intersect(mag_subset, setdiff(colnames(abundance_df), "Type"))
@@ -510,7 +526,7 @@ subset_abund <- function(abundance_df, mag_subset) {
 #
 #   rows    MAGs by DisplayName, ordered ROMZ, 1000, BTM, then by station
 #   cols    pathways, labelled in Spanish
-# · Color = blanco to rojo (completitud normalizada 0–1)
+#   colour  white to red, normalised completeness 0 to 1
 #   ann_v   0 no sidebar, rows cluster freely
 #           1 depth and station, 2 depth only, 3 station only
 
@@ -524,17 +540,17 @@ make_cnps_heatmap <- function(abundance_df, title_es, outfile, ann_v = 1L) {
     message("    ", title_es, " (ann_v=", ann_v, "): sin pathways – omitido")
     return(invisible(NULL))
   }
-  mat_pw <- mat_pw[keep, , drop = FALSE] / 100 # escalar 0–1
+  mat_pw <- mat_pw[keep, , drop = FALSE] / 100 # scale to 0-1
 
   pw_es <- capitalize_first(
     translate_to_spanish(rownames(mat_pw), translation_cache_file = CNPS_CACHE_FILE)
   )
   rownames(mat_pw) <- pw_es
 
-  mat <- t(mat_pw) # filas = MAGs
+  mat <- t(mat_pw) # rows = MAGs
   mag_names <- rownames(mat)
 
-  # Paleta de estaciones (Set1) — calculada antes de cualquier reordenamiento
+  # Station palette (Set1), computed before any reordering
   all_depths <- factor(get_mag_depth(mag_names), levels = DEPTH_LEVELS)
   all_stations <- get_mag_station(mag_names)
   st_uniq <- sort(unique(na.omit(as.character(all_stations))))
@@ -661,9 +677,9 @@ make_cnps_heatmap <- function(abundance_df, title_es, outfile, ann_v = 1L) {
 
 # Mean abundance per station
 #
-#   rows  stations, alphabetical
+#   rows    stations, alphabetical
 #   cols    pathways, labelled in Spanish
-# · Color = blanco to rojo (media de abundancia normalizada 0–1)
+#   colour  white to red, mean normalised abundance 0 to 1
 
 make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
   type_col <- as.character(abundance_df$Type)
@@ -675,7 +691,7 @@ make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
     message("    ", title_es, " (por estación): sin pathways – omitido")
     return(invisible(NULL))
   }
-  mat_pw <- mat_pw[keep, , drop = FALSE] / 100 # escalar 0–1
+  mat_pw <- mat_pw[keep, , drop = FALSE] / 100 # scale to 0-1
 
   pw_es <- capitalize_first(
     translate_to_spanish(rownames(mat_pw), translation_cache_file = CNPS_CACHE_FILE)
@@ -756,7 +772,7 @@ make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
 #   cols   cycle pathways, labelled in Spanish
 #   colour white to red, mean normalised abundance per group
 #
-# pw_results: lista nombrada de listas de 6 dfs (salidas de ACF(), Fer(), etc.)
+# pw_results: named list of lists of 6 data frames (output of ACF(), Fer(), etc.)
 # rank_idx  index into each list: 1 phylum, 2 class, 3 order, 4 family, 5 genus, 6 species
 
 make_cnps_taxonomy_heatmap <- function(pw_results, rank_idx = 5L,
@@ -880,12 +896,12 @@ make_cnps_taxonomy_heatmap <- function(pw_results, rank_idx = 5L,
 
 # Every figure for one cycle, into a given directory
 #
-# Genera:
+# Produces:
 #   1. abun.heatmap.g by station and by depth, package logic
 #   2. abun.heatmap.s, package logic
 #   3. make_cnps_heatmap for each annotation version, DRAM2 style, DisplayName rows
 #   4. make_cnps_station_heatmap, mean abundance per station
-#      solo si station_heatmap = TRUE
+#      only if station_heatmap = TRUE
 #
 # abundance_df must already be filtered to the MAG subset, if one applies.
 # ann_versions: which sidebar variants to produce.
@@ -898,7 +914,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
                             station_heatmap = TRUE) {
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-  # Guardar CSV de abundancia
+  # Write the abundance CSV
   write.csv(abundance_df, file.path(out_dir, paste0(cycle_name, "_abundance.csv")),
     row.names = FALSE
   )
@@ -1029,7 +1045,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
   }
 }
 
-# ---- SECCIÓN A – CICLOS ELEMENTALES (54 MAGs) ----
+# ---- SECTION A: ELEMENT CYCLES (54 MAGs) ----
 
 message("\n══ [A] Ciclos elementales – 54 MAGs ══")
 
@@ -1075,7 +1091,7 @@ run_cycle_plots(
   group_station, group_depth
 )
 
-# ---- SECCIÓN B – ORDENACIÓN (PCA · PCoA · NMDS) – 54 MAGs ----
+# ---- SECTION B: ORDINATION (PCA, PCoA, NMDS), 54 MAGs ----
 
 message("\n══ [B] Ordenaci\u00f3n – 54 MAGs ══")
 
@@ -1133,7 +1149,7 @@ tax <- tax
 abundance <- abundance
 group <- group_station
 
-# Presencia binaria
+# Binary presence
 C_host <- Ccyc.host(Gene)
 names(C_host) <- c("ACF", "ACH4O", "AR", "AnCF", "COo", "Fer", "Meth")
 write.csv(as.data.frame(t(C_host)), file.path(OUT_DIR, "carbon", "C_host_presence.csv"))
@@ -1144,7 +1160,7 @@ write.csv(as.data.frame(t(P_host)), file.path(OUT_DIR, "phosphorus", "P_host_pre
 S_host <- Scyc.host(Gene)
 write.csv(as.data.frame(t(S_host)), file.path(OUT_DIR, "sulfur", "S_host_presence.csv"))
 
-# Pathways individuales – Carbono
+# Individual pathways, carbon
 c_pws <- list(ACF = ACF, Fer = Fer, Meth = Meth, ACH4O = ACH4O, COo = COo, AnCF = AnCF)
 c_results <- list()
 for (nm in names(c_pws)) {
@@ -1190,7 +1206,7 @@ for (nm in names(n_pws)) {
   }
 }
 
-# Pathways individuales – Azufre
+# Individual pathways, sulfur
 s_pws <- list(
   DRS_SO4_APS = DRS.SO4.APS, DRS_APS_SO3 = DRS.APS.SO3, DRS_SO3_H2S = DRS.SO3.H2S,
   ARS_SO4_APS = ARS.SO4.APS, ARS_APS_PAPS = ARS.APS.PAPS, ARS_PAPS_SO3 = ARS.PAPS.SO3,
@@ -1272,7 +1288,7 @@ run_host_ratio_result <- function(result, pw_label, outfile) {
   if (is.null(result) || length(result) == 0) {
     return(invisible(NULL))
   }
-  pm <- result[[1]] # nivel Filo (Phylum) del pathway function
+  pm <- result[[1]] # phylum level of the pathway function
   if (is.null(pm) || !is.data.frame(pm) || nrow(pm) == 0) {
     return(invisible(NULL))
   }
@@ -1286,7 +1302,7 @@ run_host_ratio_result <- function(result, pw_label, outfile) {
 
   tryCatch(
     {
-      # Convertir a formato largo
+      # Convert to long format
       df <- as.data.frame(pm)
       df$Taxon <- rownames(df)
       df_long <- reshape2::melt(df,
@@ -1371,7 +1387,7 @@ for (nm in names(p_results)) {
   )
 }
 
-# SECCIÓN F – SUBCONJUNTO DE 10 MAGs SIN ESPECIE
+# SECTION F: THE 10 MAGs WITHOUT A SPECIES
 # Same structure as sections A and B, restricted to the mags_10 subset.
 # Laid out like section 16 of DRAM2_output_analysis.R.
 
@@ -1384,7 +1400,7 @@ if (length(mags_10) == 0) {
 } else {
   out_10 <- file.path(OUT_DIR, "10_MAGs")
 
-  # Subconjunto de tablas de abundancia
+  # Subset of the abundance tables
   C10 <- subset_abund(C.abundance, mags_10)
   N10 <- subset_abund(N.abundance, mags_10)
   P10 <- subset_abund(P.abundance, mags_10)
@@ -1460,17 +1476,17 @@ if (length(mags_10) == 0) {
   }
 }
 
-# SECCIÓN G – RESUMEN A NIVEL COMUNIDAD: BURBUJAS TAXONÓMICAS Y DE METADATOS
+# SECTION G: COMMUNITY-LEVEL SUMMARY, TAXONOMY AND METADATA BUBBLES
 #
 # Absorbs what used to live in CNPS.cycle_2.R.
-# Reutiliza: translate_to_spanish, capitalize_first, font_family,
+# Reuses: translate_to_spanish, capitalize_first, font_family,
 #            WSL_BASE, OUT_DIR, CNPS_CACHE_FILE, meta
 # Reads the CSVs written in section A rather than the in-memory objects.
 # The _g suffix keeps these names clear of the global environment.
 
 message("\n\u2550\u2550 [G] Resumen comunidad: gr\u00e1ficos de burbujas taxon\u00f3micas y de metadatos \u2550\u2550")
 
-# ---- g.0  Directorio de salida ----
+# ---- g.0  Output directory ----
 
 dir.create(file.path(OUT_DIR, "resumen_comunidad"), recursive = TRUE, showWarnings = FALSE)
 
@@ -1766,7 +1782,7 @@ plot_taxonomic_bubble_g(df_integrado_g, "Order", "Orden")
 plot_taxonomic_bubble_g(df_integrado_g, "Family", "Familia")
 plot_taxonomic_bubble_g(df_integrado_g, "Genus", "G\u00e9nero")
 
-# ---- g.6  Metadatos: preprocesado ----
+# ---- g.6 metadata preprocessing ----
 
 df_metadata_g <- meta |>
   dplyr::select(MAG = NameWithoutExtension, Estacion = Station, Profundidad = Depth) |>
@@ -1811,7 +1827,7 @@ df_summary_meta_g <- df_meta_long_g |>
     # pivot_longer drops the factor levels on Profundidad, leaving Grupo as
     # character, and ggplot2 would then order it alphabetically: 1000 m, Fondo,
     # ZMOR. Refactoring inside the mutate restores the depth order, the same way
-    # tax_analysis.R: estaciones primero (alfab.), luego ZMOR to 1000 m to Fondo.
+    # tax_analysis.R does: stations first (alphabetical), then ZMOR, 1000 m, Fondo.
     Grupo = factor(Grupo, levels = c(
       sort(levels(df_metadata_g$Estacion)),
       DEPTH_DISPLAY_LEVELS
@@ -2074,8 +2090,8 @@ make_combined_meta_tax_g <- function(tax_level, tax_suffix) {
   lookup <- get_parent_lookup_g(df_integrado_g, tax_level)
   n_taxa <- length(unique(df_tax_sum$Taxon))
 
-  # ---- construir dataframe combinado ----
-  # Panel izquierdo: metadatos (x = grupo, Panel = nombre de variable)
+  # ---- build the combined data frame ----
+  # Left panel: metadata (x = group, Panel = variable name)
   df_meta_part <- df_summary_meta_g |>
     dplyr::mutate(
       Panel   = as.character(Variable),
@@ -2114,7 +2130,7 @@ make_combined_meta_tax_g <- function(tax_level, tax_suffix) {
       ))
     )
 
-  # ---- dimensiones ----
+  # ---- dimensions ----
   n_est <- length(unique(
     df_meta_part$x_label[df_meta_part$Panel == panel_levels[1]]
   ))

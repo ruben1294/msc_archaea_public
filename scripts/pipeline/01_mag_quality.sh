@@ -3,13 +3,17 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Step 1. Runs CheckM2 over the raw MAGs and writes quality_report.tsv under
-# 02_mags_quality/. Before that it strips duplicate contig IDs, which CheckM2
-# rejects outright and which show up when MAGs binned from separate assemblies
-# of the same station carry contigs with the same name.
+# Step 1. Runs CheckM2 over the input MAGs in data/mags/ and writes
+# quality_report.tsv under results/01_mag_quality/. Before that it strips
+# duplicate contig IDs, which CheckM2 rejects outright and which show up when
+# MAGs binned from separate assemblies of the same station carry contigs with
+# the same name.
 #
-# utils/01_filter_mags.py reads the report afterwards and applies the MIMAG
-# thresholds set in configs/server.env.
+# Two helpers finish the quality block before step 02:
+#   utils/01_filter_mags.py  keeps the MAGs of MIMAG medium quality or better,
+#                            copying them into results/01_mag_quality/filtered/
+#   utils/05_rename_mags.sh  gives those copies their final dotted names, which
+#                            every later step and data/MAGs_metadata.tsv use
 
 VERSION="1.0.0"
 
@@ -22,10 +26,10 @@ Assess the quality of metagenome-assembled genomes with CheckM2.
 OPTIONS:
     -c, --cpu-cores NUM          CPU cores (default: \$SLURM_CPUS_PER_TASK, or 4)
     -p, --project-dir PATH       Project root (default: PROJECT_DIR from server.env)
-    -w, --workdir PATH           Working directory (default: \$PROJECT_DIR)
-    -r, --raw-dir PATH           Input MAGs (default: \$PROJECT_DIR/01_raw_files)
-    -t, --temp-dir PATH          Scratch space (default: \$WORKDIR/temp)
-    -l, --logdir PATH            Log directory (default: \$WORKDIR/logs)
+    -w, --workdir PATH           Results root (default: \$PROJECT_DIR/results)
+    -r, --raw-dir PATH           Input MAGs (default: \$PROJECT_DIR/data/mags)
+    -t, --temp-dir PATH          Scratch space (default: \$PROJECT_DIR/temp)
+    -l, --logdir PATH            Log directory (default: \$PROJECT_DIR/logs)
     -h, --help                   Show this message and exit
     -v, --version                Show the version and exit
 
@@ -38,8 +42,8 @@ name in upper case, which is how the SLURM wrappers in slurm/ pass them.
 
 EXAMPLES:
     bash $0
-    bash $0 --cpu-cores 8 --workdir /scratch/archaea
-    RAW_DIR=/data/mags bash $0
+    bash $0 --cpu-cores 8 --project-dir /scratch/archaea
+    RAW_DIR=/elsewhere/mags bash $0
 EOF
 }
 
@@ -53,7 +57,7 @@ parse_arguments() {
             -h|--help)        print_help; exit 0 ;;
             -v|--version)     print_version; exit 0 ;;
             -c|--cpu-cores)   CPU_CORES="$2"; shift 2 ;;
-            -p|--project-dir) PROJECT_DIR="$2"; shift 2 ;;
+            -p|--project-dir) OPT_PROJECT_DIR="$2"; shift 2 ;;
             -w|--workdir)     WORKDIR="$2"; shift 2 ;;
             -r|--raw-dir)     RAW_DIR="$2"; shift 2 ;;
             -t|--temp-dir)    TEMP_DIR="$2"; shift 2 ;;
@@ -76,19 +80,25 @@ for arg in "$@"; do
 done
 
 load_project_config
+require_commands checkm2
 
 CPU_CORES="${SLURM_CPUS_PER_TASK:-4}"
 
 parse_arguments "$@"
 
-# Resolved after parsing so that --project-dir propagates into the paths derived
-# from it.
+# Resolved after parsing so that --project-dir moves every default derived from
+# it; --workdir and --raw-dir then override one each.
+if [[ -n "${OPT_PROJECT_DIR:-}" ]]; then
+    PROJECT_DIR="$OPT_PROJECT_DIR"
+    RESULTS_DIR="$PROJECT_DIR/results"
+    MAGS_DIR="$PROJECT_DIR/data/mags"
+fi
 PROJECT_DIR="${PROJECT_DIR:?PROJECT_DIR is unset; check $CONFIG_FILE}"
-WORKDIR="${WORKDIR:-$PROJECT_DIR}"
-RAW_DIR="${RAW_DIR:-$PROJECT_DIR/${RAWFILES_SUBDIR:-01_raw_files}}"
-TEMP_DIR="${TEMP_DIR:-$WORKDIR/${TEMP_SUBDIR:-temp}}"
+WORKDIR="${WORKDIR:-${RESULTS_DIR:-$PROJECT_DIR/results}}"
+RAW_DIR="${RAW_DIR:-${MAGS_DIR:-$PROJECT_DIR/data/mags}}"
+TEMP_DIR="${TEMP_DIR:-$PROJECT_DIR/${TEMP_SUBDIR:-temp}}"
 TS="${TS:-$(date +%Y%m%d_%H%M%S)}"
-LOGDIR="${LOGDIR:-$WORKDIR/${LOGS_SUBDIR:-logs}}"
+LOGDIR="${LOGDIR:-$PROJECT_DIR/${LOGS_SUBDIR:-logs}}"
 mkdir -p "$LOGDIR"
 LOGFILE="${LOGFILE:-$LOGDIR/01_mag_quality_${TS}.log}"
 
@@ -98,13 +108,12 @@ echo "Log file:     $LOGFILE"
 echo "Host:         $(hostname)"
 echo "SLURM job ID: ${SLURM_JOB_ID:-NA}"
 echo "CPUs:         $CPU_CORES"
-echo "Working dir:  $WORKDIR"
+echo "Results root: $WORKDIR"
 echo "Input MAGs:   $RAW_DIR"
 
-D02_QUALITY="$WORKDIR/${QUALITY_SUBDIR:-02_mags_quality}"
-D03_SUMMARY="$WORKDIR/03_summary"
+QUALITY_DIR="$WORKDIR/${QUALITY_SUBDIR:-01_mag_quality}"
 
-for d in "$D02_QUALITY" "$D03_SUMMARY" "$TEMP_DIR"; do
+for d in "$QUALITY_DIR" "$TEMP_DIR"; do
     mkdir -p "$d"
 done
 
@@ -175,8 +184,9 @@ echo ""
 checkm2 predict \
     --threads "$CPU_CORES" \
     --input "$RAW_DIR" \
-    --output-directory "$D02_QUALITY" \
+    --output-directory "$QUALITY_DIR" \
     --extension fa \
     --force
 
-echo "Quality report: $D02_QUALITY/quality_report.tsv"
+echo "Quality report: $QUALITY_DIR/quality_report.tsv"
+echo "Next: python3 scripts/utils/01_filter_mags.py, then bash scripts/utils/05_rename_mags.sh"

@@ -1,7 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name=01_mag_quality
-#SBATCH --account=metagenomica
-#SBATCH --partition=d30
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -10,16 +8,17 @@
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-# CheckM2 quality assessment. Submit from the repository root:
+# CheckM2 quality assessment. Submit from the repository root, naming your
+# account and partition:
 #
-#   mkdir -p logs && sbatch slurm/01_mag_quality.slurm
+#   mkdir -p logs
+#   sbatch --account=<account> --partition=<partition> slurm/01_mag_quality.slurm
 #
-# The account, partition and module lines above and below are specific to the
-# CICESE cluster. Edit them for yours; pipeline/01_mag_quality.sh itself needs
-# none of them and runs anywhere the tools are on PATH.
-#
-# Resource requests are the ones these runs actually used, so they are a
-# starting point rather than a recommendation.
+# Exporting SBATCH_ACCOUNT and SBATCH_PARTITION once does the same for every
+# wrapper. Nothing here is tied to one cluster: the module and conda setup come
+# from slurm/cluster.env, and pipeline/01_mag_quality.sh itself runs anywhere
+# its tools are on PATH. Resource requests are the ones these runs actually
+# used, a starting point rather than a recommendation.
 
 set -euo pipefail
 

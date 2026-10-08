@@ -22,9 +22,10 @@ log_error() { echo "[$(_log_stamp)] [ERROR] $*" >&2; }
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export REPO_ROOT
 
-# Sources configs/server.env and exports what it defines. Override CONFIG_FILE
-# to point at a different profile, which is how the IXACHI steps pick up
-# server_ixachi.env.
+# Sources configs/server.env and exports what it defines, so that tools started
+# from a step (Nextflow reading the DRAM2 config, the Python helpers) see the
+# same paths. Override CONFIG_FILE to use another profile, for example one per
+# machine when the work is split across two clusters.
 load_project_config() {
     CONFIG_FILE="${CONFIG_FILE:-${REPO_ROOT}/configs/server.env}"
 
@@ -34,8 +35,10 @@ load_project_config() {
         return 1
     fi
 
+    set -a
     # shellcheck source=/dev/null
     source "$CONFIG_FILE"
+    set +a
     log_info "Loaded configuration from $CONFIG_FILE"
 }
 

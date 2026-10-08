@@ -1,7 +1,12 @@
-# Steps 10 to 13, plus 19 and 20. The marker-based phylogenomics route.
+# Steps 12 to 15, plus 17 and 18. The marker-based phylogenomics route.
+#
+# trimAl and IQ-TREE are pinned to the versions the thesis ran, 1.5.0 and 2.2.5.
+# The MAFFT version is the one this file has always named; no log of the runs
+# records it.
 #
 # FASconCAT-G is a single Perl script with no conda package;
-# scripts/utils/install_FASconCAT-G.sh fetches it and records where it went.
+# scripts/utils/install_FASconCAT-G.sh fetches the pinned commit and records
+# where it went.
 name: phylo
 channels:
   - conda-forge
@@ -9,6 +14,6 @@ channels:
   - defaults
 dependencies:
   - mafft=7.520
-  - trimal=1.4.1
-  - iqtree=2.3.6
+  - trimal=1.5.0
+  - iqtree=2.2.5
   - perl

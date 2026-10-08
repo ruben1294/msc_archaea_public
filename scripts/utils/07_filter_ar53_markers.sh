@@ -8,10 +8,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 load_project_config
+require_vars RESULTS_DIR
 
-AR53_DIR="${PROJECT_DIR}/${GTDBTK_DENOVO_TREE_SUBDIR:-09_de_novo_tree}/identify/intermediate_results/single_copy_fasta/ar53"
+AR53_DIR="${RESULTS_DIR}/${GTDBTK_DENOVO_TREE_SUBDIR:-11_de_novo_tree}/identify/intermediate_results/single_copy_fasta/ar53"
 
-OUTPUT_DIR="${PROJECT_DIR}/${MARKER_ALIGNMENT_SUBDIR:-10_marker_alignment}/ar53_filtered"
+OUTPUT_DIR="${RESULTS_DIR}/${MARKER_ALIGNMENT_SUBDIR:-12_marker_alignment}/ar53_filtered"
 
 # Scratch space for the intermediate files
 TEMP_DIR="${OUTPUT_DIR}/.temp_processing"
@@ -31,7 +32,7 @@ log_msg() {
     echo "$1" | tee -a "$LOG_FILE"
 }
 
-# Iniciar log
+# Start the log
 log_msg "========================================"
 log_msg "Filtering de markers AR53"
 log_msg "Fecha: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -47,7 +48,7 @@ log_msg "  Minimum percentage required: ${MIN_MARKER_PERCENT}%"
 log_msg "  Minimum markers required: $MIN_MARKERS"
 log_msg ""
 
-# ---- PASO 1: Filtrar secuencias cortas ----
+# ---- step 1: drop short sequences ----
 
 log_msg "========================================"
 log_msg "Step 1: filter by sequence length"
@@ -104,7 +105,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     
     temp_stats="${TEMP_DIR}/.stats_${basename_file}.tmp"
     
-    # Filtrar secuencias y escribir archivo temporal
+    # Filter the sequences into a temporary file
     awk -v min_len="$min_length" -v stats_file="$temp_stats" '
     BEGIN { current_header=""; current_seq=""; kept=0; removed=0 }
     /^>/ {
@@ -119,7 +120,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
                 ++removed
             }
         }
-        # Guardar nuevo header
+        # Keep the new header
         current_header = $0
         current_seq = ""
         next
@@ -155,7 +156,7 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     log_msg "  Sequences kept: $kept"
     log_msg "  Secuencias dropped: $removed"
     
-    # Actualizar contadores totales
+    # Update the running totals
     total_seqs_kept_length=$((total_seqs_kept_length + kept))
     total_seqs_removed_length=$((total_seqs_removed_length + removed))
     processed=$((processed + 1))
@@ -214,7 +215,7 @@ while IFS= read -r mag_name; do
     # Marker completeness, as a percentage
     completeness=$(awk -v present=$marker_count -v total=$TOTAL_MARKERS 'BEGIN {printf "%.2f", (present/total)*100}')
     
-    # Decidir si mantener o eliminar
+    # Decide whether to keep or drop it
     if [ "$marker_count" -ge "$MIN_MARKERS" ]; then
         echo "$mag_name" >> "$MAGS_TO_KEEP"
         echo -e "${mag_name}\t${marker_count}\t${TOTAL_MARKERS}\t${completeness}\tKEPT" >> "$MAG_REPORT"
@@ -233,7 +234,7 @@ log_msg "  MAGs con <${MIN_MARKER_PERCENT}% markers: $mags_removed (dropped)"
 log_msg "  Reporte de completitud: $MAG_REPORT"
 log_msg ""
 
-# ---- PASO 3: Filtrar archivos removiendo MAGs incompletos ----
+# ---- step 3: remove the incomplete MAGs from every file ----
 
 log_msg "========================================"
 log_msg "PASO 3: Writing files finales"
@@ -272,7 +273,7 @@ for temp_file in "$TEMP_DIR"/*.fa; do
         mag_name = substr($0, 2)
         keep_current = 0
         
-        # Buscar en lista de MAGs a mantener
+        # Look it up in the list of MAGs to keep
         while ((getline line < mags_keep_file) > 0) {
             if (line == mag_name) {
                 keep_current = 1
@@ -333,7 +334,7 @@ log_msg "  Sequences kept: $total_seqs_kept_final"
 log_msg "  Secuencias removidas por MAG incompleto: $total_seqs_removed_mag"
 log_msg ""
 
-# ---- LIMPIEZA Y RESUMEN FINAL ----
+# ---- cleanup and final summary ----
 
 log_msg "========================================"
 log_msg "Limpiando files temporales..."

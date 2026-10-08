@@ -1,25 +1,23 @@
-#!/usr/bin/env bash
-# Script: MAG_quality_assessment.R
-# Description: Comprehensive quality analysis of MAGs using CheckM2 reports
-#              following MIMAG standards (Bowers et al., 2017, Nature Biotech)
-# Created: 2025-12-19
-# Version: 1.0
-
-### To run it, do:
-#Rscript scripts/analysis/MAG_quality_assessment.R \
-#--file1  results/20251222_23077_lizt_quality_report.tsv \
-#--file2  results/02_mags_quality/20251222_valentin_quality_report.tsv \
-#--output-dir results/02_mags_quality \
-#--gunc-progenomes results/17_chimerism/gunc_summary_progenomes3.tsv \
-#--gunc-gtdb       results/17_chimerism/gunc_summary_gtdb214.tsv
-
-# Rscript scripts/R/MAG_quality_assessment.R --file1 results/20251222_23077_lizt_quality_report.tsv --file2 results/02_mags_quality/20251222_valentin_quality_report.tsv --output-dir results/02_mags_quality --gunc-progenomes results/17_chimerism/gunc_summary_progenomes3.tsv --gunc-gtdb results/17_chimerism/gunc_summary_gtdb214.tsv --metadata MAGs_metadata.tsv
+#!/usr/bin/env Rscript
+# Quality analysis of the MAGs from their CheckM2 reports, following the MIMAG
+# standard (Bowers et al. 2017, Nature Biotechnology), with the GUNC chimerism
+# screen of pipeline step 02 alongside.
+#
+# Usage, from the repository root once pipeline steps 01 and 02 have run:
+#
+#   Rscript scripts/R/MAG_quality_assessment.R
+#
+# Every input has a default under results/ and data/, and the options listed by
+# --help override them. Figures 1, 2, 3A and 4 compare the MAGs analysed here
+# with a second MAG set from the same samples, labelled "Lizt" in the figures.
+# Its CheckM2 report is not produced by this pipeline, so those figures appear
+# only when it is passed with --file1.
 
 #.libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
 
 # === Package loading ===
 # Install pacman if needed and load packages
-# 2026/01/14: Can't use pacman on CICESE-omica server. Modified structure to remove pacman usage.
+# pacman is not used: it was unavailable on the cluster where this first ran.
 #if (!require("pacman")) {
 #  install.packages("pacman")
 #}
@@ -36,20 +34,8 @@
 # inside a panel that carries its own title, so a per-subplot title would only
 # repeat it.
 #
-# To run:
-# Rscript scripts/analysis/MAG_quality_assessment.R \
-# --file1 results/20251222_23077_lizt_quality_report.tsv \
-# --file2 results/20251219_23075_valentin_quality_report.tsv \
-# --output-dir results/02_mags_quality
-#
-# To also generate GUNC chimerism figures (Figs 8-12), add:
-# --gunc-progenomes results/17_chimerism/gunc_summary_progenomes3.tsv \
-# --gunc-gtdb       results/17_chimerism/gunc_summary_gtdb214.tsv \
-# --metadata        MAGs_metadata.tsv
-
-# Running it from the RStudio console through source() does not work, because
-# the script reads commandArgs(). Use the terminal instead, or set the cli_args
-# list below and source the file with that block active.
+# From the RStudio console, source() runs it with the defaults, since
+# commandArgs() then carries no options.
 
 # === Configure library paths ===
 user_lib <- Sys.getenv("R_LIBS_USER")
@@ -136,8 +122,8 @@ required_packages <- c(
   "showtext",    # Custom font support
   "sysfonts",     # System font detection
   "ggbeeswarm",
-  "ggpubr",      # NUEVO: Para líneas de significancia y asteriscos
-  "rstatix"      # NUEVO: Para la tabla de Kruskal-Wallis
+  "ggpubr",      # significance brackets and asterisks
+  "rstatix"      # the Kruskal-Wallis table
 )
 
 failed_packages <- c()
@@ -347,126 +333,106 @@ cat("\n")
 # === CLI Parser ===
 print_help <- function() {
   cat(
-    "Usage: Rscript MAG_quality_assessment.R [OPTIONS]\n\n",
+    "Usage: Rscript scripts/R/MAG_quality_assessment.R [OPTIONS]\n\n",
+    "Every option has a default, so a run after pipeline steps 01 and 02 needs\n",
+    "none of them.\n\n",
     "Options:\n",
-    "  --file1 FILE      Path to first quality report TSV file (required)\n",
-    "  --file2 FILE      Path to second quality report TSV file (required)\n",
-    "  --output-dir DIR        Output directory for results (default: results/quality_assessment)\n",
-    "  --gunc-progenomes FILE  GUNC ProGenomes3 summary TSV (optional; enables Figs 8-12)\n",
-    "  --gunc-gtdb FILE        GUNC GTDB r214 summary TSV   (optional; enables Figs 8-12)\n",
-    "  --metadata FILE         MAGs_metadata.tsv with DisplayName column (optional)\n",
+    "  --file2 FILE            CheckM2 report of the MAGs analysed here\n",
+    "                          (default: results/01_mag_quality/quality_report.tsv)\n",
+    "  --file1 FILE            CheckM2 report of a second MAG set to compare against;\n",
+    "                          enables Figures 1, 2, 3A and 4 (default: none)\n",
+    "  --output-dir DIR        Output directory (default: results/01_mag_quality)\n",
+    "  --gunc-progenomes FILE  GUNC ProGenomes3 summary from step 02 (Figs 8-12)\n",
+    "  --gunc-gtdb FILE        GUNC GTDB r214 summary from step 02 (Figs 8-12)\n",
+    "  --metadata FILE         MAG metadata with a DisplayName column\n",
+    "                          (default: data/MAGs_metadata.tsv)\n",
     "  --help                  Show this help message and exit\n\n",
     "Description:\n",
-    "  Comprehensive quality analysis of MAGs using CheckM2 reports following MIMAG standards.\n\n",
-    "Examples:\n",
-    "  Rscript MAG_quality_assessment.R --file1 lizt_report.tsv --file2 valentin_report.tsv\n",
-    "  Rscript MAG_quality_assessment.R --file1 data1.tsv --file2 data2.tsv --output-dir my_results\n\n",
+    "  Quality analysis of MAGs from CheckM2 reports, following the MIMAG standard.\n\n",
     sep = ""
   )
 }
 
-parse_arguments <- function(args) {
-  parsed_args <- list(
-    file1 = NULL,
-    file2 = NULL,
-    output_dir = "results/quality_assessment",
-    gunc_progenomes = NULL,
-    gunc_gtdb = NULL,
-    metadata = NULL
+# Starts from the defaults and overrides whatever the command line names.
+parse_arguments <- function(args, defaults) {
+  parsed_args <- defaults
+  option_names <- c(
+    "--file1" = "file1", "--file2" = "file2", "--output-dir" = "output_dir",
+    "--gunc-progenomes" = "gunc_progenomes", "--gunc-gtdb" = "gunc_gtdb",
+    "--metadata" = "metadata"
   )
 
   i <- 1
   while (i <= length(args)) {
     arg <- args[i]
-
     if (arg == "--help") {
       print_help()
       quit(status = 0)
-    } else if (arg == "--file1") {
-      if (i + 1 > length(args)) {
-        stop("Error: --file1 requires an argument")
-      }
-      parsed_args$file1 <- args[i + 1]
-      i <- i + 2
-    } else if (arg == "--file2") {
-      if (i + 1 > length(args)) {
-        stop("Error: --file2 requires an argument")
-      }
-      parsed_args$file2 <- args[i + 1]
-      i <- i + 2
-    } else if (arg == "--output-dir") {
-      if (i + 1 > length(args)) {
-        stop("Error: --output-dir requires an argument")
-      }
-      parsed_args$output_dir <- args[i + 1]
-      i <- i + 2
-    } else if (arg == "--gunc-progenomes") {
-      if (i + 1 > length(args)) {
-        stop("Error: --gunc-progenomes requires an argument")
-      }
-      parsed_args$gunc_progenomes <- args[i + 1]
-      i <- i + 2
-    } else if (arg == "--gunc-gtdb") {
-      if (i + 1 > length(args)) {
-        stop("Error: --gunc-gtdb requires an argument")
-      }
-      parsed_args$gunc_gtdb <- args[i + 1]
-      i <- i + 2
-    } else if (arg == "--metadata") {
-      if (i + 1 > length(args)) {
-        stop("Error: --metadata requires an argument")
-      }
-      parsed_args$metadata <- args[i + 1]
-      i <- i + 2
-    } else {
-      stop(paste("Error: Unknown option", arg))
     }
-  }  # IMPORTANTE: Esta llave cierra el while
-
-  # Validate required arguments
-  if (is.null(parsed_args$file1) || is.null(parsed_args$file2)) {
-    cat("Error: --file1 and --file2 are required arguments\n\n")
-    print_help()
-    quit(status = 1)
+    if (!arg %in% names(option_names)) {
+      stop("Unknown option ", arg, ". See --help.", call. = FALSE)
+    }
+    if (i + 1 > length(args)) {
+      stop(arg, " requires an argument", call. = FALSE)
+    }
+    parsed_args[[option_names[[arg]]]] <- args[i + 1]
+    i <- i + 2
   }
 
-  return(parsed_args)
-}  # IMPORTANTE: Esta llave cierra la función
+  if (!file.exists(parsed_args$file2)) {
+    stop("CheckM2 report not found: ", parsed_args$file2,
+         "\nRun pipeline step 01 first, or pass the report with --file2.",
+         call. = FALSE)
+  }
+  if (!is.null(parsed_args$file1) && !file.exists(parsed_args$file1)) {
+    stop("Comparison report not found: ", parsed_args$file1, call. = FALSE)
+  }
 
-# Defaults for an interactive run, where commandArgs() carries nothing useful.
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
+  parsed_args
 }
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
 
-PROJECT_DIR <- resolve_project_dir()
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-base_dir <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
-cli_args <- list(
-  file1           = file.path(base_dir, "results/20251222_23077_lizt_quality_report.tsv"),
-  file2           = file.path(base_dir, "results/02_mags_quality/20251222_valentin_quality_report.tsv"),
-  output_dir      = file.path(base_dir, "results/02_mags_quality"),
-  gunc_progenomes = file.path(base_dir, "results/17_chimerism/gunc_summary_progenomes3.tsv"),
-  gunc_gtdb       = file.path(base_dir, "results/17_chimerism/gunc_summary_gtdb214.tsv"),
-  metadata        = file.path(base_dir, "MAGs_metadata.tsv")
+# Defaults for every input, so that a plain run from the terminal and one
+# through source() in RStudio both read the pipeline output. The comparison set
+# of --file1 has none; see the header.
+cli_defaults <- list(
+  file1           = NULL,
+  file2           = file.path(PROJECT_DIR, "results", "01_mag_quality", "quality_report.tsv"),
+  output_dir      = file.path(PROJECT_DIR, "results", "01_mag_quality"),
+  gunc_progenomes = file.path(PROJECT_DIR, "results", "02_chimerism", "gunc_summary_progenomes3.tsv"),
+  gunc_gtdb       = file.path(PROJECT_DIR, "results", "02_chimerism", "gunc_summary_gtdb214.tsv"),
+  metadata        = file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
 )
+cli_args <- parse_arguments(commandArgs(trailingOnly = TRUE), cli_defaults)
 
 script_start <- Sys.time()
 cat(sprintf("=== Inicio del script: %s ===\n\n", format(script_start, "%Y-%m-%d %H:%M:%S")))
 
 # === Configuration ===
 cat("=== Configuration ===\n")
-cat("Input file 1:", cli_args$file1, "\n")
+cat("Input file 1:", if (is.null(cli_args$file1)) "none, comparison figures skipped" else cli_args$file1, "\n")
 cat("Input file 2:", cli_args$file2, "\n")
 cat("Output directory:", cli_args$output_dir, "\n")
 if (!is.null(cli_args$gunc_progenomes))
@@ -489,6 +455,11 @@ MIMAG_THRESHOLDS <- list(
   medium_quality = list(completeness = 50, contamination = 10),
   near_complete = list(completeness = 90, contamination = 5)
 )
+
+# MAG names as utils/05_rename_mags.sh leaves them, dots in place of
+# underscores. GUNC and the metadata's NameWithoutExtension use that form, and
+# so does the CheckM2 report once renamed; one written before keeps underscores.
+mag_key <- function(x) gsub("_", ".", x, fixed = TRUE)
 
 # === Data loading and processing ===
 #' Load and classify MAG quality data
@@ -514,9 +485,9 @@ load_and_classify <- function(file_path, dataset_name) {
       Station = ifelse(is.na(str_extract(Name, "^[A-Z0-9]+")),
                        "Unknown",
                        str_extract(Name, "^[A-Z0-9]+")),
-      Depth = ifelse(is.na(str_extract(Name, "(?<=_)[A-Z0-9]+(?=_megahit)")),
+      Depth = ifelse(is.na(str_extract(Name, "(?<=[_.])[A-Z0-9]+(?=[_.]megahit)")),
                      "Unknown",
-                     str_extract(Name, "(?<=_)[A-Z0-9]+(?=_megahit)")),
+                     str_extract(Name, "(?<=[_.])[A-Z0-9]+(?=[_.]megahit)")),
       Binner = case_when(
         str_detect(Name, "metabat") ~ "MetaBAT2",
         str_detect(Name, "maxbin") ~ "MaxBin2",
@@ -546,8 +517,14 @@ load_and_classify <- function(file_path, dataset_name) {
   return(df)
 }
 
-df_1 <- load_and_classify(input_1, "Lizt")
-df_2 <- load_and_classify(input_2, "Valentín")
+# The MAGs analysed here, keyed so that the joins with GUNC and the metadata
+# work whether or not the report has been through the rename.
+df_2 <- load_and_classify(input_2, "Valentín") %>% mutate(Name = mag_key(Name))
+
+# The comparison set when given; otherwise an empty table with the same
+# columns, so the summaries below need no special case.
+HAS_COMPARISON <- !is.null(input_1)
+df_1 <- if (HAS_COMPARISON) load_and_classify(input_1, "Lizt") else df_2[0, ]
 df_combined <- bind_rows(df_1, df_2)
 
 # === Summary statistics ===
@@ -652,130 +629,135 @@ save_dual <- function(plot, outfile, width, height, dpi = 300) {
   ggsave(outfile, plot, width = width, height = height, dpi = dpi)
 }
 
-# === Figure 1: Completeness vs Contamination (MIMAG plot) ===
-cat("=== Generating Figure 1: MIMAG quality plot ===\n")
-# Alpha refers to the opacity of a geom. Values of alpha range from 0 to 1,
-# with lower values corresponding to more transparent colors.
+# Figures 1 and 2 compare the two MAG sets, so they need --file1.
+if (HAS_COMPARISON) {
 
-p1 <- ggplot(df_combined, aes(x = Contamination, y = Completeness,
-                              fill = Dataset,    # Relleno basado en Dataset
-                              color = Dataset)) + # Contorno basado en Dataset
-  # MIMAG quality regions
-  annotate("rect", xmin = 0, xmax = 5, ymin = 90, ymax = 100,
-           fill = "#2ecc71", alpha = 0.1) +
-  annotate("rect", xmin = 0, xmax = 10, ymin = 50, ymax = 90,
-           fill = "#f39c12", alpha = 0.1) +
-  annotate("rect", xmin = 5, xmax = 10, ymin = 90, ymax = 100,
-           fill = "#f39c12", alpha = 0.1) +
-  annotate("rect", xmin = 0, xmax = 10, ymin = 0, ymax = 50,
-           fill = "#95a5a6", alpha = 0.1) +
-  annotate("rect", xmin = 10, xmax = Inf, ymin = 0, ymax = 100,
-           fill = "#e74c3c", alpha = 0.1) +
-  # Reference lines
-  geom_vline(xintercept = c(5, 10), linetype = "dashed", color = "gray30", linewidth = 0.5) +
-  geom_hline(yintercept = c(50, 90), linetype = "dashed", color = "gray30", linewidth = 0.5) +
-  # Data points, with a heavy outline
-  geom_point(size = 2.7, alpha = 0.4,
-             shape = 21,      # Círculo con borde
-             stroke = 0.8) +  # Grosor del contorno
-  scale_fill_manual(values = c(     # Colores de relleno
-    "Lizt" = "#FF3030",
-    "Valentín" = "#006300")) +
-  scale_color_manual(values = c(    # Colores de contorno (iguales que relleno)
-    "Lizt" = "#FF3030",
-    "Valentín" = "#006300")) +
-  labs(
-    title = "Evaluación de calidad de los conjuntos de MAGs",
-    x = "Contaminación (%)",
-    y = "Completitud (%)",
-    fill = "Conjunto de MAGs",    # Título de la leyenda
-    color = "Conjunto de MAGs"
-  ) +
-  guides(color = "none") +  # Ocultar la leyenda de color (solo mostrar fill)
-  scale_x_continuous(limits = c(0, max(df_combined$Contamination) + 1),
-                     breaks = seq(0, 15, 5)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10))
+  # === Figure 1: Completeness vs Contamination (MIMAG plot) ===
+  cat("=== Generating Figure 1: MIMAG quality plot ===\n")
+  # Alpha refers to the opacity of a geom. Values of alpha range from 0 to 1,
+  # with lower values corresponding to more transparent colors.
 
-p1_publication <- p1 + theme_publication()
-save_dual(p1_publication, file.path(output_dir, "Fig1_pub_MIMAG_quality.png"), width = 10, height = 6)
+  p1 <- ggplot(df_combined, aes(x = Contamination, y = Completeness,
+                                fill = Dataset,    # fill by Dataset
+                                color = Dataset)) + # outline by Dataset
+    # MIMAG quality regions
+    annotate("rect", xmin = 0, xmax = 5, ymin = 90, ymax = 100,
+             fill = "#2ecc71", alpha = 0.1) +
+    annotate("rect", xmin = 0, xmax = 10, ymin = 50, ymax = 90,
+             fill = "#f39c12", alpha = 0.1) +
+    annotate("rect", xmin = 5, xmax = 10, ymin = 90, ymax = 100,
+             fill = "#f39c12", alpha = 0.1) +
+    annotate("rect", xmin = 0, xmax = 10, ymin = 0, ymax = 50,
+             fill = "#95a5a6", alpha = 0.1) +
+    annotate("rect", xmin = 10, xmax = Inf, ymin = 0, ymax = 100,
+             fill = "#e74c3c", alpha = 0.1) +
+    # Reference lines
+    geom_vline(xintercept = c(5, 10), linetype = "dashed", color = "gray30", linewidth = 0.5) +
+    geom_hline(yintercept = c(50, 90), linetype = "dashed", color = "gray30", linewidth = 0.5) +
+    # Data points, with a heavy outline
+    geom_point(size = 2.7, alpha = 0.4,
+               shape = 21,      # circle with an outline
+               stroke = 0.8) +  # outline width
+    scale_fill_manual(values = c(     # fill colours
+      "Lizt" = "#FF3030",
+      "Valentín" = "#006300")) +
+    scale_color_manual(values = c(    # outline colours (same as the fill)
+      "Lizt" = "#FF3030",
+      "Valentín" = "#006300")) +
+    labs(
+      title = "Evaluación de calidad de los conjuntos de MAGs",
+      x = "Contaminación (%)",
+      y = "Completitud (%)",
+      fill = "Conjunto de MAGs",    # legend title
+      color = "Conjunto de MAGs"
+    ) +
+    guides(color = "none") +  # hide the colour legend; only fill is shown
+    scale_x_continuous(limits = c(0, max(df_combined$Contamination) + 1),
+                       breaks = seq(0, 15, 5)) +
+    scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10))
 
-#p1_clean <- p1 + theme_clean() +
-#  theme(legend.background = element_rect(fill = "white", color = NA),
-#        legend.title = element_text(face = "bold"))
-#ggsave(file.path(output_dir, "Fig1_clean_MIMAG_quality.png"),
-#       p1_clean, width = 10, height = 6, dpi = 300)
+  p1_publication <- p1 + theme_publication()
+  save_dual(p1_publication, file.path(output_dir, "Fig1_pub_MIMAG_quality.png"), width = 10, height = 6)
 
-cat("[OK] Saved Figure 1\n")
+  #p1_clean <- p1 + theme_clean() +
+  #  theme(legend.background = element_rect(fill = "white", color = NA),
+  #        legend.title = element_text(face = "bold"))
+  #ggsave(file.path(output_dir, "Fig1_clean_MIMAG_quality.png"),
+  #       p1_clean, width = 10, height = 6, dpi = 300)
 
-#ggsave(file.path(output_dir, "Fig1_MIMAG_quality_plot.pdf"),
- #      p1, width = 10, height = 6)
+  cat("[OK] Saved Figure 1\n")
 
-# === Figure 2: Quality distribution by dataset ===
-cat("=== Generating Figure 2: Quality distributions ===\n")
+  #ggsave(file.path(output_dir, "Fig1_MIMAG_quality_plot.pdf"),
+   #      p1, width = 10, height = 6)
 
-dataset_colors <- c("Lizt" = "#f04b82", "Valentín" = "#2899c9")
+  # === Figure 2: Quality distribution by dataset ===
+  cat("=== Generating Figure 2: Quality distributions ===\n")
 
-# Construir subplots SIN theme() al final
-p2a <- ggplot(df_combined, aes(x = MIMAG_Quality, fill = Dataset)) +
-  geom_bar(position = "dodge", color = "black", linewidth = 0.3) +
-  geom_text(stat = "count", aes(label = after_stat(count)),
-            position = position_dodge(width = 0.9), vjust = -0.5, size = 3.5) +
-  scale_fill_manual(values = dataset_colors) +  # Colores personalizados
-  labs(
-    title = "Distribución de calidad de MAGs por conjunto de MAGs",
-    x = "Categoría de calidad MIMAG",
-    y = "Número de MAGs",
-    fill = "Conjunto de MAGs"
+  dataset_colors <- c("Lizt" = "#f04b82", "Valentín" = "#2899c9")
+
+  # Build the subplots WITHOUT theme() at the end
+  p2a <- ggplot(df_combined, aes(x = MIMAG_Quality, fill = Dataset)) +
+    geom_bar(position = "dodge", color = "black", linewidth = 0.3) +
+    geom_text(stat = "count", aes(label = after_stat(count)),
+              position = position_dodge(width = 0.9), vjust = -0.5, size = 3.5) +
+    scale_fill_manual(values = dataset_colors) +  # custom colours
+    labs(
+      title = "Distribución de calidad de MAGs por conjunto de MAGs",
+      x = "Categoría de calidad MIMAG",
+      y = "Número de MAGs",
+      fill = "Conjunto de MAGs"
+    )
+
+  p2b <- ggplot(df_combined, aes(x = Dataset, y = Completeness, fill = Dataset)) +
+    geom_violin(alpha = 0.4, color = "black", linewidth = 0.5) +
+    geom_boxplot(width = 0.2, alpha = 0.8, outlier.shape = 21, linewidth = 0.5) +
+    geom_hline(yintercept = c(50, 90), linetype = "dashed", color = "gray30", linewidth = 0.5) +
+    scale_fill_manual(values = dataset_colors) +  # custom colours
+    labs(
+      title = "Distribución de completitud",
+      x = NULL,
+      y = "Completitud (%)",
+      fill = "Conjunto de MAGs"
+    ) +
+    guides(fill = "none")
+
+  p2c <- ggplot(df_combined, aes(x = Dataset, y = Contamination, fill = Dataset)) +
+    geom_violin(alpha = 0.4, color = "black", linewidth = 0.5) +
+    geom_boxplot(width = 0.2, alpha = 0.8, outlier.shape = 21, linewidth = 0.5) +
+    geom_hline(yintercept = c(5, 10), linetype = "dashed", color = "gray30", linewidth = 0.5) +
+    scale_fill_manual(values = dataset_colors) +  # custom colours
+    labs(
+      title = "Distribución de contaminación",
+      x = NULL,
+      y = "Contaminación (%)",
+      fill = "Conjunto de MAGs"
+    ) +
+    guides(fill = "none")
+
+  # Combine the plots
+  p2 <- p2a / (p2b | p2c) + plot_layout(heights = c(1.2, 1))
+
+  # Apply the themes with &
+  p2_publication <- p2 & theme_publication() & theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
   )
 
-p2b <- ggplot(df_combined, aes(x = Dataset, y = Completeness, fill = Dataset)) +
-  geom_violin(alpha = 0.4, color = "black", linewidth = 0.5) +
-  geom_boxplot(width = 0.2, alpha = 0.8, outlier.shape = 21, linewidth = 0.5) +
-  geom_hline(yintercept = c(50, 90), linetype = "dashed", color = "gray30", linewidth = 0.5) +
-  scale_fill_manual(values = dataset_colors) +  # Colores personalizados
-  labs(
-    title = "Distribución de completitud",
-    x = NULL,
-    y = "Completitud (%)",
-    fill = "Conjunto de MAGs"
-  ) +
-  guides(fill = "none")
+  save_dual(p2_publication, file.path(output_dir, "Fig2_pub_quality_distributions.png"), width = 12, height = 8)
 
-p2c <- ggplot(df_combined, aes(x = Dataset, y = Contamination, fill = Dataset)) +
-  geom_violin(alpha = 0.4, color = "black", linewidth = 0.5) +
-  geom_boxplot(width = 0.2, alpha = 0.8, outlier.shape = 21, linewidth = 0.5) +
-  geom_hline(yintercept = c(5, 10), linetype = "dashed", color = "gray30", linewidth = 0.5) +
-  scale_fill_manual(values = dataset_colors) +  # Colores personalizados
-  labs(
-    title = "Distribución de contaminación",
-    x = NULL,
-    y = "Contaminación (%)",
-    fill = "Conjunto de MAGs"
-  ) +
-  guides(fill = "none")
+  #p2_clean <- p2 & theme_clean() & theme(
+  #  axis.text.x = element_text(angle = 25, hjust = 1),
+  #  legend.background = element_rect(fill = "white", color = NA),
+  #  legend.title = element_text(face = "bold")
+  #)
 
-# Combinar plots
-p2 <- p2a / (p2b | p2c) + plot_layout(heights = c(1.2, 1))
+  #ggsave(file.path(output_dir, "Fig2_clean_quality_distributions.png"),
+  #       p2_clean, width = 12, height = 8, dpi = 300)
 
-# Aplicar temas usando &
-p2_publication <- p2 & theme_publication() & theme(
-  axis.text.x = element_text(angle = 25, hjust = 1)
-)
+  cat("[OK] Saved Figure 2\n")
 
-save_dual(p2_publication, file.path(output_dir, "Fig2_pub_quality_distributions.png"), width = 12, height = 8)
+}
 
-#p2_clean <- p2 & theme_clean() & theme(
-#  axis.text.x = element_text(angle = 25, hjust = 1),
-#  legend.background = element_rect(fill = "white", color = NA),
-#  legend.title = element_text(face = "bold")
-#)
-
-#ggsave(file.path(output_dir, "Fig2_clean_quality_distributions.png"),
-#       p2_clean, width = 12, height = 8, dpi = 300)
-
-cat("[OK] Saved Figure 2\n")
-
-# === Figure 3: Genome assembly metrics (SEPARADO POR DATASET) ===
+# === Figure 3: Genome assembly metrics (SEPARATE PER DATASET) ===
 cat("=== Generating Figure 3: Assembly metrics (by dataset) ===\n")
 
 # Colour palette for the MIMAG quality bands
@@ -786,75 +768,80 @@ mimag_colors <- c(
   "Contaminado" = "#e74c3c"
 )
 
-# ---- FIGURA 3A: Conjunto de datos LIZT ----
+# Figure 3A shows the comparison set alone, so it needs --file1 too.
+if (HAS_COMPARISON) {
 
-# Lizt dataset
-df_lizt <- df_combined %>% filter(Dataset == "Lizt")
+  # ---- FIGURE 3A: the Lizt MAG set ----
 
-# Subplot 3A-1: genome size against N50 (Lizt)
-p3a_lizt <- ggplot(df_lizt, aes(x = Genome_Size / 1e6, y = Contig_N50 / 1000,
-                                color = MIMAG_Quality)) +
-  geom_point(size = 2.5, alpha = 0.7) +
-  scale_x_log10(labels = comma) +
-  scale_y_log10(labels = comma) +
-  scale_color_manual(values = mimag_colors) +
-  labs(
-    title = "Tamaño del genoma vs N50 de contigs",
-    x = "Tamaño del genoma (Mb)",
-    y = "Contig N50 (kb)",
-    color = "Categoría de calidad"
+  # Lizt dataset
+  df_lizt <- df_combined %>% filter(Dataset == "Lizt")
+
+  # Subplot 3A-1: genome size against N50 (Lizt)
+  p3a_lizt <- ggplot(df_lizt, aes(x = Genome_Size / 1e6, y = Contig_N50 / 1000,
+                                  color = MIMAG_Quality)) +
+    geom_point(size = 2.5, alpha = 0.7) +
+    scale_x_log10(labels = comma) +
+    scale_y_log10(labels = comma) +
+    scale_color_manual(values = mimag_colors) +
+    labs(
+      title = "Tamaño del genoma vs N50 de contigs",
+      x = "Tamaño del genoma (Mb)",
+      y = "Contig N50 (kb)",
+      color = "Categoría de calidad"
+    )
+
+  # Subplot 3A-2: GC vs Coding Density (Lizt)
+  p3b_lizt <- ggplot(df_lizt, aes(x = GC_Content * 100, y = Coding_Density * 100,
+                                  color = MIMAG_Quality)) +
+    geom_point(size = 2.5, alpha = 0.7) +
+    scale_color_manual(values = mimag_colors) +
+    labs(
+      title = "Contenido GC vs Densidad de codificación",
+      x = "Contenido GC (%)",
+      y = "Densidad de codificación (%)",
+      color = "Categoría de calidad"
+    )
+
+  # Subplot 3A-3: quality against size (Lizt)
+  p3c_lizt <- ggplot(df_lizt, aes(x = Size_Category, fill = MIMAG_Quality)) +
+    geom_bar(position = "stack", color = "black", linewidth = 0.3) +
+    scale_fill_manual(values = mimag_colors) +
+    labs(
+      title = "Calidad por tamaño de genoma",
+      x = "Categoría de tamaño de genoma",
+      y = "Número de MAGs",
+      fill = "Categoría de calidad"
+    )
+
+  # Assemble the Lizt panel
+  p3_lizt <- (p3a_lizt | p3b_lizt) / p3c_lizt +
+    plot_layout(heights = c(1, 1)) +
+    plot_annotation(
+      title = "Métricas de ensamble de genomas - Conjunto Dra. Lizt",
+      theme = theme(plot.title = element_text(face = "bold", size = 18, hjust = 0.5))
+    )
+
+  # Apply the themes
+  p3_lizt_publication <- p3_lizt & theme_publication() & theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
   )
 
-# Subplot 3A-2: GC vs Coding Density (Lizt)
-p3b_lizt <- ggplot(df_lizt, aes(x = GC_Content * 100, y = Coding_Density * 100,
-                                color = MIMAG_Quality)) +
-  geom_point(size = 2.5, alpha = 0.7) +
-  scale_color_manual(values = mimag_colors) +
-  labs(
-    title = "Contenido GC vs Densidad de codificación",
-    x = "Contenido GC (%)",
-    y = "Densidad de codificación (%)",
-    color = "Categoría de calidad"
-  )
+  save_dual(p3_lizt_publication, file.path(output_dir, "Fig3A_pub_assembly_metrics_Lizt.png"), width = 12, height = 10)
 
-# Subplot 3A-3: quality against size (Lizt)
-p3c_lizt <- ggplot(df_lizt, aes(x = Size_Category, fill = MIMAG_Quality)) +
-  geom_bar(position = "stack", color = "black", linewidth = 0.3) +
-  scale_fill_manual(values = mimag_colors) +
-  labs(
-    title = "Calidad por tamaño de genoma",
-    x = "Categoría de tamaño de genoma",
-    y = "Número de MAGs",
-    fill = "Categoría de calidad"
-  )
+  #p3_lizt_clean <- p3_lizt & theme_clean() & theme(
+  #  axis.text.x = element_text(angle = 25, hjust = 1),
+  #  legend.background = element_rect(fill = "white", color = NA),
+  #  legend.title = element_text(face = "bold")
+  #)
 
-# Assemble the Lizt panel
-p3_lizt <- (p3a_lizt | p3b_lizt) / p3c_lizt +
-  plot_layout(heights = c(1, 1)) +
-  plot_annotation(
-    title = "Métricas de ensamble de genomas - Conjunto Dra. Lizt",
-    theme = theme(plot.title = element_text(face = "bold", size = 18, hjust = 0.5))
-  )
+  #ggsave(file.path(output_dir, "Fig3A_clean_assembly_metrics_Lizt.png"),
+  #       p3_lizt_clean, width = 12, height = 10, dpi = 300)
 
-# Aplicar temas
-p3_lizt_publication <- p3_lizt & theme_publication() & theme(
-  axis.text.x = element_text(angle = 25, hjust = 1)
-)
+  cat("[OK] Saved Figure 3A\n")
 
-save_dual(p3_lizt_publication, file.path(output_dir, "Fig3A_pub_assembly_metrics_Lizt.png"), width = 12, height = 10)
+}
 
-#p3_lizt_clean <- p3_lizt & theme_clean() & theme(
-#  axis.text.x = element_text(angle = 25, hjust = 1),
-#  legend.background = element_rect(fill = "white", color = NA),
-#  legend.title = element_text(face = "bold")
-#)
-
-#ggsave(file.path(output_dir, "Fig3A_clean_assembly_metrics_Lizt.png"),
-#       p3_lizt_clean, width = 12, height = 10, dpi = 300)
-
-cat("[OK] Saved Figure 3A\n")
-
-# ---- FIGURA 3B: Conjunto de datos VALENTÍN ----
+# ---- FIGURE 3B: the Valentín MAG set ----
 
 # Valentin dataset, the 54 MAGs this thesis is about
 df_valentin <- df_combined %>% filter(Dataset == "Valentín")
@@ -904,7 +891,7 @@ p3_valentin <- (p3a_valentin | p3b_valentin) / p3c_valentin +
     theme = theme(plot.title = element_text(face = "bold", size = 18, hjust = 0.5))
   )
 
-# Aplicar temas
+# Apply the themes
 p3_valentin_publication <- p3_valentin & theme_publication() & theme(
   axis.text.x = element_text(angle = 25, hjust = 1)
 )
@@ -932,7 +919,7 @@ if (nrow(df_1) > 0 && any(df_1$Binner != "Unknown")) {
     summarise(n = n(), .groups = "drop")
 
   if (nrow(binner_stats) > 0) {
-    # Subplots SIN theme() individual
+    # Subplots WITHOUT their own theme()
     p4a <- ggplot(binner_stats, aes(x = Binner, y = n, fill = MIMAG_Quality)) +
       geom_col(position = "stack", color = "black", linewidth = 0.3) +
       geom_text(aes(label = n), position = position_stack(vjust = 0.5),
@@ -962,7 +949,7 @@ if (nrow(df_1) > 0 && any(df_1$Binner != "Unknown")) {
         x = "Herramienta de binning",
         y = "Puntuación de calidad (Qscore)"
       ) +
-      guides(fill = "none")  # Ocultar leyenda en este subplot
+      guides(fill = "none")  # hide the legend in this subplot
 
     p4 <- p4a / p4b
 
@@ -1083,7 +1070,7 @@ save_dual(p6_publication, file.path(output_dir, "Fig6_pub_MIMAG_quality_Valentin
 cat("[OK] Saved Figure 6\n")
 
 # 2026/04/02:
-# ---- PRUEBAS ESTADÍSTICAS (Kruskal-Wallis) PARA DISTRIBUCIÓN DE CALIDAD ----
+# ---- STATISTICAL TESTS (Kruskal-Wallis) ON THE QUALITY DISTRIBUTIONS ----
 cat("\n=== Realizando pruebas estadísticas (Kruskal-Wallis) ===\n")
 
 # The test runs on the 54 high and medium quality MAGs, less ZMOR (n = 2) and
@@ -1129,9 +1116,9 @@ openxlsx::write.xlsx(
 )
 cat("[OK] Tabla de resultados estadísticos guardada (con hoja MAGs_usados).\n")
 
-# --- REGLAS DE COMPARACIÓN PARA LOS BOXPLOTS ---
-my_depth_comparisons <- list(c("1000 m", "Fondo")) # Ignorar ZMOR
-estaciones_validas <- setdiff(unique(as.character(df_stats$Station)), "C22") # Ignorar C22
+# --- COMPARISON RULES FOR THE BOXPLOTS ---
+my_depth_comparisons <- list(c("1000 m", "Fondo")) # leave out ZMOR
+estaciones_validas <- setdiff(unique(as.character(df_stats$Station)), "C22") # leave out C22
 my_station_comparisons <- combn(estaciones_validas, 2, simplify = FALSE)
 
 # Returns only the pairs at p < 0.05 by Wilcoxon rank-sum. The unit conversions
@@ -1284,7 +1271,7 @@ if (nrow(df_val_filtered) > 0) {
     ) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-  # --- Row 3: Quality Score (MOVIDO AQUÍ) ---
+  # --- Row 3: Quality Score (MOVED HERE) ---
   # By Depth (left)
   p7e <- ggplot(df_val_filtered, aes(x = Depth, y = Quality_Score)) +
     geom_jitter(width = 0.2, alpha = 0.6, size = 2, fill = color_quality, color = "black", shape = 21, stroke = 0.3) +
@@ -1484,7 +1471,7 @@ if (nrow(df_val_filtered) > 0) {
 
     ORDER_MIN_N <- 3L
     .order_meta_d <- read_tsv(cli_args$metadata, show_col_types = FALSE) %>%
-      select(Name = OriginalName, FullTaxonomy) %>%
+      select(Name = NameWithoutExtension, FullTaxonomy) %>%
       mutate(Order = str_extract(FullTaxonomy, "(?<=o__)[^;]+"),
              Class = str_extract(FullTaxonomy, "(?<=c__)[^;]+")) %>%
       filter(!is.na(Order), Order != "")
@@ -1644,7 +1631,7 @@ if (nrow(df_val_filtered) > 0) {
 # GUNC Chimerism Analysis – Figures 8–12
 #
 # Requires: --gunc-progenomes and --gunc-gtdb CLI arguments pointing to the
-# gunc_summary_*.tsv files produced by 17_chimerism.sh.
+# gunc_summary_*.tsv files produced by 02_chimerism.sh.
 #
 # Methodological rationale
 # GUNC (Genome UNcleaned Check; Orakov et al. 2021, Genome Biol.) detects
@@ -1671,12 +1658,6 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
   cat("\n=== Loading GUNC chimerism data ===\n")
 
-  # Normalise GUNC dot-separated genome names to CheckM2 underscore format
-  # e.g. A4.BTM.megahit.bin.28 to A4_BTM_megahit_bin.28
-  normalize_gunc_name <- function(x) {
-    sub("_bin_(\\d+)$", "_bin.\\1", gsub("\\.", "_", x))
-  }
-
   # Load one GUNC summary TSV and annotate with spatial metadata
   load_gunc <- function(file_path, db_label) {
     if (!file.exists(file_path)) {
@@ -1694,7 +1675,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
         Depth     = recode(Depth, "OMZ" = "ZMOR", "1000" = "1000 m", "BTM" = "Fondo"),
         Depth     = factor(Depth, levels = c("ZMOR", "1000 m", "Fondo")),
         # Normalised name for joining with CheckM2 data
-        Name      = normalize_gunc_name(genome),
+        Name      = mag_key(genome),
         # read_tsv parses "True"/"False" as logical (TRUE/FALSE); convert back
         # to character "TRUE"/"FALSE" before factoring to avoid NA mismatch.
         pass.GUNC = factor(as.character(pass.GUNC), levels = c("TRUE", "FALSE")),
@@ -1733,7 +1714,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # -------------------------------------------------------------------------
     if (!is.null(cli_args$metadata) && file.exists(cli_args$metadata)) {
       mag_meta <- read_tsv(cli_args$metadata, show_col_types = FALSE) %>%
-        select(Name = OriginalName, DisplayName)
+        select(Name = NameWithoutExtension, DisplayName)
       gunc_all  <- gunc_all  %>% left_join(mag_meta, by = "Name") %>%
         mutate(DisplayName = if_else(is.na(DisplayName), Name, DisplayName))
       gunc_prog <- gunc_prog %>% left_join(mag_meta, by = "Name") %>%
@@ -1763,7 +1744,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
       ORDER_MIN_N_C <- 3L
       .order_meta_c <- read_tsv(cli_args$metadata, show_col_types = FALSE) %>%
-        select(Name = OriginalName, FullTaxonomy) %>%
+        select(Name = NameWithoutExtension, FullTaxonomy) %>%
         mutate(Order = str_extract(FullTaxonomy, "(?<=o__)[^;]+"),
                Class = str_extract(FullTaxonomy, "(?<=c__)[^;]+")) %>%
         filter(!is.na(Order), Order != "")
@@ -1771,7 +1752,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
       order_levels_taxa_c <- c("Poseidoniales", "Nitrososphaerales",
                                "MGIII", "Undinarchaeales")
 
-      # Mismas reglas de fmt_taxon() en tax_analysis.R: orden en texto plano,
+      # Same rules as fmt_taxon() in tax_analysis.R: the order in plain text.
       # A code-like order name gets its parent class prefixed as "c.".
       .build_order_labels_c <- function(order_class_df) {
         is_acronym <- function(nm) {
@@ -2447,7 +2428,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
     gunc_wide_10 <- if (!is.null(cli_args$metadata) && file.exists(cli_args$metadata)) {
       species_meta_11 <- read_tsv(cli_args$metadata, show_col_types = FALSE) %>%
-        select(Name = OriginalName, Species)
+        select(Name = NameWithoutExtension, Species)
       gunc_wide %>% left_join(species_meta_11, by = "Name") %>%
         filter(is.na(Species) | Species == "N/A")
     } else {
@@ -2698,7 +2679,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
       checkm2_10 <- if (!is.null(cli_args$metadata) && file.exists(cli_args$metadata)) {
         species_meta <- read_tsv(cli_args$metadata, show_col_types = FALSE) %>%
-          select(Name = OriginalName, Species)
+          select(Name = NameWithoutExtension, Species)
         checkm2_joined %>%
           left_join(species_meta, by = "Name") %>%
           filter(is.na(Species) | Species == "N/A")
@@ -2882,7 +2863,7 @@ table1 <- df_combined %>%
 write.csv(table1, file.path(output_dir, "Table1_summary_statistics.csv"),
           row.names = FALSE)
 
-# RESUMEN CONTEXTUAL DE LOS 54 MAGs FINALES (ESTACIÓN, PROFUNDIDAD Y CALIDAD)
+# CONTEXT SUMMARY OF THE FINAL 54 MAGs (STATION, DEPTH AND QUALITY)
 # Faceted bar chart that opens the results section
 cat("\n=== Generando gráfico de contexto de los 54 MAGs finales ===\n")
 
@@ -2893,13 +2874,13 @@ df_54 <- df_valentin %>%
   mutate(
     # Quality score, following Parks et al.
     Quality_Score = Completeness - 5 * Contamination,
-    # Traducir profundidades
+    # Translate the depths
     Depth = recode(Depth, "OMZ" = "ZMOR", "1000" = "1000 m", "BTM" = "Fondo"),
     # Order the depths from surface to bottom
     Depth = factor(Depth, levels = c("ZMOR", "1000 m", "Fondo"))
   )
 
-# 2. Resumir datos
+# 2. Summarise the data
 summary_54 <- df_54 %>%
   group_by(Station, Depth) %>%
   summarise(

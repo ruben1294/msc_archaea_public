@@ -76,13 +76,31 @@ italic_title <- function(pretty) {
   }
 }
 
-# --- Rutas --------------------------------------------------------------------
-PROJECT_DIR <- resolve_project_dir()
+# --- Paths --------------------------------------------------------------------
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 SO_03_DIR   <- file.path(PROJECT_DIR, "results", "SO_03")
 DERIVED_DIR <- file.path(SO_03_DIR, "derived")
 CLASS_DIR   <- file.path(SO_03_DIR, "classification")
 OUTPUT_DIR  <- file.path(SO_03_DIR, "rda_env")
-ENV_XLSX    <- file.path(PROJECT_DIR, "Physicochemical_properties.xlsx")
+ENV_XLSX    <- file.path(PROJECT_DIR, "data", "Physicochemical_properties.xlsx")
 TREE_NWK    <- file.path(PROJECT_DIR, "results", "SO_02", "phylogenomics",
                          "curated_54mags.gtdb_pruned.nwk")
 
@@ -106,7 +124,7 @@ log_warn <- function(...) cat(sprintf("[%s] [WARN] %s\n",
                                       format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
                                       paste0(...)), file = stderr())
 
-# Must match the sanitisation in pipeline step 14
+# Must match the sanitisation in pipeline step 20
 sanitize <- function(x) gsub("[^a-zA-Z0-9_]", "_", x)
 
 # PVR axes from a tree: PCoA over the patristic distance matrix
@@ -121,7 +139,7 @@ phylo_pvr <- function(tree, tips_keep, n_axes = 3) {
   list(axes = axes, eigvals = pco$eig)
 }
 
-# --- Cargar ambiental ---------------------------------------------------------
+# --- Load environmental data -------------------------------------------------
 if (!file.exists(ENV_XLSX)) {
   stop("Environmental XLSX not found: ", ENV_XLSX,
        " — run scripts/utils/09_combine_env_metadata.py first")
@@ -156,7 +174,7 @@ if (file.exists(TREE_NWK)) {
   tree <- read.tree(TREE_NWK)
   log_info(sprintf("Tree loaded: %d tips (raw)", length(tree$tip.label)))
 
-  META_TSV <- file.path(PROJECT_DIR, "MAGs_metadata.tsv")
+  META_TSV <- file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
   meta_for_tree <- read_tsv(META_TSV, show_col_types = FALSE) %>%
     mutate(parts = str_split(NameWithoutExtension, fixed("."))) %>%
     rowwise() %>%
@@ -190,7 +208,7 @@ if (file.exists(TREE_NWK)) {
 
 # ---- one species at a time ----
 varpart_summary <- list()
-panel_varpart   <- list()  # almacena vp + metadatos para Fig_panel_varpart_venn
+panel_varpart   <- list()  # holds vp and metadata for Fig_panel_varpart_venn
 
 canonical_species <- names(species_pretty)
 bin_files <- list.files(DERIVED_DIR, pattern = "_GCxMAG_binary\\.tsv$", full.names = TRUE)
@@ -226,7 +244,7 @@ for (bin_file in bin_files) {
   bin_mat <- as.matrix(bin_df[, -1])
   rownames(bin_mat) <- bin_df$gene_cluster_id
   bin_acc <- bin_mat[rownames(bin_mat) %in% accessory_gcs, , drop = FALSE]
-  Y <- t(bin_acc)  # filas = MAGs, columnas = GCs
+  Y <- t(bin_acc)  # rows = MAGs, columns = GCs
 
   # Station and Depth join the per-station sheet; Depth alone joins the other
   env_join <- meta_sp %>%
@@ -247,7 +265,7 @@ for (bin_file in bin_files) {
   env_aligned <- env_aligned[full_rows, ]
 
   # PVR axes from the within-species subtree; tips are already renamed above
-  # al genome_key sanitizado, el match es directo.
+  # to the sanitised genome_key, so the match is direct.
   pvr <- if (!is.null(tree)) phylo_pvr(tree, rownames(Y), n_axes = 3) else NULL
   pvr_axes <- NULL
   if (!is.null(pvr)) {
@@ -283,7 +301,7 @@ for (bin_file in bin_files) {
   jac <- vegdist(Y, method = "jaccard", binary = TRUE)
   cond_terms <- intersect(c("PVR1", "PVR2", "PVR3"), colnames(env_aligned))
 
-  # --- varpart ambiente vs filogenia -----------------------------------------
+  # --- varpart, environment against phylogeny ---------------------------------
   # varpart returns NA for the adjusted R squared when the model is
   # undersaturated, which happens easily with few MAGs and many variables. To
   # get interpretable numbers back, the environmental variables and the number
@@ -370,7 +388,7 @@ for (bin_file in bin_files) {
 
 }
 
-# --- Resumen global -----------------------------------------------------------
+# --- Overall summary ----------------------------------------------------------
 if (length(varpart_summary) > 0) {
   bind_rows(varpart_summary) %>%
     write_tsv(file.path(OUTPUT_DIR, "varpart_summary_all_species.tsv"))
@@ -388,7 +406,7 @@ if (length(panel_varpart) > 0) {
   n_rows    <- ceiling(n_pl / ncol_grid)
 
   panel_w <- 7.5 * ncol_grid
-  panel_h <- 6.5 * n_rows + 0.9   # margen extra arriba para el título global
+  panel_h <- 6.5 * n_rows + 0.9   # extra top margin for the overall title
 
   png(file.path(OUTPUT_DIR, "Fig_panel_varpart_venn.png"),
       width = panel_w, height = panel_h, units = "in", res = 300)

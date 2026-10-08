@@ -1,7 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name=01_filter_mags
-#SBATCH --account=metagenomica
-#SBATCH --partition=d30
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -10,15 +8,16 @@
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 
-# MIMAG filtering. Submit from the repository root:
+# MIMAG filtering, between step 01 and utils/05_rename_mags.sh. Submit from the
+# repository root, naming your account and partition:
 #
-#   mkdir -p logs && sbatch slurm/01_filter_mags.slurm
+#   mkdir -p logs
+#   sbatch --account=<account> --partition=<partition> slurm/01_filter_mags.slurm
 #
-# The account, partition and module lines above and below are specific to the
-# CICESE cluster. Edit them for yours; utils/01_filter_mags.py itself needs
-# none of them and runs anywhere the tools are on PATH.
-#
-# Resource requests are the ones these runs actually used, so they are a
+# Exporting SBATCH_ACCOUNT and SBATCH_PARTITION once does the same for every
+# wrapper. Nothing here is tied to one cluster: the module and conda setup come
+# from slurm/cluster.env, and utils/01_filter_mags.py itself runs anywhere its
+# tools are on PATH. Resource requests are the ones these runs actually used, a
 # starting point rather than a recommendation.
 
 set -euo pipefail
@@ -36,6 +35,11 @@ if [[ ! -f "$SCRIPT_PATH" ]]; then
     echo "Submit from the repository root, not from slurm/." >&2
     exit 1
 fi
+
+# The filter takes its paths and MIMAG thresholds from configs/server.env.
+# shellcheck source=/dev/null
+source "$REPO_ROOT/scripts/lib/common.sh"
+load_project_config
 
 # Cluster-specific module and conda setup. Copy slurm/cluster.env.example to
 # slurm/cluster.env and edit it; without it, conda has to be on PATH already.

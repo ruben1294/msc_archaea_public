@@ -23,7 +23,25 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-PROJECT_DIR <- resolve_project_dir()
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 SO_03_DIR   <- file.path(PROJECT_DIR, "results", "SO_03")
 DERIVED_DIR <- file.path(SO_03_DIR, "derived")
 CLASS_DIR   <- file.path(SO_03_DIR, "classification")
@@ -67,7 +85,7 @@ if (any(!keep_idx)) {
 }
 bin_files <- bin_files[keep_idx]
 
-panel_nmds <- list()  # subplots para Fig_panel_nmds
+panel_nmds <- list()  # subplots for Fig_panel_nmds
 
 for (bin_file in bin_files) {
   sp_name <- str_replace(basename(bin_file), "_GCxMAG_binary\\.tsv$", "")

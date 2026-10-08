@@ -4,9 +4,9 @@
 # Aggregated trait heatmaps by group (figures 9a to 9f), Fisher tests and
 # logistic models per functional trait, over both the DRAM2 traits and the
 # carbon, nitrogen and sulfur cycle pathways from CNPS.cycle.
-# Fecha: 2026-02-26
+# Date: 2026-02-26
 
-# === PAQUETES ===
+# === PACKAGES ===
 if (!require("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   tidyverse, ComplexHeatmap, RColorBrewer, circlize,
@@ -28,7 +28,7 @@ font_priority <- c(
   "Helvetica", "Helvetica Neue"
 )
 
-# Cargar fuentes locales directamente (prioridad: Lato > Source Sans 3)
+# Load local fonts directly (priority: Lato, then Source Sans 3)
 font_found <- FALSE
 local_font_dir <- path.expand("~/.local/share/fonts")
 local_direct <- list(
@@ -109,31 +109,38 @@ if (!font_found) {
 }
 cat("[OK] Configuración de fuentes completada\n\n")
 
-# === RUTAS ===
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# === PATHS ===
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
 BASE_DIR    <- resolve_project_dir()
-DISTILL_DIR <- file.path(BASE_DIR, "results/08_MAG_distill")
-CNPS_DIR    <- file.path(BASE_DIR, "results/15_CNPS_cycle")
+DISTILL_DIR <- file.path(BASE_DIR, "results/10_MAG_distill")
+CNPS_DIR    <- file.path(BASE_DIR, "results/SO_01/CNPS_cycle")
 
-METADATA_FILE <- file.path(BASE_DIR, "MAGs_metadata.tsv")
+METADATA_FILE <- file.path(BASE_DIR, "data", "MAGs_metadata.tsv")
 TRAITS_FILE   <- file.path(DISTILL_DIR, "SUMMARIZE/traits.xlsx")
 
-# Directorio de salida propio (subdirectorio de funct_annot)
+# Own output directory, under funct_annot
 OUTPUT_DIR  <- file.path(BASE_DIR, "results/SO_01/funct_annot/treatment_comparison")
 CACHE_FILE  <- file.path(BASE_DIR, "results/SO_01/funct_annot/translation_cache_dram2_distill.csv")
 
@@ -160,7 +167,7 @@ capitalize_first <- function(x) {
   ifelse(is.na(x), x, paste0(toupper(substring(x, 1, 1)), substring(x, 2)))
 }
 
-# === GLOBALES DE PROFUNDIDAD / ESTACIÓN ===
+# === DEPTH AND STATION GLOBALS ===
 # Depth labels for the figures: ROMZ to ZMOR, 1000 to "1000 m", BTM to Fondo
 depth_label_map <- c("ROMZ" = "ZMOR", "1000" = "1000 m", "BTM" = "Fondo")
 translate_depth <- function(x) {
@@ -244,7 +251,7 @@ parse_gtdb_rank <- function(taxstr, prefix) {
   "Other"           = "Otro",
   "SCFA/alcohol"    = "AGCC/alcohol",
   "CAZy"            = "CAZy",
-  # CNPS cycle pathways (Carbono)
+  # CNPS cycle pathways (carbon)
   "Aerobic C fixation"              = "Fijación aeróbica de C",
   "Aerobic CH4 oxidation"           = "Oxidación aeróbica de CH\u2084",
   "Aerobic respiration"             = "Respiración aeróbica",
@@ -262,7 +269,7 @@ parse_gtdb_rank <- function(taxstr, prefix) {
   "Nitrogen mineralization"         = "Mineralización del N",
   "Nitrogen assimilation"           = "Asimilación de N",
   "DNRA"                            = "DNRA",
-  # CNPS cycle pathways (Azufre)
+  # CNPS cycle pathways (sulfur)
   "Dissimilatory sulfate reduction" = "Reducción disimilativa de SO\u2084\u00b2\u207b",
   "Assimilatory sulfate reduction"  = "Reducción asimilativa de SO\u2084\u00b2\u207b",
   "Sulfur oxidation"                = "Oxidación de S",
@@ -300,11 +307,11 @@ translate_to_spanish <- function(names_vec, translation_cache_file = CACHE_FILE)
   translated
 }
 
-# HELPER: cargar CSV de abundancia CNPS y convertir a data.frame de rasgos
+# HELPER: load a CNPS abundance CSV and turn it into a trait data frame
 #
-# Los CSV de CNPS tienen formato:  Type | MAG1 | MAG2 | ...
-# El resultado tiene formato:      genome | pathway1 | pathway2 | ...
-# Los valores son binarios (presencia/ausencia: valor > 0 to 1).
+# The CNPS CSVs are laid out as:  Type | MAG1 | MAG2 | ...
+# The result is laid out as:      genome | pathway1 | pathway2 | ...
+# Values become binary, presence or absence: anything above 0 becomes 1.
 
 load_cnps_abundance <- function(csv_path) {
   if (!file.exists(csv_path)) {
@@ -323,7 +330,7 @@ load_cnps_abundance <- function(csv_path) {
   mat_pw  <- as.matrix(df[, mag_cols, drop = FALSE])
   rownames(mat_pw) <- type_col
 
-  # Transponer: filas = MAGs, columnas = pathways to binarizar
+  # Transpose (rows = MAGs, columns = pathways), then binarise
   mat_t   <- t(mat_pw)                           # MAGs × pathways
   mat_bin <- matrix(
     as.integer(mat_t > 0),
@@ -514,7 +521,7 @@ plot_forest <- function(results_df, title, outfile,
   cat("  \u2713 Guardado:", basename(outfile), "\n")
 }
 
-# ---- CARGAR DATOS ----
+# ---- LOAD THE DATA ----
 
 # ---- DRAM2 traits ----
 if (!file.exists(TRAITS_FILE)) stop("traits.xlsx no encontrado: ", TRAITS_FILE)
@@ -546,7 +553,7 @@ order_raw[is.na(order_raw) | trimws(order_raw) == ""] <- "Desconocido"
 order_grp <- setNames(order_raw, metadata$NameWithoutExtension)
 cat("Órdenes detectados:", paste(unique(order_grp), collapse = ", "), "\n")
 
-# SECCIÓN 1: Heatmaps agregados
+# SECTION 1: aggregated heatmaps
 # Fig9a-9f:  DRAM2 traits (energy / carbon)
 # Fig12a-12i: CNPS cycle (carbon / nitrogen / sulfur)
 cat("=== SECCIÓN 1: HEATMAPS AGREGADOS ===\n\n")
@@ -603,7 +610,7 @@ make_trait_aggregated_heatmap(
 
 # ---- fig12a-12l: CNPS cycle (depth, station, genus, order) ----
 cnps_heatmap_specs <- list(
-  # CNPS Carbono
+  # CNPS carbon
   list(df = cnps_carbon,   label = "Carbono (CNPS)",   fig_pfx = "Fig12a", grp = depth_grp,
        grp_title = "Profundidad", grp_lbl = "profundidad",
        ord = depth_levels_std, cluster = FALSE, row_level = NULL),
@@ -629,7 +636,7 @@ cnps_heatmap_specs <- list(
   list(df = cnps_nitrogen, label = "Nitrógeno (CNPS)", fig_pfx = "Fig12f2", grp = order_grp,
        grp_title = "Orden",       grp_lbl = "orden",         ord = NULL, cluster = TRUE,
        row_level = "Order"),
-  # CNPS Azufre
+  # CNPS sulfur
   list(df = cnps_sulfur,   label = "Azufre (CNPS)",    fig_pfx = "Fig12g", grp = depth_grp,
        grp_title = "Profundidad", grp_lbl = "profundidad",
        ord = depth_levels_std, cluster = FALSE, row_level = NULL),
@@ -661,7 +668,7 @@ for (spec in cnps_heatmap_specs) {
 
 cat("\u2713 Sección 1 completada\n\n")
 
-# ---- SECCIÓN 2: Test de Fisher (rasgo × nivel de grupo) ----
+# ---- SECTION 2: Fisher tests (trait by group level) ----
 cat("=== SECCIÓN 2: TEST DE FISHER ===\n\n")
 
 run_fisher_tests <- function(trait_df, group_vec, sheet_name, group_var_name) {
@@ -704,7 +711,7 @@ run_fisher_tests <- function(trait_df, group_vec, sheet_name, group_var_name) {
   bind_rows(results[seq_len(k)])
 }
 
-# Lista de fuentes de datos: DRAM2 traits + CNPS cycle
+# Data sources: DRAM2 traits and CNPS cycles
 sheet_list <- list(
   list(df = traits_energy, name = "energy",         label = "Energía (DRAM2)"),
   list(df = traits_carbon, name = "carbon_dram2",   label = "Carbono (DRAM2)")
@@ -755,7 +762,7 @@ if (length(fisher_parts) > 0) {
   )
   grp_labels <- c("depth" = "Profundidad", "station" = "Estación", "genus" = "Género")
 
-  fig_counter <- 10L  # Fig10a, 10b, ... continua desde las anteriores
+  fig_counter <- 10L  # Fig10a, 10b, ... continuing from the earlier ones
   fig_letters <- c(letters, paste0("a", letters))  # a-z, aa-az
   fig_idx     <- 1L
 

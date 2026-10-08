@@ -6,7 +6,7 @@ cat("Inicio:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
 # metabolism summaries, the KEGG-Decoder comparison, and the figures for the
 # functional annotation objective.
 #
-# Reads the distillate from pipeline step 08 and writes into
+# Reads the distillate from pipeline step 10 and writes into
 # results/SO_01/funct_annot/. Figure labels are Spanish, matching the thesis;
 # translation runs through DeepL against a cached table, so the script works
 # offline once the cache exists.
@@ -26,7 +26,7 @@ if (!dir.exists(user_lib)) {
 .libPaths(c(user_lib, .libPaths()))
 fecha <- format(Sys.Date(), "%Y%m%d")
 
-# === VERIFICACIÓN DE PAQUETES ===
+# === PACKAGE CHECK ===
 cat("Verificando compatibilidad de paquetes...\n")
 
 check_and_update_packages <- function() {
@@ -60,7 +60,7 @@ check_and_update_packages <- function() {
 check_and_update_packages()
 cat("\n")
 
-# === CARGAR PAQUETES ===
+# === LOAD PACKAGES ===
 if (!require("pacman")) {
   install.packages("pacman")
 }
@@ -231,7 +231,7 @@ gpar_f <- function(...) {
 #   upright if the name is NA or "Sin asignar"
 #   italic otherwise, meaning an established genus or species name
 make_row_fontface <- function(names) {
-  first_word <- sub("\\s.*$", "", names)   # primera palabra del DisplayName
+  first_word <- sub("\\s.*$", "", names)   # first word of the DisplayName
   ifelse(
     is.na(names) | names == "Sin asignar" |
       grepl("[0-9]", first_word) | grepl("^[A-Z]+$", first_word),
@@ -252,11 +252,11 @@ should_italicize_level <- function(level) {
 # Builds plotmath expressions that italicise only the taxonomic part of a name.
 # Word by word: no digits and not all caps goes italic, everything else upright.
 # Only applies at genus level and below.
-#   level en {Family, Order, Class, Phylum, Domain} to todo plain (CDC).
-# Ejemplos (level="Species"):
+#   level in {Family, Order, Class, Phylum, Domain}: all plain (CDC).
+# Examples (level="Species"):
 #   "Thalassarchaeum betae A6 BTM_56"         to paste(italic('Thalassarchaeum betae'), ' A6 BTM_56')
 #   "Thalassarchaeum sp002507125 PO1 BTM_31"  to paste(italic('Thalassarchaeum'), ' sp002507125 PO1 BTM_31')
-#   "MGIIb-Q1 A4 1000_28"                     to 'MGIIb-Q1 A4 1000_28'  (todo plain)
+#   "MGIIb-Q1 A4 1000_28"                     to 'MGIIb-Q1 A4 1000_28'  (all plain)
 make_taxon_label_expr <- function(names, level = "Species") {
   italic_ok <- should_italicize_level(level)
   result <- lapply(names, function(nm) {
@@ -325,7 +325,7 @@ make_taxon_label_expr <- function(names, level = "Species") {
   lgds
 }
 
-# ---- TEMA PERSONALIZADO ----
+# ---- CUSTOM THEME ----
 theme_publication <- function(base_size = 11) {
   theme_bw(base_size = base_size) +
     theme(
@@ -345,22 +345,29 @@ theme_publication <- function(base_size = 11) {
     )
 }
 
-# ---- 1. CARGA Y PREPARACIÓN DE DATOS ----
-# Shared style and path resolution. This block locates _pub_style.R without
-# resolve_project_dir(), since that function lives inside it.
-.msc_root <- Sys.getenv("MSC_ARCHAEA_DIR")
-if (!nzchar(.msc_root) || !dir.exists(.msc_root)) {
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or just set MSC_ARCHAEA_DIR and skip it.
-  .cand <- c("//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-             path.expand("~/msc_archaea"))
-  .hit <- .cand[dir.exists(.cand)]
-  if (length(.hit) == 0) stop("Set MSC_ARCHAEA_DIR to the repository root.", call. = FALSE)
-  .msc_root <- .hit[1]
-}
-source(file.path(.msc_root, "scripts", "R", "_pub_style.R"))
+# ---- 1. DATA LOADING AND PREPARATION ----
+# Repository root: MSC_ARCHAEA_DIR when set, otherwise the nearest directory
+# above this script (under Rscript) or above the working directory (in an
+# interactive session) that holds scripts/R/_pub_style.R.
+PROJECT_DIR <- local({
+  root <- Sys.getenv("MSC_ARCHAEA_DIR")
+  if (!nzchar(root)) {
+    script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE))
+    root <- normalizePath(if (length(script) == 1) dirname(script) else getwd())
+    while (!file.exists(file.path(root, "scripts", "R", "_pub_style.R")) &&
+           dirname(root) != root) {
+      root <- dirname(root)
+    }
+    if (!file.exists(file.path(root, "scripts", "R", "_pub_style.R"))) {
+      stop("Repository root not found. Set MSC_ARCHAEA_DIR to it.", call. = FALSE)
+    }
+    Sys.setenv(MSC_ARCHAEA_DIR = root)
+  }
+  normalizePath(root)
+})
 
-PROJECT_DIR <- resolve_project_dir()
+# Shared fonts, theme and palettes, and resolve_project_dir().
+source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 
 OUTPUT_DIR <- file.path(PROJECT_DIR, "results", "SO_01", "funct_annot")
 dir.create(OUTPUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -381,12 +388,12 @@ cat("Limpiando archivos de corrida anterior (preservando caché)...\n")
 }
 cat("Directorio de salida:", OUTPUT_DIR, "\n")
 
-METADATA_FILE <- file.path(PROJECT_DIR, "MAGs_metadata.tsv")
+METADATA_FILE <- file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
 cat("Leyendo archivo de metadatos...\n")
 metadata <- read.delim(METADATA_FILE, sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 cat("Leyendo archivo de anotaciones DRAM2...\n")
-dram <- read_tsv(file.path(PROJECT_DIR, "results", "08_MAG_distill", "ANNOTATE", "raw-annotations.tsv"),
+dram <- read_tsv(file.path(PROJECT_DIR, "results", "10_MAG_distill", "ANNOTATE", "raw-annotations.tsv"),
   show_col_types = FALSE,
   na = c("", "NA")
 )
@@ -394,7 +401,7 @@ dram <- read_tsv(file.path(PROJECT_DIR, "results", "08_MAG_distill", "ANNOTATE",
 cat("Total de genes anotados:", nrow(dram), "\n")
 cat("Total de MAGs:", n_distinct(dram$input_fasta), "\n")
 
-# Verificar columnas disponibles
+# Check which columns are available
 cat("\nColumnas de descripción disponibles:\n")
 available_desc_cols <- c()
 if ("uniref_description" %in% colnames(dram)) {
@@ -422,12 +429,12 @@ if ("kegg_id" %in% colnames(dram)) {
   cat("  [WARN] kegg_id NO disponible\n")
 }
 
-# ---- FUNCIONES DE MAPEO AUTOMÁTICO: ID to DESCRIPCIÓN FUNCIONAL ----
+# ---- AUTOMATIC MAPPING: ID TO FUNCTIONAL DESCRIPTION ----
 
-# --- 1. MAPEO DE KEGG KOs ---
+# --- 1. KEGG KO MAPPING ---
 get_kegg_description <- function(ko_ids, use_cache = TRUE, cache_dir = NULL) {
   if (!KEGGREST_AVAILABLE) {
-    return(ko_ids) # Retornar IDs si KEGGREST no está disponible
+    return(ko_ids) # Return the bare IDs when KEGGREST is unavailable
   }
 
   if (is.null(cache_dir)) {
@@ -482,7 +489,7 @@ get_kegg_description <- function(ko_ids, use_cache = TRUE, cache_dir = NULL) {
   return(descriptions[ko_ids])
 }
 
-# --- 2. MAPEO DE CAZy ---
+# --- 2. CAZy MAPPING ---
 get_cazy_description <- function(cazy_ids) {
   descriptions <- character(length(cazy_ids))
 
@@ -516,11 +523,11 @@ get_cazy_description <- function(cazy_ids) {
   return(descriptions)
 }
 
-# --- 3. FUNCIÓN GENERAL: EXTRAER DESCRIPCIÓN DE DRAM2 ---
+# --- 3. GENERAL FUNCTION: EXTRACT THE DRAM2 DESCRIPTION ---
 get_description_from_dram <- function(ids, id_col, desc_col, data) {
   # Confirm the columns are there
   if (!id_col %in% colnames(data) || !desc_col %in% colnames(data)) {
-    return(ids) # Retornar IDs si las columnas no existen
+    return(ids) # Return the bare IDs when the columns are missing
   }
 
   id_to_desc <- data %>%
@@ -539,7 +546,7 @@ get_description_from_dram <- function(ids, id_col, desc_col, data) {
   return(descriptions)
 }
 
-# --- 4. FUNCIÓN PARA LIMPIAR Y TRUNCAR DESCRIPCIONES ---
+# --- 4. CLEAN AND TRUNCATE DESCRIPTIONS ---
 clean_description <- function(desc, max_length = 60) {
   if (is.na(desc) || desc == "") {
     return(desc)
@@ -646,7 +653,7 @@ translate_to_spanish <- function(names_vec, translation_cache_file = NULL) {
   "Pyruvate"         = "Piruvato",
   "Piruvate"         = "Piruvato",
   "Acetyl"           = "acetil",
-  # Rutas pyruvate/acetyl (DeepL fallaba en estas frases cortas)
+  # Pyruvate and acetyl pathways (DeepL failed on these short phrases)
   "Acetyl-CoA pathway, CO2 => acetyl-CoA"        = "Vía del acetil-CoA, CO₂ => acetil-CoA",
   "pyruvate => acetyl CoA v1"                    = "piruvato => acetil-CoA v1",
   "pyruvate => acetyl CoA v2"                    = "piruvato => acetil-CoA v2",
@@ -697,12 +704,12 @@ translate_to_spanish <- function(names_vec, translation_cache_file = NULL) {
   "Aerobic CO Oxidizer"   = "Oxidador aerobio de CO",
   "Anaerobic CO Oxidizer" = "Oxidador anaerobio de CO",
 
-  # ANME y ureasa
+  # ANME and urease
   "Anaerobic Methane Oxidizer ANME" = "Oxidador anaerobio de metano (ANME)",
   "Urease Nitrogen Mineralization"  = "Ureasa (mineralización de N)"
 )
 
-# --- 6. FUNCIÓN WRAPPER PARA CREAR LABELS INFORMATIVOS ---
+# --- 6. WRAPPER THAT BUILDS INFORMATIVE LABELS ---
 create_functional_labels <- function(ids, id_col, data, max_length = 50, use_kegg_api = FALSE) {
   if (id_col == "kofam_id") {
     # The KEGG columns carry no description field
@@ -788,7 +795,7 @@ reorder_rows_by_version <- function(mat, ann_df, annotation_version,
   } else if (v == 5L && !is.null(completeness_map)) {
     compl <- completeness_map[rownames(mat)]
     compl[is.na(compl)] <- 0
-    ord <- order(compl) # menor arriba to mayor abajo
+    ord <- order(compl) # lowest at the top, highest at the bottom
   } else {
     return(list(mat = mat, ann = ann_df))
   }
@@ -798,10 +805,10 @@ reorder_rows_by_version <- function(mat, ann_df, annotation_version,
   )
 }
 
-# ---- 2. CLASIFICACIÓN DE CALIDAD DE ANOTACIÓN ----
+# ---- 2. ANNOTATION QUALITY CLASSIFICATION ----
 # What counts as a real functional annotation: a gene qualifies only on a hit
 # against a curated or HMM functional database
-# (KEGG, KOfam, dbCAN, CAMPER, sulfur, methyl, FeGenie, metals). Un hit en
+# (KEGG, KOfam, dbCAN, CAMPER, sulfur, methyl, FeGenie, metals). A hit in
 # UniRef does not count. It is sequence homology, and the reference protein it
 # points at may itself be uncharacterised, so a UniRef hit can mean nothing more
 # than "resembles something nobody has identified". Those are reported separately
@@ -862,7 +869,7 @@ dram_classified <- dram %>%
 
 cat("[OK] Clasificación completada\n")
 
-# Tabla resumen general
+# Overall summary table
 summary_table <- dram_classified %>%
   summarise(
     Total_Genes = n(),
@@ -946,7 +953,7 @@ dram_classified %>%
   write_csv(file.path(OUTPUT_DIR, "02b_gene_annotation_quality.csv"))
 cat("[OK] Tabla de clasificación de genes guardada\n")
 
-# Mapeo de metadata
+# Metadata mapping
 mag_to_display <- metadata %>%
   select(NameWithoutExtension, DisplayName) %>%
   deframe()
@@ -1011,7 +1018,7 @@ mag_to_order <- setNames(
   metadata$NameWithoutExtension
 )
 
-# Helper: agrega cualquier data.frame (genome, col1, col2, ...) a nivel de Orden.
+# Helper: aggregates any data frame (genome, col1, col2, ...) to order level.
 # Boolean and 0-to-1 numeric columns both collapse to a per-order mean, which reads as a proportion.
 aggregate_to_order <- function(df) {
   genome_col <- names(df)[1]
@@ -1062,7 +1069,7 @@ fmt_order_label <- function(ord_name) {
   ord_name
 }
 
-# ---- 3. TABLAS FORMATEADAS CON FLEXTABLE ----
+# ---- 3. TABLES FORMATTED WITH FLEXTABLE ----
 cat("\n=== GENERANDO TABLAS FORMATEADAS ===\n")
 
 .has_flextable <- requireNamespace("flextable", quietly = TRUE) &&
@@ -1215,7 +1222,7 @@ if (.has_flextable) {
   cat("[OK] Tabla 2 guardada\n")
 }
 
-# TABLA 3: DRAM2 vertical
+# TABLE 3: DRAM2, vertical
 cat("\nGenerando Tabla 3: DRAM2 vertical...\n")
 
 if (.has_flextable) {
@@ -1328,14 +1335,14 @@ if (.has_flextable) {
   cat("[OK] Tabla 4 guardada\n")
 }
 
-# Guardar datos CSV
+# Write the CSV data
 write_csv(datos_anot, file.path(OUTPUT_DIR, "tabla_01_datos_comparacion_software.csv"))
 write_csv(datos_dram2, file.path(OUTPUT_DIR, "tabla_02_datos_dram2_detalle.csv"))
 write_csv(datos_dram2_transpuesto, file.path(OUTPUT_DIR, "tabla_02_datos_dram2_transpuesto.csv"))
 write_csv(datos_taxonomia, file.path(OUTPUT_DIR, "tabla_04_datos_taxonomia.csv"))
 cat("[OK] Datos de tablas guardados en CSV\n")
 
-# ---- 4. PREPARACIÓN DE MATRICES PARA HEATMAPS ----
+# ---- 4. MATRICES FOR THE HEATMAPS ----
 cat("\n=== PREPARANDO MATRICES PARA HEATMAPS ===\n")
 
 heatmap_data <- summary_by_mag %>%
@@ -1382,7 +1389,7 @@ ordered_percent <- order_matrix_by_depth(heatmap_percent, annotation_row)
 heatmap_percent_ordered <- ordered_percent$matrix
 annotation_row_percent_ordered <- ordered_percent$annotation
 
-# ---- 5. HEATMAPS GENERALES ----
+# ---- 5. GENERAL HEATMAPS ----
 cat("\n=== GENERANDO HEATMAPS GENERALES ===\n")
 
 cat("\nGenerando heatmap general de bases de datos...\n")
@@ -1530,7 +1537,7 @@ draw(ht_03)
 dev.off()
 cat("[OK] Heatmap de porcentajes guardado\n")
 
-# ---- 6. HEATMAPS INDIVIDUALES CON DESCRIPCIONES FUNCIONALES ----
+# ---- 6. INDIVIDUAL HEATMAPS WITH FUNCTIONAL DESCRIPTIONS ----
 cat("\n=== GENERANDO HEATMAPS INDIVIDUALES CON DESCRIPCIONES ===\n")
 
 generate_db_heatmap <- function(data, db_col, db_name, output_file, title, use_kegg_api = TRUE) {
@@ -1624,7 +1631,7 @@ generate_db_heatmap <- function(data, db_col, db_name, output_file, title, use_k
 
 cat("[OK] Sección de heatmaps individuales por base de datos omitida (eliminada por diseño)\n")
 
-# ---- 7. GRÁFICOS GENERALES ----
+# ---- 7. GENERAL PLOTS ----
 cat("\n=== GENERANDO GRÁFICOS GENERALES ===\n")
 
 cat("\nGenerando gráfico de calidad de anotación...\n")
@@ -1933,7 +1940,7 @@ if (!is.null(res_order$sig)) {
   # Effect size for the omnibus: epsilon squared = H / (N - 1), Tomczak &
   # Tomczak 2014. It reads as the share of rank variance the grouping explains.
   # Conventionally: under 0.04 very small, 0.04 to 0.16 small,
-  # 0.16-0.36 medio, ≥0.36 grande.
+  # 0.16 to 0.36 medium, 0.36 and above large.
   test_df_omni <- summary_by_mag_tax %>%
     filter(!is.na(Order), !is.na(Percent_Curated_Functional)) %>%
     mutate(.grp = as.factor(Order))
@@ -2151,7 +2158,7 @@ ggsave(file.path(OUTPUT_DIR, "plot_04_functional_composition_stacked.png"),
 
 cat("[OK] Gráfico de composición funcional guardado\n")
 
-# ---- 8. ANÁLISIS ESPECÍFICOS CON DESCRIPCIONES FUNCIONALES ----
+# ---- 8. SPECIFIC ANALYSES WITH FUNCTIONAL DESCRIPTIONS ----
 cat("\n=== ANÁLISIS ESPECÍFICOS CON DESCRIPCIONES ===\n")
 
 # KEGG KOs
@@ -2220,7 +2227,7 @@ top_cazymes <- top_cazymes %>%
 write_csv(top_cazymes, file.path(OUTPUT_DIR, "data_02_top30_CAZymes.csv"))
 cat("[OK] Datos de CAZymes guardados (plot eliminado por diseño)\n")
 
-# UniRef informativo
+# Informative UniRef
 cat("\nAnalizando hits informativos de UniRef...\n")
 
 if (sum(dram_classified$has_informative_uniref) > 0) {
@@ -2302,12 +2309,12 @@ if ("Completeness" %in% colnames(summary_by_mag_display) &&
   cat("[WARN] Datos de calidad no disponibles\n")
 }
 
-# ---- 9. RESUMEN FINAL ----
-# ---- 10. KEGG-DECODER Y KEGG-EXPANDER HEATMAPS (ComplexHeatmap) ----
+# ---- 9. FINAL SUMMARY ----
+# ---- 10. KEGG-DECODER AND KEGG-EXPANDER HEATMAPS (ComplexHeatmap) ----
 cat("\n=== GENERANDO HEATMAPS DE KEGG-DECODER Y KEGG-EXPANDER ===\n")
 
-DECODER_FILE <- file.path(PROJECT_DIR, "results", "07_metabolic_reconstruction", "keggdecoder_static", "keggdecoder_output.list")
-EXPANDER_FILE <- file.path(PROJECT_DIR, "results", "07_metabolic_reconstruction", "keggexpander_output", "HMM_OUT.list")
+DECODER_FILE <- file.path(PROJECT_DIR, "results", "09_metabolic_reconstruction", "keggdecoder_static", "keggdecoder_output.list")
+EXPANDER_FILE <- file.path(PROJECT_DIR, "results", "09_metabolic_reconstruction", "keggexpander_output", "HMM_OUT.list")
 cat("Las figuras de KEGG se guardarán en OUTPUT_DIR:", OUTPUT_DIR, "\n\n")
 
 # --- Helper functions for KEGG matrices ---
@@ -2740,13 +2747,13 @@ if (file.exists(DECODER_FILE) && file.exists(EXPANDER_FILE)) {
 cat("[OK] Sección KEGG-Decoder/Expander completada\n")
 cat("  Caché de traducciones en:", OUTPUT_DIR, "\n\n")
 
-# ---- RUTAS Y DATOS DE DRAM2 DISTILLATION (compartidos en secciones 11-15) ----
-PRODUCT_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "VISUALIZE", "product.tsv")
-GENOME_STATS_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "SUMMARIZE", "genome_stats.tsv")
-QUALITY_REPORT_FILE <- file.path(PROJECT_DIR, "results", "02_mags_quality", "20251222_valentin_quality_report.tsv")
-SUMMARIZED_GENOMES_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "SUMMARIZE", "summarized_genomes.tsv")
-METABOLISM_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "SUMMARIZE", "metabolism_summary.xlsx")
-TRAITS_FILE <- file.path(PROJECT_DIR, "results", "08_MAG_distill", "SUMMARIZE", "traits.xlsx")
+# ---- DRAM2 DISTILLATION PATHS AND DATA (shared by sections 11 to 15) ----
+PRODUCT_FILE <- file.path(PROJECT_DIR, "results", "10_MAG_distill", "VISUALIZE", "product.tsv")
+GENOME_STATS_FILE <- file.path(PROJECT_DIR, "results", "10_MAG_distill", "SUMMARIZE", "genome_stats.tsv")
+QUALITY_REPORT_FILE <- file.path(PROJECT_DIR, "results", "01_mag_quality", "quality_report.tsv")
+SUMMARIZED_GENOMES_FILE <- file.path(PROJECT_DIR, "results", "10_MAG_distill", "SUMMARIZE", "summarized_genomes.tsv")
+METABOLISM_FILE <- file.path(PROJECT_DIR, "results", "10_MAG_distill", "SUMMARIZE", "metabolism_summary.xlsx")
+TRAITS_FILE <- file.path(PROJECT_DIR, "results", "10_MAG_distill", "SUMMARIZE", "traits.xlsx")
 
 # One translation cache shared across the sections below
 DRAM_CACHE_FILE <- file.path(OUTPUT_DIR, "translation_cache_dram2_distill.csv")
@@ -2773,7 +2780,7 @@ make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
                                       show_legend = TRUE) {
   valid_levels <- as.character(na.omit(unique(depths)))
 
-  # Helper interno: construir paleta de estaciones
+  # Internal helper: build the station palette
   build_st_cols <- function(sts) {
     unique_st <- sort(unique(na.omit(as.character(sts))))
     n_st <- max(length(unique_st), 3)
@@ -2798,7 +2805,7 @@ make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
 
   # Work out which variant applies
   v <- if (is.null(annotation_version)) {
-    if (!is.null(stations)) 2L else 3L # comportamiento original
+    if (!is.null(stations)) 2L else 3L # original behaviour
   } else {
     as.integer(annotation_version)
   }
@@ -2842,7 +2849,7 @@ make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
       )
     )
   } else if (v == 3L) {
-    # solo profundidad
+    # depth only
     rowAnnotation(
       Profundidad = depths,
       col = depth_colors,
@@ -2864,7 +2871,7 @@ make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
       annotation_name_gp = ann_gp
     )
   } else {
-    # v == 5L: solo % completitud
+    # v == 5L: completeness % only
     rowAnnotation(
       Completitud = as.numeric(completeness),
       col = list(Completitud = col_pct),
@@ -2878,30 +2885,30 @@ make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
   }
 }
 
-# Paleta de profundidad
+# Depth palette
 depth_levels_std <- c("ZMOR", "1000 m", "Fondo")
 depth_colors_std <- setNames(
   RColorBrewer::brewer.pal(3, "Set2"),
   depth_levels_std
 )
 
-# ---- 11. HEATMAP DE PRODUCT.TSV – Completitud de rutas DRAM2 ----
+# ---- 11. PRODUCT.TSV HEATMAP: DRAM2 pathway completeness ----
 cat("\n=== SECCIÓN 11: HEATMAP DE PRODUCT.TSV ===\n")
 
 if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
   genome_stats <- read_tsv(GENOME_STATS_FILE, show_col_types = FALSE)
-  mag_order_gs <- genome_stats$genome # NameWithoutExtension, sin .fa
+  mag_order_gs <- genome_stats$genome # NameWithoutExtension, without .fa
 
   # ---- completeness and contamination sidebars, as in product.html ----
   completeness_map_prod <- NULL
   contamination_map_prod <- NULL
   if (file.exists(QUALITY_REPORT_FILE)) {
-    orig_name_col <- names(metadata)[11]  # OriginalName
-    meta_orig_prod <- metadata %>%
-      select(NameWithoutExtension, OriginalName = all_of(orig_name_col))
+    # utils/05_rename_mags.sh leaves dotted names in the report, while one
+    # written before the rename keeps the original underscores. Both reduce to
+    # NameWithoutExtension once underscores become dots.
     qual_prod_df <- tryCatch(
       read_tsv(QUALITY_REPORT_FILE, show_col_types = FALSE) %>%
-        inner_join(meta_orig_prod, by = c("Name" = "OriginalName")) %>%
+        mutate(NameWithoutExtension = gsub("_", ".", Name, fixed = TRUE)) %>%
         filter(NameWithoutExtension %in% mag_order_gs),
       error = function(e) NULL
     )
@@ -2934,7 +2941,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
     }
   }
 
-  # --- Helper interno: construir y guardar heatmap de product.tsv ---
+  # --- Internal helper: build and save the product.tsv heatmap ---
   # Handles both the boolean columns and the 0-to-1 numeric ones
   make_product_heatmap <- function(prod_raw, mag_order_ids,
                                    title_main, outfile,
@@ -3133,7 +3140,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
         annotation_width     = unit(right_widths, "cm"),
         gap                  = unit(barplot_gap, "mm"),
         show_annotation_name = right_show_name,
-        width                = unit(total_right_cm, "cm")   # ← clave
+        width                = unit(total_right_cm, "cm")   # this is the key setting
       )
     ))
 
@@ -3210,7 +3217,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
     # right_widths already accounts for the 6 cm of row names
     right_ann_w <- total_right_cm * 0.3937 + 0.4
     dend_w      <- if (cluster_rows_p) 1.8 else 0
-    # width=NULL en ambas versiones: ComplexHeatmap auto-size y reserva espacio de leyenda
+    # width=NULL in both versions: ComplexHeatmap sizes itself and leaves room for the legend
     w_raw <- round(total_cols * 0.46 + left_ann_w + right_ann_w + dend_w + 0.5)
     w_p   <- max(24L, w_raw) + extra_canvas_in
     lgd_h_extra <- if (manual_lgd) 1.8 else 0
@@ -3282,7 +3289,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
     completeness_map = completeness_map_prod,
     contamination_map = contamination_map_prod,
     legend_side = "right",
-    padding = unit(c(20, 32, 12, 2), "mm")   # bottom/top extra para etiquetas y "Profundidad"
+    padding = unit(c(20, 32, 12, 2), "mm")   # extra bottom and top room for the labels and "Profundidad"
   )
   # Fig4, cladogram variant: no depth sidebar, rows clustered
   make_product_heatmap(
@@ -3319,15 +3326,15 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
       col_fun_ord  <- colorRamp2(c(0, 0.5, 1), c("white", "#FFC107", "#D32F2F"))
       n_per_order  <- table(mag_to_order[mag_order_gs])
 
-      # Traducir nombres de columnas (quitar prefijo de grupo + translate_to_spanish)
+      # Translate the column names (drop the group prefix, then translate_to_spanish)
       strip_col_prefix_p <- function(x) trimws(sub("^[^:]+:\\s*", "", x))
       feat_labels_p <- strip_col_prefix_p(feat_cols_p)
       feat_es_p     <- capitalize_first(translate_to_spanish(feat_labels_p,
                          translation_cache_file = DRAM_CACHE_FILE))
       feat_es_p[is.na(feat_es_p)] <- feat_labels_p[is.na(feat_es_p)]
-      names(feat_es_p) <- feat_cols_p  # orig to traducido
+      names(feat_es_p) <- feat_cols_p  # original to translated
 
-      # Traducir etiquetas de grupo (column_split)
+      # Translate the group labels (column_split)
       unique_grps_p <- unique(col_split_ord)
       grps_es_p     <- capitalize_first(translate_to_spanish(unique_grps_p,
                          translation_cache_file = DRAM_CACHE_FILE))
@@ -3350,7 +3357,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
         ra_ord <- rowAnnotation(
           `No. MAGs` = anno_barplot(n_vals,
             gp = gpar_f(fill = "#4A90D9", col = "black"),
-            bar_width = 0.7, width = unit(2.3, "cm")),  # +15% vs 2cm previo
+            bar_width = 0.7, width = unit(2.3, "cm")),  # 15% wider than the earlier 2 cm
           annotation_name_gp = gpar_f(fontsize = 9, fontface = "bold")
         )
 
@@ -3360,14 +3367,14 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
 
         n_r <- nrow(mat_ord_p); n_c <- ncol(mat_ord_p)
         col_w_mm_p  <- 11L
-        row_h_mm_p  <- 12L  # ~33% más bajo que los 18mm originales
+        row_h_mm_p  <- 12L  # about 33% shorter than the original 18 mm
         # h_p carries 50 mm more vertical slack than it used to, so the real
         # top and bottom padding fits instead of the canvas shrinking to the
         # heatmap body.
         h_p <- max(5L, ceiling((n_r * row_h_mm_p + 110L) / 25.4))
-        # Horizontal canvas: body plus right_annotation, about 28 mm with the barplot
-        # ampliado) + nombres (~pad_r_p) + leyenda + margen lateral
-        # restaurado parcialmente (~55mm). Piso de seguridad bajado a 12 in:
+        # Horizontal canvas: body, plus right_annotation (about 28 mm with the
+        # widened barplot), plus names (about pad_r_p), plus legend, plus the side
+        # margin, partly restored (about 55 mm). The safety floor drops to 12 in:
         # the previous floor of 22 exceeded the real calculation and masked
         # any reduction in the buffer.
         w_p <- max(12L, ceiling((n_c * col_w_mm_p + pad_r_p + 55L) / 25.4))
@@ -3420,10 +3427,10 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
   cat("[WARN] product.tsv o genome_stats.tsv no encontrado, omitiendo sección 11\n\n")
 }
 
-# ---- 12. ESTADÍSTICAS DE CALIDAD DE GENOMAS (genome_stats.tsv) ----
+# ---- 12. GENOME QUALITY STATISTICS (genome_stats.tsv) ----
 cat("=== SECCIÓN 12: omitida (Fig5a y Fig5b eliminadas por diseño) ===\n\n")
 
-# ---- 13. RASGOS METABÓLICOS PREDICHOS (traits.xlsx) ----
+# ---- 13. PREDICTED METABOLIC TRAITS (traits.xlsx) ----
 cat("=== SECCIÓN 13: RASGOS METABÓLICOS PREDICHOS (traits.xlsx) ===\n")
 
 make_trait_heatmap <- function(trait_df, title_es, subtitle_tool = NULL,
@@ -3582,8 +3589,8 @@ make_trait_order_heatmap <- function(trait_df, title_es, outfile, subtitle_tool 
   # Right margin scaled to the longest order name, counting the class suffix
   # that code-like names carry
   fmt_rn <- sapply(rownames(mat), fmt_order_label)
-  max_name_mm  <- max(nchar(fmt_rn)) * 2.2  # ~2.2 mm por carácter a fontsize 10
-  pad_right    <- max(20, ceiling(max_name_mm))     # mínimo 20 mm
+  max_name_mm  <- max(nchar(fmt_rn)) * 2.2  # about 2.2 mm per character at fontsize 10
+  pad_right    <- max(20, ceiling(max_name_mm))     # at least 20 mm
 
   .make_ht_tr_ord <- function(out) {
     n_vals <- as.integer(n_per_order[rownames(mat)])
@@ -3717,13 +3724,13 @@ if (file.exists(TRAITS_FILE)) {
   cat("[WARN] traits.xlsx no encontrado, omitiendo sección 13\n\n")
 }
 
-# ---- 13b. RASGOS AGREGADOS POR PROFUNDIDAD, ESTACIÓN Y GÉNERO TAXONÓMICO ----
+# ---- 13b. TRAITS AGGREGATED BY DEPTH, STATION AND GENUS ----
 cat("=== SECCIÓN 13b: Ver treatment_comparison.R ===\n")
 # What used to live here, the aggregated heatmaps Fig9a to 9f along with the
 # Fisher tests and logistic models, now lives in treatment_comparison.R.
 cat("  (Gráficos 9a-9f generados por treatment_comparison.R)\n\n")
 
-# ---- 14. RESUMEN METABÓLICO POR CATEGORÍA (metabolism_summary.xlsx) ----
+# ---- 14. METABOLIC SUMMARY BY CATEGORY (metabolism_summary.xlsx) ----
 cat("=== SECCIÓN 14: RESUMEN METABÓLICO (metabolism_summary.xlsx) ===\n")
 
 # Completeness heatmap by subcategory, from one sheet of
@@ -3934,18 +3941,18 @@ make_metals_heatmap <- function(title_es, outfile,
       top_rows <- order(gene_totals, decreasing = TRUE)[seq_len(min(top_n, nrow(mat_metal)))]
       mat_metal <- mat_metal[top_rows, , drop = FALSE]
 
-      # Traducir etiquetas de genes
+      # Translate the gene labels
       gene_es <- capitalize_first(
         translate_to_spanish(rownames(mat_metal), translation_cache_file = cache_file)
       )
       gene_es[is.na(gene_es)] <- rownames(mat_metal)[is.na(gene_es)]
       rownames(mat_metal) <- gene_es
 
-      # Quitar columnas todas-cero
+      # Drop all-zero columns
       keep_cols <- colSums(mat_metal, na.rm = TRUE) > 0
       mat_metal <- mat_metal[, keep_cols, drop = FALSE]
 
-      # Transponer: filas=MAGs, columnas=genes
+      # Transpose: rows = MAGs, columns = genes
       mat_t <- t(mat_metal)
       mag_ids_metal <- rownames(mat_t)
 
@@ -4130,14 +4137,14 @@ if (file.exists(METABOLISM_FILE)) {
   cat("[WARN] metabolism_summary.xlsx no encontrado, omitiendo sección 14\n\n")
 }
 
-# ---- 15. HEATMAPS POR CATEGORÍA DE GENES (summarized_genomes.tsv) ----
+# ---- 15. HEATMAPS BY GENE CATEGORY (summarized_genomes.tsv) ----
 cat("=== SECCIÓN 15: HEATMAPS POR CATEGORÍA DE GENES (summarized_genomes.tsv) ===\n")
 
 if (file.exists(SUMMARIZED_GENOMES_FILE)) {
   sg <- read_tsv(SUMMARIZED_GENOMES_FILE, show_col_types = FALSE)
-  # Columnas meta: gene_id, gene_description, topic_ecosystem, category, subcategory, pathway
+  # Metadata columns: gene_id, gene_description, topic_ecosystem, category, subcategory, pathway
   meta_sg <- names(sg)[1:6]
-  mag_cols_sg <- names(sg)[7:ncol(sg)] # NameWithoutExtension de cada MAG
+  mag_cols_sg <- names(sg)[7:ncol(sg)] # NameWithoutExtension of each MAG
   cat("  Dimensiones summarized_genomes:", nrow(sg), "x", ncol(sg), "\n")
   cat("  MAGs en columnas:", length(mag_cols_sg), "\n")
 
@@ -4301,7 +4308,7 @@ if (file.exists(SUMMARIZED_GENOMES_FILE)) {
     )
   }
 
-  # --- 15.1 Ciclo TCA y carbono central ---
+  # --- 15.1 TCA cycle and central carbon ---
   .make_sg_both(expr(category == "central carbon"),
     title_es = "Genes de metabolismo central de carbono por MAG\n(ciclo TCA, glucólisis, pentosa-fosfato, etc.)",
     outfile = file.path(OUTPUT_DIR, "Fig8a_genes_central_carbon_ES.png"),
@@ -4329,14 +4336,14 @@ if (file.exists(SUMMARIZED_GENOMES_FILE)) {
     subtitle_tool = .sub_tool_15
   )
 
-  # --- 15.5 Metabolismo de C1/metano ---
+  # --- 15.5 C1 and methane metabolism ---
   .make_sg_both(expr(category %in% c("C1-methane", "C1")),
     title_es = "Genes de metabolismo de C1/metano por MAG\n(metanogénesis, metanotrofía, metabolismo de metilaminas)",
     outfile = file.path(OUTPUT_DIR, "Fig8e_genes_C1_methane_ES.png"),
     subtitle_tool = .sub_tool_15
   )
 
-  # --- 15.6 Hidrogenasas ---
+  # --- 15.6 Hydrogenases ---
   .make_sg_both(expr(category == "Hydrogenases"),
     title_es = "Hidrogenasas por MAG",
     outfile = file.path(OUTPUT_DIR, "Fig8f_genes_hydrogenases_ES.png"),
@@ -4452,7 +4459,7 @@ cat("  ", OUTPUT_DIR, "\n")
 cat(rep("=", 70), "\n", sep = "")
 cat("\n[OK] Análisis completado exitosamente!\n\n")
 
-# ---- 16. ANÁLISIS PARA LOS 10 MAGs SIN TAXONOMÍA A NIVEL ESPECIE ----
+# ---- 16. THE 10 MAGs WITHOUT A SPECIES-LEVEL ASSIGNMENT ----
 cat("\n=== SECCIÓN 16: ANÁLISIS PARA 10 MAGs SIN TAXONOMÍA A NIVEL ESPECIE ===\n")
 
 # The MAGs with no species-level assignment
@@ -4486,7 +4493,7 @@ if (length(mags_no_species) == 0) {
   depth_colors <- depth_colors_orig[depth_levels_std]
   cat("  Profundidades en 10 MAGs:", paste(depth_levels_std, collapse = ", "), "\n\n")
 
-  # ---- Estaciones presentes en 10 MAGs ----
+  # ---- Stations present among the 10 MAGs ----
   stations_present_10 <- sort(unique(na.omit(get_station(mags_no_species))))
   n_st_10 <- max(length(stations_present_10), 3)
   station_colors_10 <- setNames(
@@ -4585,14 +4592,14 @@ if (length(mags_no_species) == 0) {
 
   # ---- Four sidebar variants ----
   ann_version_dirs <- c(
-    "2" = "prof_estacion", # v2: profundidad + estación
-    "3" = "profundidad", # v3: solo profundidad
-    "4" = "estacion", # v4: solo estación
-    "0" = "cladograma" # v0: sin barra, filas clusterizadas
+    "2" = "prof_estacion", # v2: depth and station
+    "3" = "profundidad", # v3: depth only
+    "4" = "estacion", # v4: station only
+    "0" = "cladograma" # v0: no sidebar, rows clustered
   )
 
   for (ann_v_str in names(ann_version_dirs)) {
-    ann_v <- as.integer(ann_v_str) # versión efectiva: 2L, 3L, 4L
+    ann_v <- as.integer(ann_v_str) # effective version: 2L, 3L, 4L
     OUTPUT_DIR <- file.path(OUTPUT_DIR_ORIG, "10_MAGs", ann_version_dirs[ann_v_str])
     dir.create(OUTPUT_DIR, recursive = TRUE, showWarnings = FALSE)
     cat("\n--- Anotación versión", ann_v, "(", ann_version_dirs[ann_v_str], ") ---\n")
@@ -4918,9 +4925,9 @@ if (length(mags_no_species) == 0) {
     }
 
     cat("  [OK] Versión", ann_v, "completada en:", OUTPUT_DIR, "\n")
-  } # fin loop 5 versiones de anotación
+  } # end of the loop over the annotation versions
 
-  # ---- Restaurar globales de profundidad ----
+  # ---- Restore the depth globals ----
   depth_levels_std <- depth_levels_std_orig
   depth_colors_std <- depth_colors_std_orig
   depth_colors <- depth_colors_orig

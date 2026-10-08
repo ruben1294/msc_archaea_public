@@ -8,8 +8,15 @@ work/
 .nextflow/
 .nextflow.log*
 
+# Third-party code fetched by the setup scripts, such as the pinned DRAM2
+# checkout, and reference databases kept next to the project.
+tools/
+databases/
+
 # Genome and read data. The 54 MAGs live in a public sequence archive.
 *.fa
+*.fna
+*.faa
 *.fasta
 *.fastq
 *.fastq.gz
@@ -56,3 +63,7 @@ __pycache__/
 Thumbs.db
 *~
 *:Zone.Identifier
+
+# Scripts that generate figures for the MDMS poster. These are not part of the
+# pipeline, but they are used to generate the figures in the manuscript.
+scripts/R/MDMS_figs.R

@@ -8,9 +8,10 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 load_project_config
+require_vars RESULTS_DIR GENE_PREDICTION_SUBDIR
 
 # Configuration
-INPUT_DIR="${1:-${PROJECT_DIR}/${GENE_PREDICTION_SUBDIR}}"
+INPUT_DIR="${1:-${RESULTS_DIR}/${GENE_PREDICTION_SUBDIR}}"
 OUTPUT_PREFIX="$INPUT_DIR/CMRA_all_proteins_prodigal_prefixed"
 SEQUENCES_PER_FILE=10000
 FINAL_OUTPUT="$INPUT_DIR/CMRA_all_proteins_final.faa"

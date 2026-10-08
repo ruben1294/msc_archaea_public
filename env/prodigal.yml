@@ -1,9 +1,9 @@
-# Step 03. Prodigal calls genes on the filtered MAGs.
+# Step 05. Prodigal calls genes on the filtered MAGs.
 #
 # Prodigal ran from the base environment on the original cluster, which is fine
 # but leaves nothing to reproduce. This pins it explicitly.
 #
-# Step 03 runs it in single-genome mode rather than meta mode, since the input is
+# Step 05 runs it in single-genome mode rather than meta mode, since the input is
 # a binned genome, and uses translation table 11.
 name: prodigal
 channels:

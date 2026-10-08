@@ -1,7 +1,8 @@
 # Shared look for every figure in the project, plus the path resolution the
-# other R scripts rely on. Load it first:
+# other R scripts rely on. Each script finds the repository root on its own and
+# then loads this file:
 #
-#   source(file.path(SCRIPTS_R_DIR, "_pub_style.R"))
+#   source(file.path(PROJECT_DIR, "scripts", "R", "_pub_style.R"))
 #
 # Font selection walks four fallbacks in order: Lato or Source Sans 3 from
 # ~/.local/share/fonts, then a matching system face, then Google Fonts, then
@@ -12,7 +13,7 @@
 # not documentation, so they stay that way.
 #
 # What this exports:
-#   resolve_project_dir()  : project root, from MSC_ARCHAEA_DIR or the usual paths
+#   resolve_project_dir()  : project root, from MSC_ARCHAEA_DIR or the working directory
 #   font_family            : the family that was actually found
 #   theme_publication()    : the ggplot2 theme every figure starts from
 #   depth_levels_es        : c("ZMOR", "1000 m", "Fondo")
@@ -23,28 +24,28 @@
 #   pan_class_colors       : Dark2-like
 #   taxon_italic(x, level) : italicises genus and below, per CDC style
 
-# Project root. MSC_ARCHAEA_DIR wins; otherwise the first candidate that exists.
-# RStudio on Windows reaches a WSL tree through a UNC path, which is why that
-# form is tried before the native one.
+# Project root. MSC_ARCHAEA_DIR wins, and the block at the top of every script
+# sets it from the script's own location before loading this file, so the two
+# always agree. Failing that, the nearest directory above the working directory
+# that holds this file.
 resolve_project_dir <- function() {
   from_env <- Sys.getenv("MSC_ARCHAEA_DIR")
-  if (nzchar(from_env) && dir.exists(from_env)) {
-    return(normalizePath(from_env, mustWork = FALSE))
+  if (nzchar(from_env)) {
+    if (!dir.exists(from_env)) {
+      stop("MSC_ARCHAEA_DIR points at a missing directory: ", from_env,
+           call. = FALSE)
+    }
+    return(normalizePath(from_env))
   }
 
-  # The UNC entry is for RStudio on Windows reading a WSL tree; edit the distro
-  # and user name to match yours, or set MSC_ARCHAEA_DIR and skip it entirely.
-  candidates <- c(
-    "//wsl.localhost/Ubuntu-24.04/home/ruben/msc_archaea",
-    path.expand("~/msc_archaea")
-  )
-  found <- candidates[dir.exists(candidates)]
-
-  if (length(found) == 0) {
-    stop("Project root not found. Set MSC_ARCHAEA_DIR to the repository root.",
-         call. = FALSE)
+  dir <- normalizePath(getwd())
+  repeat {
+    if (file.exists(file.path(dir, "scripts", "R", "_pub_style.R"))) return(dir)
+    if (dirname(dir) == dir) break
+    dir <- dirname(dir)
   }
-  found[1]
+  stop("Project root not found. Run from inside the repository or set ",
+       "MSC_ARCHAEA_DIR to its root.", call. = FALSE)
 }
 
 suppressPackageStartupMessages({
