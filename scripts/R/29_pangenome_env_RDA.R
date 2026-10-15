@@ -6,10 +6,10 @@
 #   X2  PVR vectors, phylogenetic eigenvector regression on the subtree for
 #       that species
 #
-# The point of the partition is that environment and phylogeny are confounded
-# here: MAGs from the same depth also tend to be related. Fitting either alone
-# credits it with variance the other could equally explain, and varpart is what
-# separates the shared fraction from the two independent ones.
+# Environment and phylogeny are confounded here: MAGs from the same depth also
+# tend to be related. Fitting either alone credits it with variance the other
+# could explain as well, so varpart separates the shared fraction from the two
+# independent ones.
 #
 # Only species with at least five MAGs are processed.
 #
@@ -167,7 +167,7 @@ log_info(sprintf("Env station×depth rows:    %d", nrow(env_station)))
 # The pruned tree from SO_02 labels its tips with the display form, for example
 # "MGIIb-O1_sp002498525_F37_BTM_20", while the binary matrices are keyed on the
 # sanitised names anvi-gen-genomes-storage produced. The tips are renamed to the
-# sanitised key so the phylogenetic conditioning in the db-RDA actually binds to
+# sanitised key so the phylogenetic conditioning in the db-RDA binds to
 # the right genomes instead of silently matching nothing.
 tree <- NULL
 if (file.exists(TREE_NWK)) {
@@ -297,7 +297,7 @@ for (bin_file in bin_files) {
     next
   }
 
-  # Distancia Jaccard (binaria)
+  # Jaccard distance, binary
   jac <- vegdist(Y, method = "jaccard", binary = TRUE)
   cond_terms <- intersect(c("PVR1", "PVR2", "PVR3"), colnames(env_aligned))
 
@@ -306,7 +306,7 @@ for (bin_file in bin_files) {
   # undersaturated, which happens easily with few MAGs and many variables. To
   # get interpretable numbers back, the environmental variables and the number
   # of PVR axes are both trimmed to what the degrees of freedom can carry.
-  # de libertad (residual_df = n - n_env - n_pvr - 1 >= 1).
+  # The constraint is residual_df = n - n_env - n_pvr - 1 >= 1.
   if (!is.null(pvr_axes) && length(cond_terms) > 0) {
     n_mags_vp     <- nrow(Y)
     priority_env  <- intersect(
@@ -315,7 +315,7 @@ for (bin_file in bin_files) {
       env_vars
     )
     n_pvr_used    <- if (length(cond_terms) >= 1) 1 else 0
-    max_predictors <- n_mags_vp - 2  # asegura >=1 df residual
+    max_predictors <- n_mags_vp - 2  # keeps at least 1 residual df
     n_env_used    <- max(0, max_predictors - n_pvr_used)
     n_env_used    <- min(length(priority_env), n_env_used)
     env_vars_vp   <- head(priority_env, n_env_used)
@@ -363,9 +363,9 @@ for (bin_file in bin_files) {
       par(mar = c(3.0, 2.5, 5.0, 2.5),
           family = font_family,
           cex.main = 1.05, cex.lab = 0.95, xpd = NA)
-      # Four points larger than the previous version throughout:
-      #   cex      1.1 to 1.45, the numbers inside the Venn and "Residuales = ..."
-      #   cex.main 1.15 to 1.5, the species name
+      # Text sizes:
+      #   cex      1.45, the numbers inside the Venn and "Residuales = ..."
+      #   cex.main 1.5, the species name
       plot(vp,
            bg     = c("#1B9E77", "#7570B3"),
            Xnames = c("Ambiente", "Filogenia"),
@@ -395,7 +395,7 @@ if (length(varpart_summary) > 0) {
 }
 
 # ---- varpart panel across species ----
-# plot.varpart draws with base graphics and does not compose with patchwork. So
+# plot.varpart draws with base graphics and does not compose with patchwork, so
 # this opens one PNG device and lays the Venns out with par(mfrow), reproducing
 # the title style the other panels use (bold, around 18 pt, centred).
 if (length(panel_varpart) > 0) {
@@ -420,8 +420,8 @@ if (length(panel_varpart) > 0) {
 
   for (item in vps) {
     # Same sizes and rules as the per-species render. italic_title() turns the
-    # markdown "*X*" in the display name into expression(italic(X)), which is
-    # what makes base R set it in italics.
+    # markdown "*X*" in the display name into expression(italic(X)), which
+    # base R sets in italics.
     plot(item$vp,
          bg     = c("#1B9E77", "#7570B3"),
          Xnames = c("Ambiente", "Filogenia"),

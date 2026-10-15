@@ -16,7 +16,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #     DisplayName as a layer and anvi-display-pan labels genomes from it.
 #
 # Pfam, COG24_PATHWAY and COG24_FUNCTION are deleted from
-# GENOMES_modified.db.gene_function_calls, which is where they actually live;
+# GENOMES_modified.db.gene_function_calls, where they live;
 # they are not in PAN.db. EVERYTHING stays, because it is synthetic, the union
 # of the remaining functional sources, and removing it would mean removing all
 # of them.
@@ -193,7 +193,7 @@ PYEOF
         fi
     done
 
-    # Task 3: genome_name is deliberately left alone.
+    # Task 3: genome_name stays as it is.
     # Step 23 already imported DisplayName as a layer, and anvi-display-pan
     # labels genomes from it. The internal genome_name stays as the sanitised
     # NameWithoutExtension so it keeps matching GENOMES.db and every internal
@@ -286,7 +286,7 @@ PYEOF
         fi
     done
 
-    # TASK 5: import ONLY Station and Depth (translated) as layers.
+    # Task 5: import only Station and Depth, translated, as layers.
     # DisplayName, Order and ROMZ_flag go: the short genome_name replaces
     # DisplayName in task 6 below.
     # Depth translations:
@@ -327,8 +327,8 @@ PYEOF
             log_warn "      No metadata rows produced; skipping import"
         else
             log_info "      Importing $n_rows metadata rows"
-            # Removing the keys first makes a re-run idempotent (covers the
-            # legacy DisplayName/Order/ROMZ_flag de versiones anteriores)
+            # Removing the keys first makes a re-run idempotent, and also clears
+            # the DisplayName, Order and ROMZ_flag layers earlier versions imported.
             for key in Station Depth Estacion Profundidad DisplayName Order ROMZ_flag; do
                 anvi-delete-misc-data \
                     -p "$pan_mod" \
@@ -342,7 +342,7 @@ PYEOF
         fi
     fi
 
-    # TASK 6: rename genome_name to PanShortName (Station_Depth_BinID),
+    # Task 6: rename genome_name to PanShortName (Station_Depth_BinID),
     # cascading through PAN_modified.db and GENOMES_modified.db.
     # Tables affected:
     #   PAN: gene_clusters.genome_name, gene_cluster_presence_absence.layer,

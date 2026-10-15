@@ -15,9 +15,8 @@ so each of these lands in OUTPUT_DIR and gets dragged onto the tree separately:
     09_station_colorstrip.txt     DATASET_COLORSTRIP   sampling station
     10_depth_colorstrip.txt       DATASET_COLORSTRIP   sampling depth
 
-Leaf labels have to match the tree exactly, which is why the renaming tables
-below are written out rather than derived: the tree was relabelled in step 18
-and these follow that same mapping.
+Leaf labels have to match the tree, so the renaming tables below are written out
+by hand: they follow the mapping step 18 used to relabel the tree.
 """
 
 import os
@@ -126,7 +125,7 @@ REF_DISPLAY_NAMES = {
 
 # main() fills this in with:
 #   MAGs: NameWithoutExtension to DisplayName, spaces become underscores
-# - Referencias: REF_DISPLAY_NAMES
+#   refs: REF_DISPLAY_NAMES
 LEAF_NAME_MAP = {}
 
 
@@ -767,7 +766,7 @@ def write_08_branch_support_colors(outdir):
 
 def write_09_station_colorstrip(outdir, stations):
     fname = '09_station_colorstrip.txt'
-    # Which stations the 10 MAGs actually come from
+    # The stations the 10 MAGs come from
     present = sorted({stations.get(m, m.split('.')[0]) for m in TARGET_MAGS})
     leg_colors = [STATION_COLORS.get(s, '#999999') for s in present]
 
@@ -795,7 +794,7 @@ def write_09_station_colorstrip(outdir, stations):
 
 def write_10_depth_colorstrip(outdir, depths):
     fname = '10_depth_colorstrip.txt'
-    # Which depths the 10 MAGs actually come from
+    # The depths the 10 MAGs come from
     present_depths = []
     seen_d = set()
     for mag in TARGET_MAGS:
@@ -836,8 +835,8 @@ def write_10_depth_colorstrip(outdir, depths):
 def validate_leaf_coverage(outdir):
     """
     Reads every file just written, pulls the leaf names out of the DATA section
-    and compares them against the relabelled names the tree is expected to use.
-    (10mags_pmsf.renamed.treefile).
+    and compares them against the relabelled names in
+    10mags_pmsf.renamed.treefile.
     """
     all_leaf_set = {translate_leaf(x) for x in ALL_LEAVES}
     print("\nLeaf coverage check")

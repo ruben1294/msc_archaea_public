@@ -8,9 +8,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # pangenome per species.
 #
 # Only species with at least four MAGs get a pangenome; below that the core and
-# accessory split is not meaningful. The gene clusters this produces are what
-# steps 21 to 25 annotate, summarise and clean, and what the R scripts under
-# scripts/R/ read for the pangenome figures.
+# accessory split is not meaningful. Steps 21 to 25 annotate, summarise and
+# clean the gene clusters this produces, and the R scripts under scripts/R/
+# read them for the pangenome figures.
 
 # --- Error handling ---
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR

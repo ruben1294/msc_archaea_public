@@ -15,7 +15,7 @@ set -euo pipefail
 # GTDB-Tk runs Prodigal itself and can die with "OSError: AF_UNIX path too long"
 # when the temporary directory path is deep. Passing --genes with the proteins
 # from step 05 avoids that, but GTDB-Tk then skips the ANI screen and
-# classification steps, and this version rejected the flag outright
+# classification steps, and this version rejected the flag
 # ("unrecognized arguments"). The workaround in use is a short TMPDIR.
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
@@ -71,8 +71,8 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-# set -e would abort before any $? check, so the exit code is captured here to
-# let the closing message distinguish success from failure.
+# Capture the exit code instead of letting set -e abort, so the closing message
+# can tell success from failure.
 exit_code=0
 gtdbtk de_novo_wf \
     --genome_dir "$RAW_DIR" \

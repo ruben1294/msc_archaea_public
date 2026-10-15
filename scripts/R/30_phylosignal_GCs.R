@@ -10,9 +10,9 @@
 #   Fig_phylosignal_K_<sp>.png
 #   Fig_panel_phylosignal_K.png
 #
-# Phylogenetic signal still enters the analysis, through the PVR eigenvectors
-# that script 29 uses in its variance partition. What went away is the per-cluster
-# K and lambda inference, not the question.
+# Phylogenetic signal still enters the analysis through the PVR eigenvectors
+# that script 29 uses in its variance partition; only the per-cluster K and
+# lambda inference is gone.
 #
 # The file stays as a record, with the body disabled so a stray run cannot leave
 # orphaned output under SO_03/phylosignal/. To bring the analysis back, recover

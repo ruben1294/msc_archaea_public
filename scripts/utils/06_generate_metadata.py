@@ -5,9 +5,9 @@ The filenames encode where each MAG came from: <station>.<depth>.megahit.bin.<n>
 so A4.BTM.megahit.bin.25 is bin 25 from station A4 at the bottom depth. This
 splits that apart and joins it against the classify_wf summary of step 03.
 
-The curated result is data/MAGs_metadata.tsv, the spine of the whole project.
-Every R script keys off its NameWithoutExtension and DisplayName columns, and
-pipeline steps 04, 18, 20, 23 and 25 read it too. This script regenerates it
+The curated result is data/MAGs_metadata.tsv. The R scripts join on its
+NameWithoutExtension and DisplayName columns, and pipeline steps 04, 18, 20, 23
+and 25 read it too. This script regenerates it
 into results/ rather than over the curated copy, so the two can be compared:
 
     python3 scripts/utils/06_generate_metadata.py

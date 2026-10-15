@@ -14,8 +14,8 @@
 #      against depth test in script 28. BH corrected, with the top clusters
 #      ranked.
 #   D  Spearman, cluster presence against Pressure_atm and O2_dissolved.
-#      Logistic regression degenerates at these sample sizes, which is why this
-#      is rank correlation. BH corrected per variable.
+#      Logistic regression degenerates at these sample sizes, so this uses
+#      rank correlation. BH corrected per variable.
 #   E  Candidate list: clusters passing either test at BH < 0.10, annotated
 #      against keywords for pressure, osmotic, transport, lipid and heat shock
 #      adaptation.
@@ -88,7 +88,7 @@ log_warn <- function(...) cat(sprintf("[%s] [WARN] %s\n",
 sanitize <- function(x) gsub("[^a-zA-Z0-9_]", "_", x)
 
 # Shannon entropy normalised by log(k): 0 means the cluster sits in a single
-# category, 1 means it spreads evenly across all k. This is what separates
+# category, 1 means it spreads evenly across all k. It separates
 # depth-restricted clusters from depth-agnostic ones.
 shannon_norm <- function(counts) {
   counts <- counts[counts > 0]
@@ -459,9 +459,7 @@ for (sp_name in canonical_species) {
     )
     # shape = 16, a filled circle with no border. The bordered default rendered
     # as two greys and two reds, since border and fill picked up the scale
-    # separately. The x axis uses a plotmath expression so the rho comes from R's
-    # Symbol font: element_markdown with Unicode or HTML fell back to "?"
-    # whenever the active font family lacked the Greek glyph.
+    # separately.
     fig_volc <- ggplot(spear_env_df, aes(rho, -log10(p))) +
       geom_point(aes(color = adaptive, size = adaptive),
                  shape = 16, alpha = 0.85) +
@@ -480,8 +478,7 @@ for (sp_name in canonical_species) {
       )) +
       # The rho glyph does not render in this environment: the active font
       # family carries no Greek, and the fallback substitutes a question mark.
-      # Naming the statistic instead of symbolising it is correct rather than a
-      # compromise, and the scale is the same -1 to +1 either way.
+      # The axis names the statistic instead; the scale is -1 to +1 either way.
       labs(title = pretty,
            x = "Coeficiente de Spearman",
            y = "-log<sub>10</sub>(*p*)") +

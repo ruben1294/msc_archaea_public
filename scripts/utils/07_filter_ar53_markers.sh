@@ -170,7 +170,7 @@ log_msg "  Sequences kept: $total_seqs_kept_length"
 log_msg "  Sequences dropped on length: $total_seqs_removed_length"
 log_msg ""
 
-# ---- ---- step 2: marker completeness per MAG ----
+# ---- step 2: marker completeness per MAG ----
 
 log_msg "========================================"
 log_msg "Step 2: marker completeness"

@@ -3,9 +3,9 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Step 18, first of four that build a focused tree for the 10 MAGs GTDB-Tk left
+# Step 16, first of four that build a focused tree for the 10 MAGs GTDB-Tk left
 # without a species. The 54-MAG tree from steps 11 to 15 places them in a
-# 7,022-leaf context that is too coarse to resolve where exactly they sit, so
+# 7,022-leaf context that is too coarse to resolve where they sit, so
 # this branch rebuilds a small tree around them with hand-picked references.
 #
 # The thesis ran this with GTDB-Tk 2.6.1 against GTDB R226.
@@ -56,7 +56,7 @@ export TMP="$TMPDIR"
 log_info "GTDB-Tk temp dir: ${TMPDIR}"
 
 # The 10 target MAGs (no-species assignment, MIMAG medium-quality or better)
-# Note: A4.BTM.megahit.bin.58 has 6.5% contamination, included but flagged.
+# A4.BTM.megahit.bin.58 carries 6.5% contamination; it stays in, flagged.
 TARGET_MAGS=(
     "A6.BTM.megahit.bin.3"
     "A4.BTM.megahit.bin.15"
@@ -66,7 +66,7 @@ TARGET_MAGS=(
     "A4.BTM.megahit.bin.25"
     "A4.BTM.megahit.bin.33"
     "PO1.BTM.megahit.bin.7"
-    "A4.BTM.megahit.bin.58"   # WARNING: 6.5% contamination
+    "A4.BTM.megahit.bin.58"   # 6.5% contamination
     "A6.BTM.megahit.bin.9"
 )
 
@@ -109,7 +109,7 @@ REF_SPECIES["GCA_036336595.1"]="UBA36_sp._GCA_036336595.1"
 # family, which sharpens resolution inside this clade.
 REFS_NITROSOPELAGICUS=(
     "GCA_013390375.1"   # Candidatus Nitrosopelagicus sp. (GTDB ref for A4.25, A4.33, PO1.7)
-    "GCF_000812185.2"   # Candidatus Nitrosopelagicus brevis CN25, closed genome (REPLACES U25)
+    "GCF_000812185.2"   # Candidatus Nitrosopelagicus brevis CN25, closed genome (replaces U25)
     "GCF_000018465.1"   # Nitrosopumilus maritimus SCM1, type strain, closed genome (Nitrosopumilaceae)
 )
 REF_LABELS["GCA_013390375.1"]="Nitrosopelagicus_ref1"
@@ -122,9 +122,9 @@ REF_SPECIES["GCF_000018465.1"]="Nitrosopumilus_maritimus_SCM1"
 # --- Broader archaeal context (domain-level context, GTDB-R226) ---
 # Haloarcula marismortui and Methanothermobacter thermautotrophicus were taken
 # out: they weighed the tree down without resolving the clades of interest.
-# Candidatus Lokiarchaeum sp. GC14_75 (GCA_900232055.1) came out for a harder
-# reason. Its branch length reached 1.386 in the first tree and the long-branch
-# attraction that followed distorted the topology throughout.
+# Candidatus Lokiarchaeum sp. GC14_75 (GCA_900232055.1) came out too: its
+# branch length reached 1.386 in the first tree, and the long-branch attraction
+# that followed distorted the topology.
 REFS_BROAD_ARCHAEA=(
     # Thermoproteota, Sulfolobales (hyperthermophilic Crenarchaeota)
     "GCA_000012285.1"   # Sulfolobus acidocaldarius DSM 639
@@ -142,7 +142,7 @@ REF_SPECIES["GCA_000012285.1"]="Sulfolobus_acidocaldarius_DSM_639"
 REF_SPECIES["GCA_000259595.1"]="Ca._Nitrososphaera_viennensis_EN76"
 REF_SPECIES["GCA_000091665.1"]="Methanocaldococcus_jannaschii_DSM_2661"
 
-# --- Bacterial outgroups (NOT DPANN; placed as external root) ---
+# --- Bacterial outgroups (not DPANN; placed as external root) ---
 # Using GCF_ (RefSeq) accessions, closed reference genomes, type strains
 REFS_OUTGROUPS=(
     "GCF_000008545.1"   # Thermotoga maritima MSB8        (Thermotogota)
@@ -343,7 +343,7 @@ ref_count=$(find "$REF_SOURCE" -maxdepth 1 -name "*.fna" | wc -l)
 log_info "Reference genomes in $REF_SOURCE: $ref_count"
 [[ $ref_count -gt 0 ]] || { log_error "No reference genomes available. Aborting."; exit 1; }
 
-# Write reference taxonomy mapping for use by script 20 (tree label renaming)
+# Reference taxonomy mapping, which step 18 reads to relabel the tree tips
 # Format: tree_name (REF_<accession>) TAB official_species_name
 REF_TAXONOMY_FILE="${WORK_DIR}/reference_taxonomy.tsv"
 {
@@ -372,14 +372,14 @@ for mag in "${TARGET_MAGS[@]}"; do
     fi
 done
 
-# Symlink reference genomes, ONLY accessions in ALL_REFS, prefixed with REF_ to
-# avoid GTDB-Tk ID collision (genomes are keyed by filename stem; GCA/GCF accessions
-# match internal DB entries and cause "same id" errors without the prefix).
+# Symlink only the accessions in ALL_REFS, prefixed with REF_. GTDB-Tk keys
+# genomes by filename stem, and a bare GCA/GCF accession matches an entry in its
+# own database and fails with a "same id" error.
 #
-# IMPORTANT: iterate over ALL_REFS explicitly instead of globbing REF_SOURCE/*.fna.
-# Globbing would include stale .fna files from previous runs (removed accessions,
-# NCBI-suppressed genomes, duplicate GCA/GCF versions) and add them to the tree.
-# Clearing old symlinks first ensures COMBINED_DIR contains exactly the current list.
+# The loop goes over ALL_REFS instead of globbing REF_SOURCE/*.fna, because the
+# glob would pick up stale .fna files from earlier runs (removed accessions,
+# NCBI-suppressed genomes, duplicate GCA/GCF versions). Old symlinks are cleared
+# first, so COMBINED_DIR holds the current list and nothing else.
 log_info "Symlinking reference genomes (prefix REF_, normalise to .fa)..."
 find "${COMBINED_DIR}" -maxdepth 1 -name "REF_*.fa" -type l -delete 2>/dev/null || true
 log_info "  Stale REF_ symlinks cleared"
@@ -449,7 +449,7 @@ fi
 if [[ -d "$MARKERS_DIR" ]]; then
     nmarkers=$(find "$MARKERS_DIR" -name "*.faa" | wc -l)
     log_info "  Per-marker files: $MARKERS_DIR/ ($nmarkers .faa files)"
-    log_info "  These will be used by script 19 for trimAl + FASconCAT-G"
+    log_info "  Step 17 (17_10mag_phylo_trimal_fasconcat.sh) aligns, trims and concatenates these"
 fi
 
 # ---- cleanup temp ----

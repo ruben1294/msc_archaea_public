@@ -158,11 +158,11 @@ log_info "Step 4: Testing installation"
 
 log_info "Testing FASconCAT-G..."
 
-# Test the script - just check if it exists and can be read
+# Check that the script exists and can be read
 if [[ -r "$FASCONCAT_ABS_PATH" ]]; then
     log_success "[OK] FASconCAT-G script is readable"
     
-    # Check if it's actually a Perl script
+    # Check that it is a Perl script
     if head -1 "$FASCONCAT_ABS_PATH" | grep -q "perl"; then
         log_success "[OK] FASconCAT-G is a valid Perl script"
     else

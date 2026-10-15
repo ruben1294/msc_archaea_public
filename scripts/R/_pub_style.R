@@ -9,12 +9,11 @@
 # plain "sans". Figures render on whatever machine opens them, at the cost of
 # not being byte-identical across machines.
 #
-# The figure labels here are in Spanish because the thesis is. They are output,
-# not documentation, so they stay that way.
+# The figure labels here are in Spanish because the thesis is.
 #
 # What this exports:
 #   resolve_project_dir()  : project root, from MSC_ARCHAEA_DIR or the working directory
-#   font_family            : the family that was actually found
+#   font_family            : the family that was found
 #   theme_publication()    : the ggplot2 theme every figure starts from
 #   depth_levels_es        : c("ZMOR", "1000 m", "Fondo")
 #   depth_colors_es        : colour per depth

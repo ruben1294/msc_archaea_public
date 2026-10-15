@@ -11,10 +11,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #   B. Final PMSF tree, LG+C60+F+G, using the guide tree through -ft. The
 #      posterior mean site frequency approximation makes the C60 profile
 #      mixture tractable at this size while keeping its resistance to
-#      long-branch attraction, which is the artefact that matters when placing
+#      long-branch attraction, the main risk when placing
 #      divergent archaea against bacterial outgroups.
 #   C. Partitioned tree, ModelFinder per partition (-p -m MFP), as an
-#      independent check on B rather than a replacement for it.
+#      independent check on B.
 #   D. Relabels the tips, from NameWithoutExtension to DisplayName for the MAGs
 #      and to species names for the references, so the figure is readable.
 #
@@ -47,7 +47,7 @@ fi
 IQTREE_VERSION=$(iqtree2 --version 2>&1 | head -1)
 log_info "IQ-TREE2: $IQTREE_VERSION"
 
-# Input: supermatrix + partition file from FASconCAT-G (script 19)
+# Input: supermatrix + partition file from FASconCAT-G (step 17)
 SUPERMATRIX="${FASCONCAT_DIR}/output/${PREFIX}_supermatrix.fas"
 PARTITION_FILE="${FASCONCAT_DIR}/output/${PREFIX}_partition.txt"
 
@@ -55,12 +55,12 @@ PARTITION_FILE="${FASCONCAT_DIR}/output/${PREFIX}_partition.txt"
 log_info "Step 0: Validating inputs"
 [[ -f "$SUPERMATRIX" ]] || {
     log_error "Supermatrix not found: $SUPERMATRIX"
-    log_error "Run script 19 (per-marker trimAl + FASconCAT-G) first."
+    log_error "Run 17_10mag_phylo_trimal_fasconcat.sh (per-marker trimAl + FASconCAT-G) first."
     exit 1
 }
 [[ -f "$PARTITION_FILE" ]] || {
     log_error "Partition file not found: $PARTITION_FILE"
-    log_error "Run script 19 (per-marker trimAl + FASconCAT-G) first."
+    log_error "Run 17_10mag_phylo_trimal_fasconcat.sh (per-marker trimAl + FASconCAT-G) first."
     exit 1
 }
 
@@ -202,7 +202,7 @@ PART_RENAMED="${PART_DIR}/10mags_partition.renamed.treefile"
 PART_CONTREE_RENAMED="${PART_DIR}/10mags_partition.renamed.contree"
 
 [[ -f "$METADATA" ]]     || log_warn "MAG metadata not found: $METADATA"
-[[ -f "$REF_TAXONOMY" ]] || log_warn "Reference taxonomy not found: $REF_TAXONOMY, run script 18 first"
+[[ -f "$REF_TAXONOMY" ]] || log_warn "Reference taxonomy not found: $REF_TAXONOMY, run 16_10mag_phylo_gtdbtk.sh first"
 
 if [[ -f "$METADATA" || -f "$REF_TAXONOMY" ]]; then
     python3 - "$METADATA" "$REF_TAXONOMY" "$PMSF_TREEFILE" "$PMSF_RENAMED" <<'PYEOF'

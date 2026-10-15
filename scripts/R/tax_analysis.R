@@ -1,9 +1,8 @@
 #!/usr/bin/env Rscript
 # Script: tax_analysis.R
-# Description: Comprehensive taxonomic analysis of archaeal MAGs classified
-#              with GTDB-Tk classify_wf. Generates bar charts, heatmaps and
-#              additional biologically relevant figures for species, genus and
-#              family levels, as well as novelty, ANI, and biogeography plots.
+# Description: Taxonomic analysis of the archaeal MAGs classified with GTDB-Tk
+#              classify_wf: bar charts and heatmaps at species, genus and
+#              family level, plus novelty, ANI and biogeography figures.
 # Created: 2026-03-23
 # Version: 1.0
 
@@ -88,7 +87,7 @@ required_packages <- c(
   "ggrepel", # better text placement
   "RColorBrewer", # colour palettes
   "ggtext", # rich text (markdown/HTML) in ggplot2
-  "ComplexHeatmap", # Mapas de calor (estilo DRAM2)
+  "ComplexHeatmap", # heatmaps (DRAM2 style)
   "circlize", # colorRamp2 for heatmap colour scales
   "grid", # grid graphics (needed by ComplexHeatmap)
   "readxl", # reading Excel files (metabolism_summary.xlsx)
@@ -383,7 +382,7 @@ cat("[OK] Matched to metadata:", sum(!is.na(df$Station)), "with station info\n\n
 
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
-# genus — family, order, class, phylum, domain — are plain text.
+# genus (family, order, class, phylum, domain) are plain text.
 ITALIC_LEVELS <- c("Genus", "Species", "Subspecies", "Strain")
 
 should_italicize_level <- function(level) {
@@ -496,7 +495,7 @@ get_parent_lookup <- function(df_in, child_col) {
       anc_vals <- na.omit(rows[[anc_col]])
       if (length(anc_vals) == 0) next
       anc_val <- names(sort(table(anc_vals), decreasing = TRUE))[1]
-      # Accept only if the ancestor name genuinely differs from the child
+      # Accept only if the ancestor name differs from the child
       if (!is.na(anc_val) && anc_val != child_key && anc_val != cv) {
         result[[cv]] <- list(
           name   = anc_val,
@@ -600,8 +599,8 @@ make_taxon_palette <- function(vals) {
 
 # Canonical phylum order used by the phylum-coherent palette. Stacking goes
 # top to bottom in this order, so Thermoplasmatota appears at the top of each bar,
-# Undinarchaeota at the bottom — matching the alphabetical default that the
-# legacy palette already produced for the phylum chart.
+# Undinarchaeota at the bottom, the order the earlier palette gave the phylum
+# chart alphabetically.
 phylum_levels <- c("Thermoplasmatota", "Thermoproteota", "Undinarchaeota")
 
 # Lightness adjustment via HSV. factor < 1 darkens; factor > 1 lightens by
@@ -869,7 +868,7 @@ if (nrow(df_novel_sp) > 0) {
 }
 
 # ---- section 2: phylogenetic overview, phylum and class ----
-# The whole collection falls into two or three phyla: Thermoplasmatota,
+# The collection falls into three phyla: Thermoplasmatota,
 # Thermoproteota and Undinarchaeota. Phylum and class are the minimum context
 # for describing what this set of MAGs covers.
 cat("\n=== Sección 2: Distribución de clases arqueales ===\n")
@@ -1008,9 +1007,8 @@ save_fig(b7d$plot, "Fig7d_burbujas_genero_estacion_profundidad.png", width = 13,
 
 # ---- section 8: taxonomic diversity per sample, genus richness ----
 # Genus richness per station and depth is the basic alpha diversity measure
-# here. Comparing it across depths is what exposes a diversity gradient, which
-# is the ground for discussing how the oxygen minimum zone and hydrostatic
-# pressure shape the archaeal community.
+# here. A gradient across depths would bear on how the oxygen minimum zone and
+# hydrostatic pressure shape the archaeal community.
 cat("\n=== Sección 8: Riqueza de géneros por muestra ===\n")
 
 df_richness <- df %>%
@@ -1065,9 +1063,9 @@ p8_combined <- (p8a / p8b) +
 save_fig(p8_combined, "Fig8_riqueza_MAGs_por_muestra.png", width = 10, height = 10)
 
 # ---- section 9: shared and exclusive genera ----
-# Whether a genus is confined to one station or depth, or turns up everywhere,
-# speaks to dispersal, how connected the water masses are, and how specific the
-# niche is. Standard ground in marine microbial biogeography.
+# A genus confined to one station or depth, against one found at all of them,
+# bears on dispersal, on how connected the water masses are, and on how
+# specific the niche is.
 cat("\n=== Sección 9: Exclusividad geográfica de géneros por estación ===\n")
 
 excl_st_colors <- c(
@@ -1096,10 +1094,8 @@ make_excl_station_df <- function(df_in, taxon_col, n_total_stations = 6) {
 df_excl_genero <- make_excl_station_df(df, "Genus")
 
 # ---- section 9b: station exclusivity at phylum, class, order and family ----
-# Extending the exclusivity analysis above the genus rank tests whether whole
-# lineages (phyla, classes) have restricted or cosmopolitan distributions, which
-# separates restricted from cosmopolitan distributions, which is what
-# environmental gradients and water-mass connectivity act on.
+# The same exclusivity analysis above genus rank tests whether whole lineages
+# (phyla, classes) stay at some stations or spread across all of them.
 cat("\n=== Sección 9b: Exclusividad por estación (Filo, Clase, Orden, Familia) ===\n")
 
 df_excl_filo <- make_excl_station_df(df, "Phylum")
@@ -1329,9 +1325,9 @@ if (length(mags_no_species) == 0) {
 # ---- section 10: skani, novelty as a number ----
 #
 # GTDB-Tk places the unassigned MAGs using phylogenetic distance thresholds,
-# the RED values, computed on marker trees. skani answers the same question
-# differently, by computing ANI directly against GTDB R226 representatives,
-# which gives a continuous and more readable measure of genomic distance:
+# the RED values, computed on marker trees. skani computes ANI against the
+# GTDB R226 representatives instead, a continuous measure of genomic distance
+# that is easier to read:
 #
 #   ANI >= 95% with AF >= 50%   same species (Jain et al. 2018)
 #   ANI 90 to 95% with AF >= 50%  new species inside a known genus
@@ -1342,11 +1338,10 @@ if (length(mags_no_species) == 0) {
 # means the alignment found conserved housekeeping regions and little else,
 # which is not evidence of genome-wide homology.
 #
-# ANI among the collection's own MAGs, from the all-vs-all matrix, answers a
-# second question: are the novel MAGs strains of one species recovered from
-# several stations and depths, or independent lineages? That is what bears on
-# dispersal and on how connected the water masses of the tropical eastern
-# Pacific are.
+# ANI among the collection's own MAGs, from the all-vs-all matrix, tests
+# whether the novel MAGs are strains of one species recovered from several
+# stations and depths or independent lineages, which bears on dispersal and on
+# how connected the water masses of the Gulf of Mexico are.
 #
 # Figures:
 #   10A  lollipop, ANI to the closest GTDB representative, sized by AF_query
@@ -1449,7 +1444,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   # Fig 10A: lollipop, ANI to the closest GTDB R226 representative.
   # Puts every novel MAG on the same axis against its nearest known relative.
-  # Point size carries the aligned fraction, which is what resolves the
+  # Point size carries the aligned fraction, which resolves the
   # ambiguity of an ANI computed over short conserved stretches.
   novelty_colors_10 <- c(
     "Nueva especie (ANI 90–95%)" = "#2980B9",
@@ -1598,7 +1593,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   # Fig 10B: scatter of ANI against AF_query, every GTDB hit above 5% AF.
   # The cloud is each novel MAG's signature in GTDB reference space. High AF
-  # with high ANI marks a genuine relative; very low AF with high ANI
+  # with high ANI marks a close relative; very low AF with high ANI
   # points to alignment on conserved genes only (false positives). The
   # top left quadrant (AF >= 50%, ANI < 95%) is confirmed new species; the
   # bottom band (AF < 50%) is a taxon GTDB R226 does not represent well.
@@ -1613,18 +1608,18 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
     novel_display_names
   )
 
-  # Biologically justified quadrant shading:
+  # Quadrant shading:
   #   AF >= 50% and ANI < 95%: new species in a known genus. The alignment
-  #     genuinely covers over half the genome, but identity falls short.
+  #     covers over half the genome, but identity falls short.
   #   AF < 50%: fragmentary alignment on conserved genes,
   #     only shared housekeeping regions, which is not evidence of kinship at
   #     species or genus level.
-  # NOT shaded (not biologically forced):
+  # Not shaded:
   #   AF >= 50% and ANI >= 95%: GTDB-Tk left these MAGs without a species, so
   #     a skani hit in this corner is most likely a partial-coverage artefact.
   #     It is not labelled here.
   #   AF < 50% and ANI >= 95%: high-identity alignment with low coverage, which
-  #     may reflect shared genomic islands. The reading is genuinely ambiguous,
+  #     may reflect shared genomic islands. That reading is ambiguous,
   #     and assigning it a colour would claim more than the data supports.
   p10b <- ggplot(
     skani_hits_filt,
@@ -1700,8 +1695,8 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # The all-vs-all comparison inside the collection shows whether the novel
   # MAGs are geographically spread populations of one species (same
   # species at different stations or depths, ANI >= 95%, AF >= 50%)
-  # or separate lineages. That distinction is what the biogeography argument
-  # rests on: hydrological connectivity between stations against niche
+  # or separate lineages. The biogeography argument rests on that
+  # distinction: hydrological connectivity between stations against niche
   # specificity by depth.
   skani_sparse_raw <- read_tsv(skani_sparse_file, show_col_types = FALSE)
 
@@ -1767,7 +1762,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # Append any IDs not found in meta_raw (safety)
   col_order <- c(col_order, setdiff(col_ids, col_order))
 
-  # Restrict rows to novel MAGs that actually appear in the sparse file.
+  # Restrict rows to novel MAGs that appear in the sparse file.
   # MAGs in novel_ids but absent from the sparse file would produce all-NA rows.
   novel_ids_plot <- novel_ids[novel_ids %in% unique(hits_novel_all$focal)]
   cat(sprintf("  MAGs novel con datos en matriz skani: %d\n", length(novel_ids_plot)))
@@ -1823,7 +1818,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
     show_annotation_name = TRUE
   )
 
-  # Row annotation (novelty level) — also built on original IDs
+  # Row annotation (novelty level), also built on the original IDs
   row_novelty_11 <- tibble(MAG_id = row_order_ids) %>%
     left_join(skani_best %>% select(MAG_id, Novelty), by = "MAG_id") %>%
     mutate(Novelty = ifelse(
@@ -1834,7 +1829,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   # Build italic labels for Nitrosopelagicus MAGs (ComplexHeatmap uses expressions).
   # Returns a single expression() vector so ComplexHeatmap renders all labels
-  # consistently via plotmath — no mixed list that would stringify expressions.
+  # through plotmath, with no mixed list that would turn expressions into strings.
   # Plain labels use bquote(.(txt)) which plotmath renders as the literal string.
   make_hm_labels <- function(nms) {
     exprs <- lapply(nms, function(nm) {
@@ -1852,7 +1847,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   row_labels_11 <- make_hm_labels(rownames(ani_mat_na))
   col_labels_11 <- make_hm_labels(colnames(ani_mat_na))
 
-  # NOW rename matrix axes (plain text without markdown, for internal use)
+  # Now rename the matrix axes (plain text without markdown, for internal use)
   rownames(ani_mat_na) <- gsub("\\*", "", get_display(rownames(ani_mat_na)))
   colnames(ani_mat_na) <- gsub("\\*", "", get_display(colnames(ani_mat_na)))
 
@@ -1974,7 +1969,7 @@ if (FALSE) { # section 12 disabled
   )
 
   # ---- Fig12A: GTDB-Tk classification method by phylum ----
-  # Biological: MAGs with a close GTDB reference are classified by ANI screen
+  # MAGs with a close GTDB reference are classified by ANI screen
   # (fast, high confidence). MAGs without a close reference require phylogenetic
   # tree placement (topology). The ratio per phylum reveals which lineages are
   # well-characterized vs. novel in archaeal genomics databases.
@@ -2015,7 +2010,7 @@ if (FALSE) { # section 12 disabled
   cat("[OK] Saved: Fig12A_clase_metodo_clasificacion_por_clase.png\n")
 
   # ---- Fig12B: RED value by class, coloured by novelty ----
-  # Biological: RED (Relative Evolutionary Divergence) measures a MAG's position
+  # RED (Relative Evolutionary Divergence) measures a MAG's position
   # on the GTDB reference tree relative to rank-level boundaries (Parks et al. 2022).
   # Values >0.95 indicate placement near the species level; 0.85-0.95 indicates
   # within genus but outside species boundaries (consistent with novel species).
@@ -2064,10 +2059,10 @@ if (FALSE) { # section 12 disabled
   }
 
   # ---- Fig12C: MSA%, ar53 marker coverage, by class ----
-  # Biological: The GTDB ar53 marker set comprises 53 conserved archaeal genes.
+  # The GTDB ar53 marker set comprises 53 conserved archaeal genes.
   # The MSA% is the proportion of these markers identified in each MAG.
   # Low values (<30%) can indicate draft-quality assemblies or lineages whose
-  # genes diverge from the reference markers — relevant for assessing placement
+  # genes diverge from the reference markers, which bears on placement
   # confidence. High MSA% in topology-classified MAGs (those lacking a close
   # ANI reference) confirms good genome quality despite taxonomic novelty.
   df12_msa <- df12 %>%
@@ -2112,12 +2107,12 @@ if (FALSE) { # section 12 disabled
   }
 
   # ---- Fig12D: RED value against MSA%, phylogenetic position against quality ----
-  # Biological: The joint distribution of RED value and MSA% characterises the
+  # The joint distribution of RED value and MSA% characterises the
   # quality–placement trade-off. MAGs with high MSA% and high RED (top-right)
-  # are high-quality genomes placed near the species level — the most reliable
+  # are high-quality genomes placed near the species level, the most reliable
   # classifications. MAGs with low MSA% or extreme RED may need additional
   # validation. Novel MAGs (without species) plotted here show whether their
-  # classification uncertainty stems from quality (low MSA%) or genuine novelty
+  # classification uncertainty stems from quality (low MSA%) or novelty
   # (high MSA%, moderate RED, no ANI reference).
   df12_joint <- df12 %>% filter(!is.na(red_value_num), !is.na(msa_percent_num))
 
@@ -2214,7 +2209,7 @@ order_by_parent <- function(df, parent_col, child_col) {
   # Explicit loop over parents in exact factor level order (bottom to top).
   # For each parent, children are added in ascending-count order.
   # Children shared across parents are placed at the position of their first
-  # (lowest) parent. Pure character arithmetic — no factor codes involved.
+  # (lowest) parent. Pure character arithmetic, with no factor codes.
   parent_lvls <- levels(df[[parent_col]])
   par_vec <- as.character(df[[parent_col]])
   chi_vec <- as.character(df[[child_col]])
@@ -2245,7 +2240,7 @@ df_sankey_wide <- df_sankey_wide %>%
 df_sankey_wide <- df_sankey_wide %>%
   mutate(Genero = factor(Genero, levels = order_by_parent(., "Familia", "Genero")))
 
-# Species: simple ascending-count order — order_by_parent() here would place
+# Species: ascending-count order. order_by_parent() here would place
 # "Sin especie asignada" at the first genus that uses it, leaving the other
 # genera with non-contiguous species positions and visible gaps in their bars.
 df_sankey_wide <- df_sankey_wide %>%
@@ -2272,7 +2267,7 @@ pal_wide <- setNames(
 pal_wide["Sin asignar"] <- "#C0C0C0"
 pal_wide["Sin especie asignada"] <- "#B0B0B0"
 
-# Aggregate to unique taxonomic paths — one row per combination, weighted by
+# Aggregate to unique taxonomic paths, one row per combination, weighted by
 # MAG count. This gives one ribbon per path (not one per MAG), so borders on
 # the alluvium are at the taxon level, not the individual-MAG level.
 df_sankey_agg <- df_sankey_wide %>%
@@ -2283,7 +2278,7 @@ df_sankey_agg <- df_sankey_wide %>%
 # label callback can apply CDC italics (genus/species italic; family and above
 # plain). When a name occurs at more than one rank (e.g. "UBA57" exists as a
 # family and a genus in this dataset), the lower rank wins so the genus
-# rendering stays italic — the family stratum then displays consistently with
+# rendering stays italic; the family stratum then displays consistently with
 # the genus stratum, which is acceptable since these GTDB code names are kept
 # plain by the per-word logic anyway.
 sankey_level_map <- local({
@@ -2332,7 +2327,7 @@ p_sankey <- ggplot(
     aes(fill = after_stat(stratum)),
     width = bar_w, color = NA, na.rm = TRUE
   ) +
-  # Layer 2: ribbons drawn ON TOP of bars — no later opaque fill covers them,
+  # Layer 2: ribbons drawn over the bars. No later opaque fill covers them,
   # so they are always visible; color=NA means no borders and no false
   # division lines anywhere in the plot.
   geom_flow(
@@ -2342,7 +2337,7 @@ p_sankey <- ggplot(
     width     = bar_w,
     na.rm     = TRUE
   ) +
-  # Layer 3: bar borders only — transparent fill preserves bar and ribbon
+  # Layer 3: bar borders only. A transparent fill preserves bar and ribbon
   # colors underneath; black outline marks taxon boundaries.
   geom_stratum(
     width = bar_w, fill = NA, color = "black", linewidth = 0.45, na.rm = TRUE

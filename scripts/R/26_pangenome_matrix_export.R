@@ -107,7 +107,7 @@ for (sp_dir in species_dirs) {
   gc_summary  <- file.path(summary_dir, paste0(sp_name, "_gene_clusters_summary.txt.gz"))
 
   if (!file.exists(gc_summary)) {
-    log_warn(sprintf("Missing gene_clusters_summary for %s; run script 23 on HPC first", sp_name))
+    log_warn(sprintf("Missing gene_clusters_summary for %s; run pipeline step 22 (22_pangenome_summarize.sh) first", sp_name))
     next
   }
   log_info(sprintf("Processing species: %s", sp_name))

@@ -189,7 +189,7 @@ BEGIN {
         ko = best_ko[prot_id]
     }
     
-    # Output: protein_id\tKO (or just protein_id if no KO)
+    # Output: protein_id\tKO (or protein_id alone if no KO)
     if (ko != "") {
         print prot_id, ko
     } else {
@@ -281,7 +281,7 @@ n_mag_ko=$(wc -l < "$BY_MAG_FILE")
 log "[OK] MAG-KO assignments: $BY_MAG_FILE ($n_mag_ko unique pairs)"
 log ""
 
-# ---- Step 8: Generate per-MAG statistics (CORRECTED + Multi-KO column) ----
+# ---- Step 8: Generate per-MAG statistics (with a multi-KO column) ----
 
 log "=========================================="
 log "Step 8: Calculating per-MAG statistics"

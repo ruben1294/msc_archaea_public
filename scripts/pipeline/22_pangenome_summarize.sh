@@ -6,11 +6,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # Step 22. Refreshes the genomes storages so the KEGG annotations from step 21
 # reach the pangenome, then runs anvi-summarize per species.
 #
-# The refresh is not optional: annotations added to a contigs database after the
+# The refresh has to run: annotations added to a contigs database after the
 # storage was built stay invisible to the pangenome until the storage is rebuilt.
 #
-# What this exports, gene_clusters_summary, is the matrix every downstream R
-# analysis reads.
+# scripts/R/26_pangenome_matrix_export.R starts from the gene_clusters_summary
+# this exports, and the rest of the R pangenome analysis from its tables.
 
 # --- Error handling ---
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR
@@ -59,8 +59,8 @@ fi
 
 # Step 1: Refresh species-level contigs.db copies from the KEGG-annotated
 # originals in all_mags/contigs_db. anvi-pan-genome already linked them by
-# path; what we need is for anvi-summarize to read KEGG functions from the
-# refreshed contigs DBs through a regenerated genomes storage.
+# path; anvi-summarize then reads the KEGG functions from the refreshed
+# contigs DBs through the genomes storage regenerated in step 2.
 log_info "Step 1: Refreshing per-species contigs.db copies from KEGG-annotated originals..."
 refresh_count=0
 for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
@@ -98,11 +98,9 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
         continue
     fi
 
-    # Detect the actual gene caller used in the first contigs.db of this
-    # species. anvi'o 9 default is pyrodigal_gv, NOT literal "prodigal".
-    # Hardcoding the wrong name causes "None of your genomes seem to have
-    # a gene call". Use anvi-export-gene-calls --list-gene-callers to read
-    # the actual caller name from the DB.
+    # Read the gene caller from the first contigs.db of this species instead of
+    # hardcoding it. The anvi'o 9 default is pyrodigal-gv, not "prodigal", and
+    # the wrong name fails with "None of your genomes seem to have a gene call".
     first_db=$(awk -F'\t' 'NR==2 {print $2; exit}' "$external_genomes_file")
     if [[ -z "$first_db" || ! -f "$first_db" ]]; then
         log_warn "  Could not locate a contigs.db to detect the gene caller; skipping ${species_name//_/ }"
@@ -110,7 +108,7 @@ for species_dir in "${PANGENOME_WORK_DIR}"/*/; do
     fi
     # anvi-export-gene-calls --list-gene-callers prints lines like
     #   * 'pyrodigal-gv' is a valid gene caller ...
-    # We need the bare name (without surrounding quotes), e.g. pyrodigal-gv.
+    # Keep the bare name, without the quotes: pyrodigal-gv.
     raw=$(anvi-export-gene-calls -c "$first_db" --list-gene-callers 2>&1 \
         | grep -Ei "['\"](pyrodigal[-_]?gv|pyrodigal|prodigal|prokka|gtdb)['\"]" \
         | head -n 1)

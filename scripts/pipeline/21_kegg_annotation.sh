@@ -6,10 +6,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # Step 21. Runs anvi-run-kegg-kofams over every contigs database that step 20
 # produced.
 #
-# The KEGG annotations are a prerequisite for the functional enrichment in step
-# 25, and they are what lets the findings of this thesis be located inside the
-# anvi'o pangenome: cbb3 as K00404 to K00407, HndC as K18006, and amoA as
-# K10944.
+# The functional enrichment of step 24 needs these KEGG annotations, and they
+# locate the findings of this thesis inside the anvi'o pangenome: cbb3 as
+# K00404 to K00407, HndC as K18006, and amoA as K10944.
 
 # --- Error handling ---
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR
@@ -97,9 +96,8 @@ done
 log_info "Step 2 complete: KOfam run on $kegg_count databases, $kegg_skip skipped"
 
 # Step 3: Setup Pfam data (one-time download)
-# Reinforces domain-level annotations alongside KEGG and COG. Pfam-A.hmm is
-# the gold-standard protein domain database; useful for archaeal proteins
-# that may lack KEGG orthologs but retain conserved Pfam domains.
+# Adds domain-level annotations alongside KEGG and COG, which covers archaeal
+# proteins that lack a KEGG ortholog but keep a conserved Pfam domain.
 log_info "Step 3: Setting up Pfam data snapshot..."
 PFAM_SETUP_SENTINEL="${PFAM_DATA_DIR}/.pfam_setup_done"
 if [[ -f "$PFAM_SETUP_SENTINEL" ]]; then

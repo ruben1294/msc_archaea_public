@@ -5,7 +5,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # Step 1. Runs CheckM2 over the input MAGs in data/mags/ and writes
 # quality_report.tsv under results/01_mag_quality/. Before that it strips
-# duplicate contig IDs, which CheckM2 rejects outright and which show up when
+# duplicate contig IDs, which CheckM2 rejects and which show up when
 # MAGs binned from separate assemblies of the same station carry contigs with
 # the same name.
 #

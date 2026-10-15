@@ -9,14 +9,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # It comes last because it reads the *_modified.db copies that step 25 writes,
 # not the originals.
 #
-# This is not a batch renderer. anvi-display-pan starts a server and blocks
+# anvi-display-pan starts a server and blocks
 # until you stop it, so each invocation below waits for you to close the browser
 # before the next one starts. It runs on the local machine, not the cluster.
 #
-# There is no headless SVG export here, and that is deliberate. The layer
-# ordering, colouring and gene cluster selection that the thesis figures use
-# were chosen in the interface; a scripted render would not reproduce those
-# choices, only a default view of the same data.
+# There is no headless SVG export here. The layer ordering, colouring and gene
+# cluster selection of the thesis figures were set by hand in the interface,
+# and a scripted render would only produce the default view of the same data.
 
 trap 'log_error "Failed at line $LINENO with exit code $?"; exit 1' ERR
 

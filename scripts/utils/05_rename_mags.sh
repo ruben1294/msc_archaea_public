@@ -14,7 +14,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #
 # If a GTDB-Tk summary already exists, because classification ran before the
 # rename, its first column is rewritten the same way. The header row is left
-# alone there, since the column names legitimately contain underscores.
+# alone there, since the column names contain underscores of their own.
 #
 # The R scripts join on NameWithoutExtension after turning underscores into
 # dots themselves, so they read either form of these tables.

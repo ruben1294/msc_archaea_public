@@ -5,20 +5,19 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # Step 10. Runs the DRAM2 Nextflow workflow over the filtered MAGs and writes the
 # distillate under results/10_MAG_distill/: raw-annotations.tsv, traits.xlsx,
-# product.tsv and the metabolism summaries. Almost every R script downstream
-# reads one of those files, which makes this the pivot of the whole analysis.
+# product.tsv and the metabolism summaries. Most of the downstream R scripts
+# read one of those files.
 # It needs the GTDB-Tk summary of step 03 and the CheckM2 report of step 01,
 # both of which DRAM2 carries into the distillate.
 #
-# This supersedes the DRAM v1 pass in step 07. Both are kept because the two
-# versions disagree on enough trait calls that the comparison is worth being
-# able to reproduce.
+# This supersedes the DRAM v1 pass in step 07, which stays so the comparison
+# between the two versions can be reproduced.
 #
 # The thesis ran a fork of DRAM2, ruben1294/DRAM, under Nextflow 25.10.2 with
 # the docker profile. The fork carries fixes to the KEGG database formatting,
 # the archaea-calibrated trait rules and the run configuration of this step;
 # its README lists every change. All of that is DRAM2-derived and GPL-licensed,
-# which is why it lives in the fork and not here. DRAM2_REVISION in server.env
+# so it lives in the fork. DRAM2_REVISION in server.env
 # pins the commit; slurm/DRAM2_HPC_install.slurm fetches it into DRAM2_REPO,
 # and this script refuses a checkout at any other commit unless
 # DRAM2_ALLOW_OTHER_REVISION=true.
@@ -26,8 +25,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # Nextflow itself needs almost nothing to run: it schedules the work and waits.
 # Either launch it in the background with -bg, which leaves its pid in
 # .nextflow.pid, or put it in a small job of one CPU and a gigabyte or two. The
-# SLURM wrapper takes the second route, which is why it asks for so little while
-# running for days.
+# SLURM wrapper takes the second route, with 2 CPUs and 2 GB for up to 140
+# hours.
 #
 # To stop a backgrounded run:
 #   kill "$(cat .nextflow.pid)"
@@ -115,8 +114,8 @@ export NXF_OFFLINE="${NXF_OFFLINE:-true}"
 export NXF_WORK="${DRAM2_WORK_DIR:-${PROJECT_DIR}/work/DRAM2}"
 log_info "Work directory:  $NXF_WORK"
 
-# -resume reuses the cached work directory, which matters because a full run
-# takes days and a failure partway through is expensive to repeat.
+# -resume reuses the cached work directory, so a run that fails partway through
+# picks up where it stopped instead of repeating days of work.
 exit_code=0
 (cd "$DRAM2_REPO" && nextflow run . \
     --outdir "$OUT_DIR" \

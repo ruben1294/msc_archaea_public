@@ -12,8 +12,8 @@
 #   cbb3 (K00404 to K00407) should land in the core of MGIIb_O1_sp002498525
 #   HndC (K18006) should land in core or soft-core of UBA8886_sp003193815
 #
-# A cluster missing from an incomplete MAG looks the same as one that genuinely
-# is not there, which biases everything toward the accessory bands. The
+# A cluster missing from an incomplete MAG looks the same as one the genome
+# lacks, which biases everything toward the accessory bands. The
 # sensitivity pass at the end reclassifies using only MAGs above 80% CheckM2
 # completeness and reports how far the two agree.
 
@@ -364,7 +364,7 @@ panel_h <- function(n_subplots) 4.5 * ceiling(n_subplots / 3)
 
 # Combined panel: pangenome classes along the top, accumulation curves below.
 # No panel titles, since each subplot already carries its species name, and one
-# tag per row rather than per subplot. wrap_elements() is what makes tag_levels
+# tag per row rather than per subplot. wrap_elements() makes tag_levels
 # match at the row level instead of descending into each subplot.
 if (length(panel_classes) > 0 && length(panel_curves) > 0) {
   ord <- intersect(canonical_species, names(panel_classes))

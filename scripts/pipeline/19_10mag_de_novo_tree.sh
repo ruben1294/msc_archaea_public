@@ -5,8 +5,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # Step 19. A second, independent tree for the same 10 MAGs, this time through
 # gtdbtk de_novo_wf over the ar53 markers rather than the hand-built supermatrix
-# of steps 16 to 18. Agreement between the two is what makes the placement of
-# the novel lineages credible.
+# of steps 16 to 18. The two trees have to agree before the placement of the
+# novel lineages can be trusted.
 #
 # It symlinks the 10 MAGs into their own input directory so de_novo_wf sees only
 # them, and runs once per outgroup listed below. The thesis ran it with GTDB-Tk
@@ -45,9 +45,9 @@ TMPDIR="$(mktemp -d /tmp/gtdbtk_XXXXXXXX)"
 export TMPDIR
 trap 'rm -rf "${TMPDIR:?}"' EXIT
 # Methanobacteriota covers the 53 archaeal markers well and sits equidistant
-# from both groups of unclassified MAGs, which is what makes it a fair root
-# here. Both the class and the phylum run, since the rooting choice is exactly
-# what a reviewer will question.
+# from both groups of unclassified MAGs, so it makes a fair root here. The run
+# uses both the class and the phylum as outgroup, to test whether the placement
+# depends on the rooting.
 OUTGROUPS=(
     "c__Methanococci"
     "p__Methanobacteriota"
@@ -110,15 +110,15 @@ log_info "Step 2: Running GTDB-Tk de novo workflow (${#OUTGROUPS[@]} outgroups)"
 OVERALL_EXIT=0
 
 for OUTGROUP_TAX in "${OUTGROUPS[@]}"; do
-    # Derive a safe directory suffix from the taxon string (e.g. c__Methanococci to c__Methanococci)
-    SUFFIX="${OUTGROUP_TAX//\//_}"   # replace any slashes, just in case
+    # Derive a safe directory suffix from the taxon string (slashes become underscores)
+    SUFFIX="${OUTGROUP_TAX//\//_}"   # replace any slashes
     OUT_DIR="${BASE_OUT_DIR}/${SUFFIX}"
     log_info "Outgroup: $OUTGROUP_TAX"
     log_info "Output:   $OUT_DIR"
     mkdir -p "$OUT_DIR" || { log_error "Failed to create $OUT_DIR"; exit 1; }
 
-    # set -e would abort before $? could be read, so the status is captured
-    # inline and the loop continues to the next outgroup.
+    # Capture the status inline instead of letting set -e abort, so the loop
+    # continues to the next outgroup.
     RUN_EXIT=0
     gtdbtk de_novo_wf \
         --genome_dir "$INPUT_DIR" \

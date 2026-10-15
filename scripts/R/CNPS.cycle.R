@@ -9,7 +9,7 @@
 #
 # OUTPUT PER CYCLE (C, N, S; P when there is data):
 #   *_abundance.csv                      pathway abundance table
-#   *_stats_station.csv / *_stats_depth.csv – p-values (ANOVA/Kruskal-Wallis)
+#   *_stats_station.csv / *_stats_depth.csv  p-values (ANOVA/Kruskal-Wallis)
 #   *_heatmap_grouped_station.png        abun.heatmap.g by station, package version
 #   *_heatmap_grouped_depth.png          abun.heatmap.g by depth, package version
 #   *_heatmap_samples.png                abun.heatmap.s per MAG, package version
@@ -922,7 +922,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
   n_path <- nrow(abundance_df)
   h_grp <- max(4, round(n_path * 0.6 + 2))
 
-  # Restrict the groups to the MAGs actually present in abundance_df
+  # Restrict the groups to the MAGs present in abundance_df
   mag_cols <- setdiff(colnames(abundance_df), "Type")
   grp_st <- group_st[group_st$ID %in% mag_cols, , drop = FALSE]
   grp_st$Group <- droplevels(grp_st$Group)
@@ -1049,7 +1049,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
 
 message("\n══ [A] Ciclos elementales – 54 MAGs ══")
 
-# ---- carbono ----
+# ---- carbon ----
 message(" Carbono ")
 C.abundance <- Ccyc.abundance(kegg.entry = ko)
 run_cycle_plots(
@@ -1082,7 +1082,7 @@ if (any(P.abundance[, p_num_cols] > 0)) {
   message("  F\u00f3sforo: KOs de PhoR-PhoB/SenX3-RegX3 ausentes (esperado en archaea)")
 }
 
-# ---- azufre ----
+# ---- sulfur ----
 message(" Azufre ")
 S.abundance <- Scyc.abundance(kegg.entry = ko)
 run_cycle_plots(
@@ -1520,9 +1520,9 @@ theme_publication_g <- function(base_size = 11) {
 }
 
 # ---- g.2 build df_long_all_g from the CSVs written in section A ----
-# Reading the files rather than the in-memory objects is deliberate. Run across
-# two RStudio sessions, the objects still in memory may be left over from an
-# earlier run and disagree with what is on disk.
+# The CSVs are read from disk instead of taken from memory: across two RStudio
+# sessions, the objects in memory may be left over from an earlier run and
+# disagree with what is on disk.
 
 .read_abund_csv <- function(csv_path, abund_fallback) {
   if (file.exists(csv_path)) {
@@ -1570,7 +1570,7 @@ df_long_all_g <- dplyr::bind_rows(df_long_c_g, df_long_n_g, df_long_p_g, df_long
 
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
-# genus — family, order, class, phylum, domain — remain plain text.
+# genus (family, order, class, phylum, domain) remain plain text.
 ITALIC_LEVELS_G <- c("Genus", "Species", "Subspecies", "Strain")
 
 should_italicize_level_g <- function(level) {
@@ -1840,7 +1840,7 @@ message("  Generando gr\u00e1fico integrado de metadatos (Estaci\u00f3n + Profun
 
 n_grupos_g <- length(unique(df_summary_meta_g$Grupo))
 h_meta_g <- max(6, length(unique(df_summary_meta_g$Pathway_ES_uniq)) * 0.25 + 2)
-# Reduced: was max(9, n_grupos * 1.2 + 5) = ~15.8 in — too wide for 9 groups
+# 0.75 in per group keeps nine groups at about 10 in wide
 w_meta_g <- max(7, n_grupos_g * 0.75 + 3)
 
 p_meta_g <- ggplot(df_summary_meta_g, aes(x = Grupo, y = Pathway_ES_uniq)) +
@@ -1964,7 +1964,7 @@ plot_tax_meta_combined_g <- function(data, tax_level, meta_col,
         legend.box = "vertical",
         panel.spacing.x = unit(0.9, "lines")
       )
-    # Width must account for ALL meta-level facets × n_taxa items each
+    # Width must account for every meta-level facet × n_taxa items each
     n_meta_vals_tx <- length(unique(df_summary$Meta))
     w_din <- max(8, n_meta_vals_tx * (n_taxa * 0.55 + 1.0) + 4)
   } else {
@@ -1978,7 +1978,7 @@ plot_tax_meta_combined_g <- function(data, tax_level, meta_col,
       scale_fill_viridis_c(
         option = "plasma", name = "Abundancia\nmedia", na.value = "transparent"
       ) +
-      # Fixed: was expansion(add = 1.8) — excessive blank space at sides
+      # A small x expansion, so the panels carry little blank space at the sides
       scale_x_discrete(expand = expansion(add = 0.5)) +
       scale_y_discrete(labels = function(x) {
       lab <- sub("_(Carbono|Nitr\u00f3geno|Azufre|F\u00f3sforo)$", "", x)
@@ -1988,7 +1988,7 @@ plot_tax_meta_combined_g <- function(data, tax_level, meta_col,
       lab <- gsub(",", ":", lab)
       lab
     }) +
-      # space = "free_y": all column panels equal width (was "free" to unequal)
+      # space = "free_y" keeps the column panels equal in width
       facet_grid(Ciclo ~ Taxon_Fmt, scales = "free_y", space = "free_y") +
       labs(x = NULL, y = NULL) +
       theme_publication_g(base_size = 13) +
@@ -2044,7 +2044,7 @@ for (i in seq_along(tax_levels_g)) {
     orientation = "tax_x"
   )
 
-  # ---- D: left out on purpose ----
+  # ---- D: left out ----
   # Putting the depths (ZMOR, 1000 m, Fondo) across the top as column headers
   # gives labels far wider than the few bubbles each panel would hold.
   # plot_tax_meta_combined_g(
@@ -2166,7 +2166,7 @@ make_combined_meta_tax_g <- function(tax_level, tax_suffix) {
     labs(x = NULL, y = NULL) +
     theme_publication_g(base_size = 13) +
     theme(
-      # x axis renders markdown, which is what italicises the taxon names
+      # x axis renders markdown, which italicises the taxon names
       axis.text.x = ggtext::element_markdown(angle = 45, hjust = 1, size = 11),
       axis.text.y = element_text(size = 10),
       # Top strip: station, depth or taxa
@@ -2192,7 +2192,7 @@ message(
   file.path(OUT_DIR, "resumen_comunidad")
 )
 
-# ---- FIN ----
+# ---- end ----
 
 message(paste0(
   "\n---\nAn\u00e1lisis CNPS.cycle completado.\nResultados en: ", OUT_DIR

@@ -66,8 +66,8 @@ DEPTH_ES_LABELS = {
     "BTM": "Fondo",
 }
 
-# Restrict to the MAG cohort. Anything outside these sets is dropped from
-# the combined workbook to keep it tightly scoped to the thesis dataset.
+# Restrict to the MAG cohort: stations and depths outside these sets are
+# dropped from the combined workbook.
 MAG_STATIONS = {"A4", "A6", "C22", "F37", "PO1", "Y6"}
 MAG_DEPTHS = {"1000", "BTM", "ROMZ"}
 

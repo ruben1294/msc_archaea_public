@@ -60,7 +60,7 @@ log "Found: $emapper_version"
 log ""
 
 # An empty EGGNOG_DATA_DIR makes emapper.py fall back to its own default
-# location, which is why this warns instead of exiting.
+# location, so this warns instead of exiting.
 if [[ ! -d "${EGGNOG_DATA_DIR:-}" ]]; then
     log "WARNING: eggNOG database not found at '${EGGNOG_DATA_DIR:-unset}'"
     log "Falling back to the emapper.py default location"

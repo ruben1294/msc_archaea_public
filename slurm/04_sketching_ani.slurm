@@ -16,16 +16,16 @@
 #
 # Add --skip-gtdb after the file name to run only the passes within the
 # collection. Exporting SBATCH_ACCOUNT and SBATCH_PARTITION once does the same
-# for every wrapper. Nothing here is tied to one cluster: the module and conda
-# setup come from slurm/cluster.env, and pipeline/04_sketching_ani.sh itself
-# runs anywhere its tools are on PATH. Resource requests are the ones these runs
-# actually used, a starting point rather than a recommendation.
+# for every wrapper. The module and conda setup come from slurm/cluster.env,
+# and pipeline/04_sketching_ani.sh runs on any machine with its tools on PATH.
+# The resource requests are the ones the thesis runs used; adjust them to your
+# data.
 
 set -euo pipefail
 
-# sbatch copies this file before running it, so its original path is not
-# recoverable at run time. SLURM_SUBMIT_DIR is wherever sbatch was invoked,
-# which is why submitting from the repository root matters.
+# sbatch runs a copy of this file, so the script cannot locate itself.
+# REPO_ROOT comes from SLURM_SUBMIT_DIR, the directory sbatch was called from,
+# which has to be the repository root.
 REPO_ROOT="${SLURM_SUBMIT_DIR:-$PWD}"
 mkdir -p "$REPO_ROOT/logs"
 
@@ -55,8 +55,8 @@ conda activate skani
 
 echo "Running $SCRIPT_PATH"
 
-# set -e would abort before an exit code could be read, so it is captured here
-# to let the closing message say what happened.
+# Capture the exit code instead of letting set -e abort, so the closing
+# message can report it.
 exit_code=0
 bash "$SCRIPT_PATH" "$@" || exit_code=$?
 

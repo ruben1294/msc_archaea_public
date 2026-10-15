@@ -7,9 +7,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # over the whole set to produce metabolism_summary.xlsx and product.html.
 #
 # Step 10 runs DRAM2 through Nextflow over the same MAGs and supersedes this for
-# the thesis figures. Step 07 stays because it produced the first pass and
-# because DRAM v1 and DRAM2 disagree on enough trait calls that the comparison
-# is worth keeping reproducible.
+# the thesis figures. Step 07 stays: it produced the first pass, and DRAM v1 and
+# DRAM2 disagree on enough trait calls that the comparison should stay
+# reproducible.
 #
 # Two modes, selected through the DRAM_MODE environment variable:
 #   annotate        starts from .fa contigs and calls genes itself
@@ -223,7 +223,7 @@ if [[ "$RUN_DISTILL" == true ]] && [[ $processed -gt 0 ]]; then
     if [[ -n "$annot_files_str" ]]; then
         distill_log="${distill_output}/distill.log"
 
-        # -i takes several paths, so this one expansion stays unquoted on purpose.
+        # -i takes several paths, so this expansion stays unquoted.
         # shellcheck disable=SC2086
         if DRAM.py distill \
             -i $annot_files_str \

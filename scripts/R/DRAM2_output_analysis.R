@@ -242,7 +242,7 @@ make_row_fontface <- function(names) {
 
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
-# genus — family, order, class, phylum, domain — remain plain text.
+# genus (family, order, class, phylum, domain) remain plain text.
 ITALIC_LEVELS <- c("Genus", "Species", "Subspecies", "Strain")
 
 should_italicize_level <- function(level) {
@@ -586,7 +586,7 @@ translate_to_spanish <- function(names_vec, translation_cache_file = NULL) {
   for (i in seq_along(names_vec)) {
     original <- names_vec[i]
     if (original %in% names(.MANUAL_TRANSLATIONS)) {
-      # Manual translations win outright, bypassing both DeepL and the cache
+      # Manual translations win, bypassing both DeepL and the cache
       translated[i] <- .MANUAL_TRANSLATIONS[[original]]
       translation_cache[[original]] <- .MANUAL_TRANSLATIONS[[original]]
     } else if (original %in% names(translation_cache)) {
@@ -813,7 +813,7 @@ reorder_rows_by_version <- function(mat, ann_df, annotation_version,
 # points at may itself be uncharacterised, so a UniRef hit can mean nothing more
 # than "resembles something nobody has identified". Those are reported separately
 # as Homology_Only, split into informative and vague by what the hit description
-# actually says.
+# says.
 cat("\nClasificando genes por calidad de anotación...\n")
 
 count_hits <- function(column) {
@@ -1054,7 +1054,7 @@ order_to_class <- local({
   setNames(tbl$class, tbl$order)
 })
 
-# Puts the class in parentheses after an order name that is really a code: first
+# Puts the class in parentheses after an order name that is a code: first
 # word all caps (MGIII, DPANN) or carrying digits (UBA1234). Only applies to
 # labels on figures collapsed by order.
 fmt_order_label <- function(ord_name) {
@@ -1977,7 +1977,7 @@ if (!is.null(res_order$sig)) {
 # Dunn post-hoc (1964) with the tie correction from Zar (1999), reported under
 # both BH (primary) and Bonferroni (secondary). It runs only where the
 # Kruskal-Wallis omnibus reached p < 0.05 and at least three groups hold two or
-# more MAGs, which are the conditions under which a post-hoc means anything.
+# more MAGs.
 # -----------------------------------------------------------------------------
 dunn_posthoc <- function(values, groups) {
   df <- data.frame(x = values, g = as.factor(groups))
@@ -2771,8 +2771,8 @@ build_row_annotation <- function(genome_ids, include_station = FALSE) {
 }
 
 # rowAnnotation covering the five annotation variants
-# annotation_version: NULL (compat. anterior) | 1=prof+est+pct | 2=prof+est |
-#                     3=prof | 4=est | 5=pct
+# annotation_version: NULL (original behaviour) | 1 depth+station+pct |
+#                     2 depth+station | 3 depth | 4 station | 5 pct
 # completeness: numeric 0 to 100, aligned with depths, for the percentage bar
 make_depth_row_annotation <- function(depths, depth_colors, stations = NULL,
                                       annotation_version = NULL,
@@ -3089,7 +3089,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
 
     # The quality bars go into the last heatmap's right_annotation, and the MAG
     # names ride along as show_row_names = TRUE. ComplexHeatmap always lays row
-    # names out before the legend, which is what stops the two from overlapping.
+    # names out before the legend, which keeps the two from overlapping.
     right_parts      <- list()
     right_widths     <- c()
     right_show_name  <- c()
@@ -3140,7 +3140,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
         annotation_width     = unit(right_widths, "cm"),
         gap                  = unit(barplot_gap, "mm"),
         show_annotation_name = right_show_name,
-        width                = unit(total_right_cm, "cm")   # this is the key setting
+        width                = unit(total_right_cm, "cm")   # the legend is placed from this width
       )
     ))
 
@@ -3357,7 +3357,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
         ra_ord <- rowAnnotation(
           `No. MAGs` = anno_barplot(n_vals,
             gp = gpar_f(fill = "#4A90D9", col = "black"),
-            bar_width = 0.7, width = unit(2.3, "cm")),  # 15% wider than the earlier 2 cm
+            bar_width = 0.7, width = unit(2.3, "cm")),
           annotation_name_gp = gpar_f(fontsize = 9, fontface = "bold")
         )
 
@@ -3367,16 +3367,13 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
 
         n_r <- nrow(mat_ord_p); n_c <- ncol(mat_ord_p)
         col_w_mm_p  <- 11L
-        row_h_mm_p  <- 12L  # about 33% shorter than the original 18 mm
-        # h_p carries 50 mm more vertical slack than it used to, so the real
-        # top and bottom padding fits instead of the canvas shrinking to the
-        # heatmap body.
+        row_h_mm_p  <- 12L
+        # 110 mm of vertical slack, so the top and bottom padding fits instead of
+        # the canvas shrinking to the heatmap body.
         h_p <- max(5L, ceiling((n_r * row_h_mm_p + 110L) / 25.4))
         # Horizontal canvas: body, plus right_annotation (about 28 mm with the
-        # widened barplot), plus names (about pad_r_p), plus legend, plus the side
-        # margin, partly restored (about 55 mm). The safety floor drops to 12 in:
-        # the previous floor of 22 exceeded the real calculation and masked
-        # any reduction in the buffer.
+        # barplot), plus names (about pad_r_p), plus legend and side margin
+        # (about 55 mm), with a floor of 12 in.
         w_p <- max(12L, ceiling((n_c * col_w_mm_p + pad_r_p + 55L) / 25.4))
 
         ht_ord <- Heatmap(mat_ord_p,
@@ -3406,10 +3403,8 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
         )
 
         png(outfile_ord, width = w_p, height = h_p, units = "in", res = 300)
-        # padding: c(bottom, left, top, right) en mm.
-        # Generous vertical padding for headroom top and bottom; the side
-        # padding is small but not zero, restoring about 20% of the left and
-        # right margin removed in the previous iteration.
+        # padding is c(bottom, left, top, right) in mm: generous top and bottom,
+        # a narrow margin at the sides.
         draw(ht_ord,
           merge_legend     = TRUE,
           padding          = unit(c(25, 4, 17, 4), "mm")
@@ -3604,11 +3599,11 @@ make_trait_order_heatmap <- function(trait_df, title_es, outfile, subtitle_tool 
     n_r <- nrow(mat); n_c <- ncol(mat)
     col_w_mm_t <- 10L
     # Fig6a, energy, is tuned separately: rows about 10% thinner and narrower
-    # side margins. Fig6b, carbon, and the rest keep the original values.
+    # side margins than Fig6b, carbon, and the rest.
     is_fig6a   <- grepl("energy", out, ignore.case = TRUE)
     h_p_base   <- max(4L, round(n_r * 0.30 + 1.5))
     h_p        <- if (is_fig6a) h_p_base * 0.9 else h_p_base
-    # Fig6a: canvas 6 mm narrower than before, 55 down to 49.
+    # Fig6a takes 49 mm of horizontal overhead, the others 55 mm.
     w_overhead <- if (is_fig6a) 49L else 55L
     # Canvas: body, right_annotation (about 25 mm), row names (pad_right) and margins (w_overhead)
     w_p  <- max(10L, ceiling((n_c * col_w_mm_t + pad_right + w_overhead) / 25.4))
@@ -3907,7 +3902,7 @@ make_metabolism_heatmap <- function(sheet_name, title_es, outfile,
   )
 }
 
-# Helper: heatmap de metales (top N genes, escala discreta 0/1/2 copias)
+# Helper: metals heatmap (top N genes, discrete scale of 0, 1 or 2 copies)
 make_metals_heatmap <- function(title_es, outfile,
                                 meta_cols = 5, top_n = 20,
                                 subtitle_tool = NULL,
@@ -4094,7 +4089,7 @@ if (file.exists(METABOLISM_FILE)) {
     subtitle_tool = "DRAM2",
     outfile = file.path(OUTPUT_DIR, "Fig7c_metabolism_carbon_woodcroft_ES.png")
   )
-  # Fig7d: metals – top 20 genes, escala discreta 0/1/2 copias
+  # Fig7d: metals, top 20 genes, discrete scale of 0, 1 or 2 copies
   .make_metals_both(
     title_es = "Genes de reducción de metales por MAG (top 20)",
     subtitle_tool = "DRAM2",
@@ -4486,7 +4481,7 @@ if (length(mags_no_species) == 0) {
   depth_colors_std_orig <- depth_colors_std
   depth_colors_orig <- depth_colors
 
-  # Which depths actually hold MAGs in this subset
+  # The depths that hold MAGs in this subset
   depths_present_10 <- unique(na.omit(get_depth(mags_no_species)))
   depth_levels_std <- intersect(c("1000 m", "Fondo"), depths_present_10)
   depth_colors_std <- depth_colors_std_orig[depth_levels_std]
@@ -4932,12 +4927,12 @@ if (length(mags_no_species) == 0) {
   depth_colors_std <- depth_colors_std_orig
   depth_colors <- depth_colors_orig
 
-  # ---- Restaurar OUTPUT_DIR ----
+  # ---- restore OUTPUT_DIR ----
   OUTPUT_DIR <- OUTPUT_DIR_ORIG
 
   cat("\n[OK] Sección 16 completada. Resultados en:", file.path(OUTPUT_DIR, "10_MAGs"), "\n\n")
   cat("  (Tabla de calidad/taxonomía generada por tax_analysis.R)\n\n")
-} # fin if length(mags_no_species) > 0
+} # end if length(mags_no_species) > 0
 
 cat(rep("=", 70), "\n", sep = "")
 cat("[OK] Script completo finalizado!\n\n")

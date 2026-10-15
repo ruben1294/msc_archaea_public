@@ -7,10 +7,10 @@ set -euo pipefail
 # The heuristic is -automated1, which picks between gappyout and strict based on
 # the alignment's own gap and similarity distribution. trimAl's authors
 # recommend it for alignments headed into maximum likelihood tree inference,
-# which is what step 15 does.
+# which step 15 runs.
 #
 # Each branch gets a trimmed/ directory, an HTML report per marker, and a TSV of
-# per-marker before and after counts. The TSV is what tells you whether a branch
+# per-marker before and after counts. The TSV shows whether a branch
 # lost so many columns that its tree is not worth inferring.
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"

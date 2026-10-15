@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The variables inside the ssh strings below expand on this side on purpose: the
-# remote shell has no idea which container or job is under inspection.
+# The variables inside the ssh strings below expand locally: the remote shell
+# does not know which container or job is under inspection.
 # shellcheck disable=SC2029
 
-# Collects everything useful about a stalled DRAM2 Nextflow job on SLURM: the
-# job accounting, which node it landed on, what is running there, the container
-# it started, the Nextflow work directory and the command that was actually
+# Collects what is needed to diagnose a stalled DRAM2 Nextflow job on SLURM:
+# the job accounting, the node it landed on, what is running there, the
+# container it started, the Nextflow work directory and the command Nextflow
 # issued.
 #
 # Written while chasing an mmseqs2 step that hung without failing. It reports

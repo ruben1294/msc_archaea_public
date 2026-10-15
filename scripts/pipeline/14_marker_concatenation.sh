@@ -5,14 +5,14 @@ set -euo pipefail
 # a supermatrix per MAFFT branch with FASconCAT-G, writing the partition file
 # that step 15 hands to IQ-TREE.
 #
-# MIN_SEQUENCES is 5. A marker present in fewer genomes contributes almost no
-# resolution and a lot of missing data, and the missing-data fraction reported
-# at the end is the number to watch when comparing the three branches.
+# MIN_SEQUENCES is 5. A marker present in fewer genomes adds little resolution
+# and a lot of missing data. Compare the three branches first on the
+# missing-data fraction reported at the end.
 #
 # FASconCAT-G is interactive: it reads single-letter commands from stdin, so the
 # heredoc below sends "l" to turn on the partition file and "s" to start. It
 # also only accepts .fas and .fasta, and writes its output into the current
-# working directory, which is why each run happens inside a subshell that cds
+# working directory, so each run happens inside a subshell that cds
 # into that branch's output directory first.
 #
 # utils/install_FASconCAT-G.sh installs it and writes the fasconcat_config.env
@@ -124,8 +124,7 @@ done
 # ---- step 2: check which taxa are present in which markers ----
 
 # A taxon missing from many markers becomes a mostly-gap row in the supermatrix,
-# so this reports the presence counts before concatenation rather than leaving
-# them to be discovered in the tree.
+# so this reports the presence counts before concatenation.
 verify_headers() {
     local method_name="$1" input_dir="$2" output_dir="$3"
     local headers_file="${output_dir}/logs/all_headers.txt"

@@ -3,30 +3,28 @@ set -euo pipefail
 
 # Step 2. Screens the 54 MAGs for chimerism with GUNC 1.1 against two reference
 # databases, ProGenomes3 and GTDB r214. It closes the quality block that step 01
-# opens: CheckM2 estimates completeness and contamination from the genes a MAG
-# carries, and GUNC asks the question CheckM2 cannot, whether those genes come
-# from more than one lineage. It runs on the MIMAG-filtered set that utils/01_filter_mags.py
-# leaves in results/01_mag_quality/filtered/, after utils/05_rename_mags.sh has
-# given the files their final names, and needs nothing from any later step.
+# opens. CheckM2 estimates completeness and contamination from the genes a MAG
+# carries; GUNC tests whether those genes come from more than one lineage. It
+# runs on the MIMAG-filtered set that utils/01_filter_mags.py leaves in
+# results/01_mag_quality/filtered/, after utils/05_rename_mags.sh has given the
+# files their final names, and needs nothing from any later step.
 #
 # GUNC assigns single-copy genes to clades and derives a clade separation score
-# from how far the assignments spread. A genome whose genes span several
-# distinct clades is the signature of a chimeric assembly. The call is CSS above
-# 0.45 with pass.GUNC False.
+# (CSS) from how far the assignments spread. Genes spread across several
+# distinct clades point to a chimeric assembly. GUNC calls a genome chimeric at
+# CSS above 0.45, with pass.GUNC False.
 #
-# Two databases because they disagree in useful ways: ProGenomes3 gives broad
-# prokaryotic coverage, GTDB r214 carries the deeper archaeal taxonomy and is
-# the one to trust for this dataset.
+# ProGenomes3 gives broad prokaryotic coverage; GTDB r214 carries the deeper
+# archaeal taxonomy and is the one to trust for this dataset.
 #
-# The result flags genomes, it does not remove them. Every MAG goes on to step
-# 03 whatever GUNC says: in this dataset 22 of the 54 fail against GTDB r214 and
-# 24 against ProGenomes3, many of them archaeal lineages that the references
-# represent poorly, where a high clade separation score comes with a low
-# reference representation score and says more about the database than the
-# genome. MAG_quality_assessment.R reports both flags per MAG. The contig-level
-# output (--contig_taxonomy_output) is kept so the contigs behind any finding of
-# interest can be checked one by one against the annotations of step 10, which
-# is a finer question than the per-genome flag answers.
+# GUNC flags genomes and this step removes none: all 54 go on to step 03. In
+# this dataset 22 of the 54 fail against GTDB r214 and 24 against ProGenomes3.
+# Many belong to archaeal lineages the references represent poorly, where a high
+# CSS comes with a low reference representation score and reflects gaps in the
+# database more than contamination. MAG_quality_assessment.R reports both flags
+# per MAG. The contig-level output (--contig_taxonomy_output) is kept so the
+# contigs behind a flag can be checked one by one against the step 10
+# annotations.
 #
 # Databases come from utils/download_gunc_1.1_db.sh; set GUNC_DB in server.env
 # to where that put them. Pass --clean to discard previous output and start
@@ -114,8 +112,8 @@ done
 #   contamination_portion  fraction of genes outside the dominant clade
 #   pass.GUNC              False marks a genome as chimeric
 #
-# --sensitive uses DIAMOND's sensitive mode, which matters for archaeal MAGs
-# that map sparsely against under-representative databases. --detailed_output
+# --sensitive uses DIAMOND's sensitive mode, which recovers more hits for
+# archaeal MAGs that map sparsely against the references. --detailed_output
 # and --contig_taxonomy_output produce the per-gene and per-contig files that
 # the plots and the contig-level cross-check both need.
 
@@ -220,7 +218,7 @@ fi
 # ---- step 3: per-genome diagnostic plots ----
 #
 # gunc plot draws one stacked bar per genome showing how gene assignments
-# distribute across taxonomic ranks, which is what identifies the contigs
+# distribute across taxonomic ranks, which identifies the contigs
 # carrying the contaminating signal. It takes a single .diamond.*.out file from
 # the diamond_output/ directory that --detailed_output produced.
 

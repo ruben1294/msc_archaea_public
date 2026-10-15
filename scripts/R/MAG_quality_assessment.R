@@ -30,9 +30,8 @@
 
 # Runs locally rather than on the cluster; nothing here needs a scheduler.
 #
-# Subplot titles are deliberately absent throughout. Every figure below ends up
-# inside a panel that carries its own title, so a per-subplot title would only
-# repeat it.
+# The subplots carry no titles. Every figure below ends up inside a panel that
+# has its own title, which a per-subplot title would only repeat.
 #
 # From the RStudio console, source() runs it with the defaults, since
 # commandArgs() then carries no options.
@@ -576,7 +575,7 @@ theme_publication <- function(base_size = 16) {
 # === Taxon italic helper (same CDC logic as tax_analysis.R) ===
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
-# genus — family, order, class, phylum, domain — remain plain text.
+# genus (family, order, class, phylum, domain) remain plain text.
 ITALIC_LEVELS <- c("Genus", "Species", "Subspecies", "Strain")
 
 should_italicize_level <- function(level) {
@@ -609,8 +608,8 @@ taxon_italic <- function(x, level = "Species") {
 # strip_reflines(): removes geom_vline / geom_hline / geom_abline layers
 # (threshold reference lines) from a ggplot or patchwork.
 # Used by save_dual() to produce the _sin_lineas version of each figure.
-# Note: continuous vertical grid lines come from theme_publication() via
-# panel.grid.major.x = element_blank() and are absent in both versions.
+# theme_publication() turns the vertical grid lines off
+# (panel.grid.major.x = element_blank()), so neither version has them.
 strip_reflines <- function(p) {
   is_refline <- function(l)
     inherits(l$geom, c("GeomVline", "GeomHline", "GeomAbline"))
@@ -1271,7 +1270,7 @@ if (nrow(df_val_filtered) > 0) {
     ) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-  # --- Row 3: Quality Score (MOVED HERE) ---
+  # --- Row 3: Quality Score ---
   # By Depth (left)
   p7e <- ggplot(df_val_filtered, aes(x = Depth, y = Quality_Score)) +
     geom_jitter(width = 0.2, alpha = 0.6, size = 2, fill = color_quality, color = "black", shape = 21, stroke = 0.3) +
@@ -1340,7 +1339,7 @@ if (nrow(df_val_filtered) > 0) {
   color_n50            <- "#16a085"
   color_gc             <- "#2c3e50"
 
-  # --- Row 1: Genome size (Mb) — reuse p7g, p7h but with top x-axis ---
+  # --- Row 1: Genome size (Mb), reusing p7g and p7h with the x axis on top ---
   p7g_top <- p7g + scale_x_discrete(position = "top") +
     labs(x = "Profundidad") +
     theme(axis.text.x.top  = element_text(angle = 45, hjust = 0,
@@ -1434,7 +1433,7 @@ if (nrow(df_val_filtered) > 0) {
     plot_layout(guides = "collect")
 
   p7b_genome_pub <- p7b_all & theme_publication()
-  # Top row (panels 1-2): x-axis at top — theme already set in panel def,
+  # Top row (panels 1-2): x-axis at top. The theme is already set in the panel definition,
   # but re-apply after theme_publication() to guarantee it wins.
   for (ti in 1:2) {
     p7b_genome_pub[[ti]] <- p7b_genome_pub[[ti]] + theme(
@@ -1479,7 +1478,7 @@ if (nrow(df_val_filtered) > 0) {
     order_levels_taxa <- c("Poseidoniales", "Nitrososphaerales",
                            "MGIII", "Undinarchaeales")
 
-    # An order name that is really a code, first word all caps or carrying
+    # An order name that is a code, first word all caps or carrying
     # digits, tells a reader nothing on its own, so the parent class goes in
     # front of it as "c. <Class>". Same rule as fmt_taxon() in tax_analysis.R.
     # Order names stay upright: CDC style italicises genus and below only.
@@ -1628,31 +1627,30 @@ if (nrow(df_val_filtered) > 0) {
   cat("[WARN] No valid Station/Depth data for Valentín dataset. Skipping Figure 7.\n")
 }
 
-# GUNC Chimerism Analysis – Figures 8–12
+# GUNC chimerism, figures 8 to 12
 #
-# Requires: --gunc-progenomes and --gunc-gtdb CLI arguments pointing to the
-# gunc_summary_*.tsv files produced by 02_chimerism.sh.
+# Needs --gunc-progenomes and --gunc-gtdb pointing at the gunc_summary_*.tsv
+# files that pipeline/02_chimerism.sh writes.
 #
-# Methodological rationale
-# GUNC (Genome UNcleaned Check; Orakov et al. 2021, Genome Biol.) detects
-# chimeric genome bins by measuring how much the single-copy gene taxonomy
-# deviates from a dominant clade. The key metric is the Clade Separation Score
-# (CSS): CSS > 0.45 flags a genome as chimeric (pass.GUNC = False).
+# GUNC (Orakov et al. 2021, Genome Biol.) flags chimeric bins by how far the
+# taxonomy of their single-copy genes spreads beyond one dominant clade. Its
+# clade separation score (CSS) marks a genome chimeric above 0.45
+# (pass.GUNC = False).
 #
-# Two databases are used:
-#   • ProGenomes3 – broad prokaryotic coverage; baseline reference.
-#   • GTDB r214   – finer archaeal taxonomy; preferred for Archaea.
+# Two databases:
+#   ProGenomes3  broad prokaryotic coverage, the baseline
+#   GTDB r214    finer archaeal taxonomy, preferred for these MAGs
 #
-# Interpretation of taxonomic level (maxCSS level):
-#   Chimerism detected at phylum/class level = inter-phylum contamination
-#   (most severe). Detection at genus/species = finer-scale misassignment.
+# The rank where CSS peaks (maxCSS level) shows how far apart the mixed lineages
+# are: phylum or class means contamination across phyla, the worst case; genus
+# or species means closely related strains mixed together.
 #
-# Figures produced
-#   Fig 8  – GUNC pass/fail overview + CSS distribution by database
-#   Fig 9  – CSS by sampling depth and station (both databases)
-#   Fig 10 – Taxonomic rank where CSS is maximised (maxCSS level)
-#   Fig 11 – Database concordance scatter (ProGenomes3 vs GTDB r214 CSS)
-#   Fig 12 – Per-MAG comprehensive summary: completeness + contamination + CSS
+# Figures:
+#   Fig 8   GUNC pass and fail, and the CSS distribution, per database
+#   Fig 9   CSS by sampling depth and station, both databases
+#   Fig 10  taxonomic rank where CSS peaks
+#   Fig 11  CSS concordance, ProGenomes3 against GTDB r214
+#   Fig 12  per-MAG summary: completeness, contamination and CSS
 
 if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
 
@@ -1701,7 +1699,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     gunc_all <- bind_rows(gunc_prog, gunc_gtdb) %>%
       mutate(Database = factor(Database, levels = c("ProGenomes3", "GTDB r214")))
 
-    # Consistent visual vocabulary
+    # Shared colours and labels
     # Levels are "TRUE"/"FALSE" because read_tsv parsed the original "True"/"False"
     # strings as logical, and as.character(TRUE/FALSE) gives "TRUE"/"FALSE".
     pass_colors  <- c("TRUE" = "#27ae60", "FALSE" = "#e74c3c")
@@ -1973,11 +1971,10 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     }
 
     # -------------------------------------------------------------------------
-    # Fig 8: GUNC overview – pass/fail stacked bar + CSS violin
+    # Fig 8: GUNC overview, pass/fail stacked bar and CSS violin
     #
-    # Rationale: summarises at a glance how many MAGs are chimeric according to
-    # each database and shows the full CSS distribution with the 0.45 threshold.
-    # Side-by-side layout allows direct database comparison.
+    # The number of MAGs each database calls chimeric, next to the full CSS
+    # distribution with the 0.45 threshold, one database beside the other.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 8: GUNC overview ===\n")
 
@@ -2039,13 +2036,13 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
       labs(x = "Base de datos de referencia",
            y = expression(bolditalic("Reference Representation Score") * bold(" (RRS)")),
            fill = "Quimerismo") +
-      # Suppress fill legend from this panel — the legend from p8b is identical
-      # and will be shown after guides = "collect" in the patchwork.
+      # No fill legend here: p8b carries the same one, and guides = "collect"
+      # shows it once for the patchwork.
       guides(fill = "none")
 
-    # ---- fig 8 panel A – grouped (dodge) variant ----
+    # ---- fig 8 panel A, grouped (dodge) variant ----
     # One bar per GUNC result (chimeric / non-chimeric) per database,
-    # side-by-side so exact counts are immediately comparable.
+    # side by side, so the counts can be compared.
     p8a_group <- ggplot(pass_summary,
                         aes(x = Database, y = n, fill = pass.GUNC)) +
       geom_col(color = "black", linewidth = 0.3, width = 0.35,
@@ -2189,10 +2186,9 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # -------------------------------------------------------------------------
     # Fig 9: CSS distribution by sampling depth and station
     #
-    # Rationale: examines whether chimerism correlates with the oceanographic
-    # sampling context. Differences between depths (OMZ vs 1000 m vs BTM) or
-    # stations could indicate systematic assembly or binning artefacts linked
-    # to community complexity or read depth at particular sites.
+    # Tests whether chimerism tracks the sampling context. A difference between
+    # depths (OMZ, 1000 m, BTM) or stations could point to assembly or binning
+    # artefacts tied to community complexity or read depth at those sites.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 9: CSS by depth and station ===\n")
 
@@ -2292,12 +2288,11 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # -------------------------------------------------------------------------
     # Fig 10: Taxonomic rank at which CSS is maximised (maxCSS level)
     #
-    # Rationale: the taxonomic rank where a genome reaches its maximum CSS
-    # reveals the severity of chimerism. Chimerism detected at broad ranks
-    # (kingdom/phylum/class) indicates contamination from phylogenetically
-    # distant organisms – the most problematic scenario for downstream
-    # metabolic or phylogenomic analyses. Detection at genus/species level
-    # suggests minor co-assembly of closely related strains.
+    # The rank where a genome reaches its maximum CSS shows how severe the
+    # chimerism is. At broad ranks (kingdom, phylum, class) the contaminant is
+    # phylogenetically distant, the worst case for downstream metabolic or
+    # phylogenomic analyses. At genus or species level it points to closely
+    # related strains assembled together.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 10: Taxonomic level of maxCSS ===\n")
 
@@ -2323,12 +2318,10 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # -------------------------------------------------------------------------
     # Fig 11: Database concordance scatter (ProGenomes3 CSS vs GTDB r214 CSS)
     #
-    # Rationale: concordance between databases increases confidence in
-    # chimerism calls. MAGs flagged by both databases are high-priority for
-    # manual inspection or re-binning. Discordant MAGs (one database flags,
-    # the other does not) warrant closer attention and are labelled here.
-    # The dotted lines mark the CSS = 0.45 threshold on each axis;
-    # the diagonal represents perfect CSS agreement between databases.
+    # A MAG flagged by both databases is the stronger chimerism call and the
+    # first to inspect or re-bin. MAGs flagged by one database only are
+    # labelled. The dotted lines mark CSS = 0.45 on each axis, and the diagonal
+    # marks equal CSS in both databases.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 11: Database concordance ===\n")
 
@@ -2485,16 +2478,15 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     }
 
     # -------------------------------------------------------------------------
-    # Fig 12: Comprehensive per-MAG quality summary
+    # Fig 12: per-MAG quality summary
     #   Lollipop chart: completeness (CheckM2) | contamination (CheckM2) | CSS (GUNC)
     #
-    # Rationale: integrates all quality dimensions for the 54 MAGs in a single
-    # figure. MAGs are ranked top-to-bottom by decreasing GTDB r214 CSS so the
-    # most chimeric genomes appear first. GTDB r214 is used as the reference
-    # because it provides the most accurate archaeal taxonomy.
-    # Vertical dashed reference lines mark the MIMAG thresholds for
+    # All the quality measures for the 54 MAGs in one figure. MAGs are ranked
+    # top to bottom by decreasing GTDB r214 CSS, so the most chimeric come
+    # first; GTDB r214 is the reference because its archaeal taxonomy is the
+    # finer of the two. Dashed vertical lines mark the MIMAG thresholds for
     # completeness (50%, 90%) and contamination (5%, 10%), and the GUNC
-    # chimerism threshold (CSS 0.45).
+    # threshold (CSS 0.45).
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 12: Comprehensive per-MAG summary ===\n")
 
@@ -2529,7 +2521,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
       # Instead, we apply per-panel y-axis and margin tweaks AFTER theme_publication
       # using patchwork's [[i]] indexing, so they take effect last.
 
-      # Panel A: Quality Score (Completeness - 5*Contamination) — MAG names here
+      # Panel A: Quality Score (Completeness - 5*Contamination), with the MAG names
       qs_max <- max(checkm2_joined$Quality_Score, na.rm = TRUE)
       qs_lim <- ceiling(qs_max / 5) * 5  # round up to next multiple of 5
       p12a <- ggplot(checkm2_joined,
@@ -2547,7 +2539,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
         labs(x = "Puntuación de calidad", y = NULL,
              color = "Calidad MIMAG")
 
-      # Panel B: Completeness (CheckM2) — legend suppressed, same as A
+      # Panel B: Completeness (CheckM2), no legend, as in A
       p12b <- ggplot(checkm2_joined,
                      aes(y = Label, x = Completeness, color = MIMAG_Quality)) +
         geom_segment(aes(y = Label, yend = Label, x = 50, xend = Completeness),
@@ -2563,7 +2555,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
              color = "Calidad MIMAG") +
         guides(color = "none")
 
-      # Panel C: Contamination — legend suppressed
+      # Panel C: Contamination, no legend
       p12c <- ggplot(checkm2_joined,
                      aes(y = Label, x = Contamination, color = MIMAG_Quality)) +
         geom_segment(aes(y = Label, yend = Label, x = 0, xend = Contamination),
@@ -2580,7 +2572,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
              color = "Calidad MIMAG") +
         guides(color = "none")
 
-      # Panel D: CSS – GTDB r214
+      # Panel D: CSS, GTDB r214
       p12d <- ggplot(checkm2_joined,
                      aes(y = Label, x = css_gtdb, color = gunc_cat)) +
         geom_segment(aes(y = Label, yend = Label, x = 0, xend = css_gtdb),
@@ -2597,7 +2589,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
              y = NULL,
              color = "Quimerismo")
 
-      # Panel E: Reference Representation Score – GTDB r214
+      # Panel E: Reference Representation Score, GTDB r214
       p12e <- ggplot(checkm2_joined,
                      aes(y = Label, x = rrs_gtdb, color = gunc_cat)) +
         geom_segment(aes(y = Label, yend = Label, x = 0, xend = rrs_gtdb),
@@ -2842,7 +2834,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
       "Skipping chimerism figures (8–12).\n")
 }
 
-# === Table 1: Comprehensive summary statistics ===
+# === Table 1: summary statistics ===
 table1 <- df_combined %>%
   group_by(Dataset) %>%
   summarise(

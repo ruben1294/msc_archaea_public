@@ -19,12 +19,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #   3. Trim each alignment with trimAl -automated1.
 #   4. Concatenate with FASconCAT-G (-s -l), which also writes the partitions.
 #
-# Why rebuild rather than reuse what GTDB-Tk align already produced: that step
-# emits one concatenated MSA with column masking applied, 8,062 columns against
-# 13,540 summed raw HMM lengths (Parks et al. 2022 Nat Biotechnol). The masking
-# is not recorded per marker, so the concatenated MSA cannot be split back into
-# per-marker alignments. Starting from the identify intermediates, which are
-# pre-alignment and pre-masking, avoids the problem entirely.
+# The alignment from GTDB-Tk align cannot be reused here. That step emits one
+# concatenated MSA with column masking applied, 8,062 columns against 13,540
+# summed raw HMM lengths (Parks et al. 2022 Nat Biotechnol). The masking is not
+# recorded per marker, so the MSA cannot be split back into per-marker
+# alignments. The identify intermediates come before alignment and masking, so
+# this step starts from them.
 #
 # Input:  16_10mag_phylogeny/01_identify/identify/intermediate_results/
 #           marker_genes/{genome_id}/
@@ -47,7 +47,7 @@ load_project_config
 WORK_DIR="${RESULTS_DIR}/${FOCUSED_PHYLOGENY_SUBDIR:-16_10mag_phylogeny}"
 PREFIX="10mag_refs"
 
-# Identify intermediates (input, from script 18)
+# Identify intermediates (input, from step 16)
 MARKERS_DIR="${WORK_DIR}/01_identify/identify/intermediate_results/marker_genes"
 
 # Output directories
@@ -108,7 +108,7 @@ log_info "Threads:     $THREADS"
 log_info "Step 0: Validating inputs"
 [[ -d "$MARKERS_DIR" ]] || {
     log_error "GTDB-Tk identify intermediates not found: $MARKERS_DIR"
-    log_error "Run script 18 (gtdbtk identify) first."
+    log_error "Run 16_10mag_phylo_gtdbtk.sh (GTDB-Tk identify) first."
     exit 1
 }
 
@@ -248,7 +248,7 @@ for marker_id in sorted(marker_seqs):
     n_written += 1
 
 eprint(f"  Written: {n_written} marker files  |  Skipped (< {min_seqs} genomes): {n_skipped}")
-print(n_written)   # ← only this integer goes to stdout to captured by bash $()
+print(n_written)   # only this integer goes to stdout, for bash $() to capture
 PYEOF
 )
 
@@ -264,7 +264,7 @@ log_info "  Per-marker files extracted: $n_markers_extracted"
 # Step 2, MAFFT L-INS-i per-marker alignment
 #
 # Method: --localpair --maxiterate 1000 (L-INS-i)
-# Justification: standard approach in published de novo archaeal phylogenomics
+# As in published de novo archaeal phylogenomics:
 #   Dombrowski et al. 2020 Nat Commun doi:10.1038/s41467-020-16835-7
 #   Seitz et al. 2019 Nat Commun doi:10.1038/s41467-019-09364-x
 #   Spang et al. 2018 Nat Microbiol doi:10.1038/s41564-018-0176-9
@@ -432,9 +432,9 @@ log_info "    └── 04_fasconcat/"
 log_info "        ├── output/            (${PREFIX}_supermatrix.fas + ${PREFIX}_partition.txt)"
 log_info "        └── logs/"
 log_info ""
-log_info "  Supermatrix (input for IQ-TREE2, script 20):"
+log_info "  Supermatrix (input for IQ-TREE 2, step 18):"
 log_info "    ${FASCONCAT_DIR}/output/${PREFIX}_supermatrix.fas"
-log_info "  Partition file (for partitioned tree, script 20 Step C):"
+log_info "  Partition file (for the partitioned tree, step 18, tree C):"
 log_info "    ${FASCONCAT_DIR}/output/${PREFIX}_partition.txt"
 log_info ""
 log_info "  Next step: sbatch 18_10mag_phylo_iqtree.slurm"

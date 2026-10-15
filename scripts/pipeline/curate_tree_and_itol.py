@@ -13,11 +13,10 @@ Curates the GTDB-Tk de_novo_wf phylogenomic tree for 54 archaeal MAGs:
   5. Generates iTOL annotation files matching the format of
      generate_itol_annotations.py (files 01–10) for the full 54-MAG set.
 
-Leaf-name convention (same in tree AND annotation files):
-  MAGs  to DisplayName from MAGs_metadata.tsv with spaces become underscores,
-           e.g. "MGIIb-Q1_A4_1000_28"  (no Newick quoting needed)
-  Refs  to REF_DISPLAY label, e.g. "Thalassarchaeum_betae_B"
-           (underscores throughout)
+Leaf names are the same in the tree and the annotation files:
+  MAGs  DisplayName from MAGs_metadata.tsv, spaces turned into underscores,
+        e.g. "MGIIb-Q1_A4_1000_28" (no Newick quoting needed)
+  Refs  the REF_DISPLAY label, e.g. "Thalassarchaeum_betae_B"
 
 Reference Selection Methodology
 Based on Parks et al. (2022) GTDB r207 and Chaumeil et al. (2022) GTDB-Tk v2:
@@ -26,8 +25,8 @@ Based on Parks et al. (2022) GTDB r207 and Chaumeil et al. (2022) GTDB-Tk v2:
   • Full genus coverage: if a genus has >1 GTDB species, include ≥1 ref per
     species to anchor within-genus diversity.
   • Outgroup: 1 Halobacteriota genome (Halobacterium salinarum NRC-1,
-    RS_GCF_000025685.1), a well-characterised phylum used routinely as
-    outgroup for Thermoplasmatota/Thermoproteota trees.
+    RS_GCF_000025685.1), a common outgroup for Thermoplasmatota and
+    Thermoproteota trees.
 
 Usage, in the gtdbtk conda environment of env/gtdbtk.yml, which provides
 FastTree:
@@ -125,9 +124,8 @@ def build_paths(project_dir: str) -> dict:
 # Literature basis:
 #   Parks et al. (2022) Nat Biotechnol, GTDB classification method
 #   Chaumeil et al. (2022) Bioinformatics, GTDB-Tk v2
-#   Rinke et al. (2019) Nat Microbiol, Marine Group II/III Euryarchaeota
-#   Orellana et al. (2022) ISME J, Thalassarchaeum betae type species
-#   Vanni et al. (2022) eLife, MAG annotation best practices
+#   Rinke et al. (2019) ISME J 13:663-675, Ca. Poseidoniales (MGII) and its
+#     type species Thalassarchaeum betae
 
 SELECTED_REFERENCES = [
     # ---- Thalassarchaeum (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
@@ -149,9 +147,9 @@ SELECTED_REFERENCES = [
     # ---- MGIIb-Q1 (Thermoplasmatota / Poseidoniales / Thalassarchaeaceae) ----
     # 7 MAGs; no species assignment (novel species cluster).
     # GCA_963580235.1, closest placement reference (cp_ref) for A4_1000_bin.28
-    # NOTE: GCA_002505495.1 and GCA_012964335.1 absent from GTDB r226 MSA;
-    #       GCA_003193925.1 (Thalassarchaeum_betae) also absent from MSA.
-    #       MGIIb-O1 sole ref (GCA_002498525.1) likewise absent from MSA.
+    # GCA_002505495.1 and GCA_012964335.1 are absent from the GTDB r226 MSA, as
+    # are GCA_003193925.1 (Thalassarchaeum_betae) and the sole MGIIb-O1 ref,
+    # GCA_002498525.1.
     ("GB_GCA_963580235.1",
      "MGIIb-Q1_sp963580235",
      "MGIIb-Q1",
@@ -188,7 +186,7 @@ SELECTED_REFERENCES = [
 
     # ---- UBA8886 (Thermoplasmatota / Poseidoniia / MGIII / CG-Epi1) ----
     # 6 MAGs; related to Marine Group III (MGIII) archaea.
-    # NOTE: GCA_003193815.1 (UBA8886_sp003193815) absent from GTDB r226 MSA.
+    # GCA_003193815.1 (UBA8886_sp003193815) absent from GTDB r226 MSA.
     ("GB_GCA_030754655.1",
      "UBA8886_sp030754655",
      "UBA8886",
@@ -203,8 +201,8 @@ SELECTED_REFERENCES = [
 
     # ---- UBA57 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA57) ----
     # 4 MAGs; novel family within Nitrososphaerales.
-    # NOTE: GCA_013306035.1 (UBA57_sp013306035) and GCA_013378385.1
-    #       (UBA57_sp013378385) absent from GTDB r226 MSA.
+    # GCA_013306035.1 (UBA57_sp013306035) and GCA_013378385.1
+    # (UBA57_sp013378385) absent from GTDB r226 MSA.
     ("GB_GCA_963577725.1",
      "UBA57_sp963577725",
      "UBA57",
@@ -213,7 +211,7 @@ SELECTED_REFERENCES = [
 
     # ---- UBA60 (Thermoproteota / Nitrososphaeria / Nitrososphaerales / UBA60) ----
     # 4 MAGs; sister to UBA57 within Nitrososphaerales.
-    # NOTE: GCA_002503395.1 (UBA60_sp002503395) absent from GTDB r226 MSA.
+    # GCA_002503395.1 (UBA60_sp002503395) absent from GTDB r226 MSA.
     ("GB_GCA_028283345.1",
      "UBA60_sp028283345",
      "UBA60",
@@ -221,14 +219,14 @@ SELECTED_REFERENCES = [
      "GCA_002503395.1 (primary cg_ref) is absent from this MSA"),
 
     # ---- Nitrosopelagicus / Undinarchaeum ----
-    # NOTE: All Nitrosopelagicus refs (GCA_013390375.1, GCA_000402075.1) and
-    #       all Undinarchaeum refs (GCA_014189675.1, GCA_002495465.1) are absent
-    #       from the GTDB r226 de_novo_wf MSA. Their 3+3 MAGs appear in the
-    #       tree without a reference genome from their own genus.
+    # All Nitrosopelagicus refs (GCA_013390375.1, GCA_000402075.1) and all
+    # Undinarchaeum refs (GCA_014189675.1, GCA_002495465.1) are absent from the
+    # GTDB r226 de_novo_wf MSA. Their 3+3 MAGs appear in the tree without a
+    # reference genome from their own genus.
 
     # ---- Outgroup (Halobacteriota / Halobacteria / Halobacteriales) ----
-    # Halobacterium salinarum NRC-1: well-characterised, complete genome,
-    # widely used as outgroup for Thermoplasmatota/Thermoproteota trees.
+    # Halobacterium salinarum NRC-1: complete genome, and a common outgroup for
+    # Thermoplasmatota and Thermoproteota trees.
     # In the de_novo_wf this phylum defines the root (--outgroup_taxon
     # p__Euryarchaeota, now p__Halobacteriota in GTDB r220).
     ("RS_GCF_000025685.1",
@@ -269,7 +267,7 @@ GENUS_COLORS = {
     "Outgroup_Halobacteriota":   "#adb5bd",
 }
 
-# Station colors (same as existing scripts)
+# Station colors (same as the R scripts)
 STATION_COLORS = {
     "A4":  "#e63946",
     "A6":  "#2a9d8f",
@@ -973,11 +971,11 @@ def validate_itol_coverage(itol_dir: str,
     """
     Validates iTOL file coverage.
 
-    File-type expectations:
-      • 01, 02, 06       to must cover ALL leaves (MAGs + refs)
-      • 03–05, 07, 09–10 to must cover MAG-only leaves (refs have no data)
-      • 08               to TREE_COLORS range file; only lists clade-boundary
-                           leaf pairs — skip completeness check, just report counts
+    What each file has to cover:
+      • 01, 02, 06        every leaf, MAGs and refs
+      • 03–05, 07, 09–10  the MAG leaves only (refs have no data)
+      • 08                nothing: a TREE_COLORS range file that lists only
+                          clade-boundary leaf pairs, so only its counts are reported
     """
     log.info("iTOL coverage validation")
     for fname in sorted(os.listdir(itol_dir)):
@@ -1007,7 +1005,7 @@ def validate_itol_coverage(itol_dir: str,
                         referenced.add(part.strip())
 
         if expected is None:
-            # TREE_COLORS: just report how many boundary leaves are listed
+            # TREE_COLORS: report how many boundary leaves are listed
             log.info("  %s: %d range entries (clade-boundary file, no full coverage expected)",
                      fname, len(referenced))
             continue

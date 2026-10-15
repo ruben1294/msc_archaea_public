@@ -8,7 +8,7 @@
 #     Fig2   pairwise heatmap per species
 #     Fig3   ANI by depth context, same depth against different
 #     Fig4   full 54 by 54 heatmap, blocked by species
-#     Fig5   each MAG's contribution to its species ANI, which is what exposes outliers
+#     Fig5   each MAG's contribution to its species ANI, which exposes outliers
 #
 #   Groups with no species assignment:
 #     Fig1b  ANI distribution per unassigned group
@@ -213,12 +213,12 @@ species_palette <- c(
 )
 
 # ---- ---- 6. taxonomic name formatting ----
-# Copied verbatim from tax_analysis.R rather than sourced, so the two scripts
-# stay visually identical even if one is edited without the other.
+# Copied from tax_analysis.R rather than sourced, so this script runs on its
+# own. Edit both together to keep the figures consistent.
 
 # CDC scientific nomenclature (https://wwwnc.cdc.gov/eid/page/scientific-nomenclature):
 # only genus and species (and infraspecific ranks) are italicised; ranks above
-# genus — family, order, class, phylum, domain — are plain text.
+# genus (family, order, class, phylum, domain) are plain text.
 ITALIC_LEVELS <- c("Genus", "Species", "Subspecies", "Strain")
 
 should_italicize_level <- function(level) {
@@ -377,7 +377,7 @@ wrap_md_label <- function(lbl, width = 28) {
 # ---- ---- 7. load and prepare the data ----
 cat("=== Cargando datos ===\n")
 
-# — Metadata —
+# Metadata
 meta_raw <- read_tsv(metadata_path, show_col_types = FALSE)
 
 # Split FullTaxonomy ("d__X;p__X;...;s__X") into ranks
@@ -1341,7 +1341,7 @@ save_fig(p_fig5b, file.path(output_dir, "Fig5b_ANI_contribucion_por_MAG_estacion
 # ---- ---- statistics: does provenance shift ANI? ----
 # Two complementary tests, because neither alone is sufficient here:
 #
-#  (1) Modelo Lineal Mixto global (LMM, lme4::lmer)
+#  (1) Global linear mixed model (LMM, lme4::lmer)
 #      ANI ~ ctx + (1 | Species), fitted by ML (REML = FALSE).
 #      The random intercept per species absorbs the baseline ANI differences
 #      between taxa, which otherwise dominate the comparison. Tested by
@@ -1349,19 +1349,19 @@ save_fig(p_fig5b, file.path(output_dir, "Fig5b_ANI_contribucion_por_MAG_estacion
 #      means higher ANI when the provenance is shared.
 #
 #  (2) Wilcoxon rank-sum per species (Mann-Whitney U)
-#      Compara ANI(misma procedencia) vs. ANI(diferente procedencia)
+#      Compares ANI between pairs of shared and of different provenance,
 #      run inside each species separately.
 #      Nonparametric, so it assumes neither normality nor equal variance.
 #      Valid at the small n these species have.
 #      Benjamini-Hochberg correction across species.
 #      95% CI on the median difference by bootstrap, n = 1999.
 #
-#  A limitation worth stating plainly:
+#  Limitation:
 #      MAG pairs are not independent observations. Each focal MAG appears in
 #      several pairs within its species, which inflates the effective n and
-#      makes the p-values anticonservative. That is why the interpretation
-#      leans on the effect size, the median difference with its bootstrap
-#      interval, rather than on significance.
+#      makes the p-values anticonservative. The interpretation therefore rests
+#      on the effect size, the median difference with its bootstrap interval,
+#      more than on the p-values.
 cat("=== Análisis estadístico: procedencia vs. ANI ===\n")
 
 # ---- Additional package: lme4 ------------------------------
@@ -1744,7 +1744,7 @@ pair_cat_colors <- c(
   "Novel vs. novel"       = "#CA6F1E"
 )
 
-# Genus labeller; the markdown is already applied, so this just passes it through
+# Genus labeller; the markdown is already applied, so this passes it through unchanged
 genus_labeller <- as_labeller(function(x) x)
 
 p_fig6a <- ggplot(fig6_pairs, aes(x = pair_cat_fct, y = ANI, fill = pair_cat_fct)) +
@@ -1858,7 +1858,7 @@ p_fig6 <- (p_fig6a / wrap_elements(p_fig6b)) +
 save_fig(p_fig6, file.path(output_dir, "Fig6_ANI_MAGs_noveles.png"),
   width = 13, height = 12.5
 )
-} # fin if (FALSE) — Fig6
+} # end if (FALSE), Fig6
 
 # ---- Final summary ----
 cat("\n=== Resumen de resultados ===\n")

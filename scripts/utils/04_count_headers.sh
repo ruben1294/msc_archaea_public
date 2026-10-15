@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Script: check_protein_headers.sh
+# Script: 04_count_headers.sh
 # Description: Extract and count protein headers in FASTA file
 
 set -euo pipefail

@@ -99,7 +99,7 @@ done | sort > concatenated_headers.txt
 
 diff -s individual_headers.txt concatenated_headers.txt && echo "[OK] Headers match!" || echo "[FAIL] Headers do not match!"
 
-# === NEW SECTION: Concatenate all parts into single file with modified headers ===
+# === Concatenate all parts into a single file with modified headers ===
 echo ""
 echo "=========================================="
 echo "Concatenating all parts into final file with modified headers"

@@ -7,7 +7,7 @@
 #
 # Count-based methods like DESeq2 or CPM do not apply to a pangenome: it records
 # whether a cluster occurs in a genome, not how many reads mapped to it. These
-# three work on presence and absence, which is what the data actually is.
+# three work on presence and absence, which is all the data records.
 #
 # Figure labels are Spanish, matching the thesis: ROMZ becomes ZMOR, 1000 becomes
 # "1000 m", BTM becomes Fondo.
@@ -229,10 +229,10 @@ for (bin_file in bin_files) {
 # (each species covers a different subset of stations, and the internal grob
 # comparison treats those guides as unlike each other even with drop = FALSE).
 #
-# So the legend is suppressed on every panel and one master legend is built
-# separately, from a throwaway ggplot covering all six stations and all three
-# depths. That legend goes in as a strip along the bottom, which is what
-# guarantees exactly one box for depth and one for station.
+# The legend is therefore suppressed on every panel, and one master legend is
+# built separately from a throwaway ggplot covering all six stations and all
+# three depths. It goes in as a strip along the bottom, with one box for depth
+# and one for station.
 build_nmds_panel <- function(plot_list, title_main) {
   ncol_grid <- if (length(plot_list) <= 3) length(plot_list) else 3
 

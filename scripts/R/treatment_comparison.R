@@ -451,7 +451,7 @@ make_trait_aggregated_heatmap <- function(trait_df, group_by_vec, group_label_ti
   }, error = function(e) cat("  \u26a0 Error en", title_es, ":", conditionMessage(e), "\n"))
 }
 
-# ---- HELPER: Forest plot de odds ratios ----
+# ---- HELPER: odds ratio forest plot ----
 plot_forest <- function(results_df, title, outfile,
                         x_col     = "OR",
                         xmin_col  = "CI_low",

@@ -22,8 +22,8 @@
 #   sbatch --account=<account> --partition=<partition> \
 #       --nodelist=<node with network access> slurm/DRAM2_HPC_install.slurm
 #
-# Compute nodes often have no outbound network, which is why everything that
-# needs it happens here, once. Step 10 then runs with NXF_OFFLINE=true and finds
+# Compute nodes often have no outbound network, so everything that needs it
+# happens here, once. Step 10 then runs with NXF_OFFLINE=true and finds
 # the pipeline in DRAM2_REPO and the plugins in ~/.nextflow/plugins.
 #
 # The pipeline is cloned with git rather than fetched with nextflow pull because
@@ -88,8 +88,8 @@ fi
 git -C "$DRAM2_REPO" -c advice.detachedHead=false checkout --quiet "$DRAM2_REVISION"
 log_info "DRAM2 checkout at $(git -C "$DRAM2_REPO" rev-parse HEAD)"
 
-# Installing exactly the plugins the pipeline declares is what lets the offline
-# runs of step 10 start without reaching the plugin registry.
+# With the plugins the pipeline declares cached here, the offline runs of step
+# 10 start without reaching the plugin registry.
 mapfile -t plugins < <(grep -oE "id +['\"][^'\"]+@[^'\"]+['\"]" "$DRAM2_REPO/nextflow.config" \
     | grep -oE "[^'\"]+@[^'\"]+")
 

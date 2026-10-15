@@ -8,8 +8,8 @@ into one of three MIMAG bands:
     medium  completeness >= 50 and contamination < 10
     low     anything else, which is left behind
 
-Everything from step 02 onward reads the filtered directory, so this is what
-fixes the cohort. Of the 64 MAGs originally recovered, 54 clear the medium bar.
+Every step from 02 onward reads the filtered directory, so this script fixes
+the cohort. Of the 64 MAGs recovered, 54 clear the medium bar.
 Run utils/05_rename_mags.sh right after it, before step 02.
 
 Paths follow the project layout: the input MAGs in data/mags and the results
@@ -31,8 +31,8 @@ from pathlib import Path
 import pandas as pd
 
 # MIMAG bands (Bowers et al. 2017 Nat Biotechnol). Medium quality takes strictly
-# less than 10% contamination, which is why a MAG at 9.9% is kept and one at
-# exactly 10% is not.
+# less than 10% contamination: a MAG at 9.9% is kept and one at
+# 10% is not.
 MIN_COMP_HIGH = float(os.environ.get("HIGH_QUALITY_COMPLETENESS", 90))
 MAX_CONT_HIGH = float(os.environ.get("HIGH_QUALITY_CONTAMINATION", 5))
 MIN_COMP_MEDIUM = float(os.environ.get("MIN_COMPLETENESS", 50))

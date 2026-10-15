@@ -58,7 +58,7 @@ MAG_EXT="fa"
 # --min-af 0.1, under the skani default of 0.15:
 #   Archaeal MAGs from metagenomes are fragmented, and a lower aligned-fraction
 #   floor keeps partially overlapping or distant genomes from being dropped
-#   without a trace. It matters most for the novel MAGs, whose closest GTDB
+#   silently. The novel MAGs need it most, since their closest GTDB
 #   reference may share little synteny.
 #
 # -s 75, under the skani default of 80:
@@ -69,7 +69,7 @@ MAG_EXT="fa"
 #
 # --slow (-c 30):
 #   Best accuracy on fragmented genomes with N50 in the low kb. It trades speed
-#   for dependable aligned-fraction estimates, which is what the species and
+#   for dependable aligned-fraction estimates, which the species and
 #   genus boundary calls rest on.
 MIN_AF="0.1"
 ANI_SCREEN="75"
@@ -144,12 +144,12 @@ log_info "  Database: $SKETCH_DIR"
 
 # ---- step 2: all-vs-all ANI triangle ----
 #
-# 54 * 53 / 2 = 1431 unique pairwise values. What they give:
+# 54 * 53 / 2 = 1431 unique pairwise values, which give:
 #   (a) an ANI distance matrix for clustering, complementary to the
 #       marker-gene phylogenomics of steps 12 to 15;
 #   (b) same-species pairs inside the study, at ANI >= 95% with AF >= 50%,
-#       which is how several Thalassarchaeum sp002507125 MAGs from different
-#       stations turn out to be the same species;
+#       which group several Thalassarchaeum sp002507125 MAGs from different
+#       stations into one species;
 #   (c) between-genus divergence, expected around 75 to 90% ANI.
 #
 # triangle rather than dist because dist computes all n^2 comparisons, which is
@@ -157,7 +157,7 @@ log_info "  Database: $SKETCH_DIR"
 # --full-matrix, writes the square phylip form that R reads through as.dist.
 #
 # --min-af is not available on triangle, so -s 75 does the work of keeping
-# distant inter-genus pairs in the output. Pairs under the screen are simply
+# distant inter-genus pairs in the output. Pairs under the screen are
 # absent from the sparse output and count as 0 downstream.
 
 log_info "Step 2: all-vs-all ANI triangle"
@@ -292,8 +292,8 @@ else
     #   Novel genus    no hit at ANI >= 80% to any genome in the same family.
     #                  Unlikely here, since GTDB-Tk did assign genera, but the
     #                  -s 75 screen is low enough to catch it.
-    #   Divergence     best-hit ANI and aligned fraction per genus, which is
-    #                  what quantifies how far MGIIb-Q1, Nitrosopelagicus and
+    #   Divergence     best-hit ANI and aligned fraction per genus, measuring
+    #                  how far MGIIb-Q1, Nitrosopelagicus and
     #                  UBA36 sit from their nearest described species.
     #
     # skani is tuned for ANI at or above 82%. Hits near or below that need
