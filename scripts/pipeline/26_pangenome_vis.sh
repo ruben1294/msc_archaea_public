@@ -29,7 +29,9 @@ RESULTS_DIR="${RESULTS_DIR:-${MSC_ARCHAEA_DIR:-$REPO_ROOT}/results}"
 # Where step 25 left the publication copies on this machine.
 LOCAL_PANGENOME_DIR="${LOCAL_PANGENOME_DIR:-${RESULTS_DIR}/${PANGENOME_SUBDIR:-20_pangenome}/pangenome}"
 
-# The five species with enough MAGs to build a pangenome from.
+# The five species with enough MAGs (at least four) to build a pangenome from.
+# Only the first three, with at least five, appear in the thesis; UBA57 and
+# UBA60 stay here so their pangenomes can still be opened.
 SPECIES=(
     Thalassarchaeum_sp002507125
     MGIIb_O1_sp002498525

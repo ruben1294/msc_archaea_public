@@ -51,8 +51,12 @@ Each step reads `configs/server.env` and writes into `results/NN_<name>/`, with
 `NN` the step number. Steps run in dependency order: quality; taxonomy, with the
 ANI that tests whether the MAGs without a species are new; gene calls and the
 annotation built on them; phylogenomics, first the 54-MAG trees and then the
-focused tree for the 10 unassigned MAGs; and last the pangenomes of the species
-with enough (n ≥ 5) genomes.
+focused tree for the 10 unassigned MAGs; and last the pangenomes. Those were
+built for the five species with at least four MAGs, but to keep the results
+focused the thesis analyses only the three with at least five (n ≥ 5):
+*Thalassarchaeum* sp002507125, MGIIb-O1 sp002498525 and UBA8886 sp003193815.
+UBA57 sp002494565 and UBA60 sp002503395, with four MAGs each, have pangenomes
+that the thesis does not include.
 
 | Step | What it does | Tool and version used in the thesis |
 |---|---|---|
@@ -75,7 +79,7 @@ with enough (n ≥ 5) genomes.
 | 14 | Marker filtering and concatenation into a supermatrix | FASconCAT-G 1.06.1 |
 | 15 | Maximum likelihood trees, three model strategies by three alignments | IQ-TREE 2.2.5 |
 | 16-19 | A focused tree for the 10 unassigned MAGs, by two independent routes | GTDB-Tk 2.6.1, MAFFT, trimAl 1.5.0, IQ-TREE 2.2.5 |
-| 20 | Pangenome construction, one per species with at least four MAGs | anvi'o 9 |
+| 20 | Pangenome construction, one per species with at least four MAGs (five species); the thesis analyses the three with at least five | anvi'o 9 |
 | 21-25 | KEGG and Pfam annotation, summaries, metadata layers, functional enrichment, cleanup | anvi'o 9 |
 | 26 | Opens each cleaned pangenome for manual figure layout | anvi'o 9 |
 

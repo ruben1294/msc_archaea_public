@@ -11,6 +11,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # accessory split is not meaningful. Steps 21 to 25 annotate, summarise and
 # clean the gene clusters this produces, and the R scripts under scripts/R/
 # read them for the pangenome figures.
+#
+# The build threshold (four) is lower than the analysis threshold (five). This
+# step builds five pangenomes, UBA57 and UBA60 included with four MAGs each, but
+# to keep the results focused the thesis analyses only the three species with at
+# least five. scripts/R/26_pangenome_matrix_export.R applies that cut.
 
 # --- Error handling ---
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR

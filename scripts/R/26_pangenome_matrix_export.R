@@ -8,8 +8,9 @@
 # Scripts 27, 28, 29 and 31 all start from these.
 #
 # Only species with at least five MAGs are exported: Thalassarchaeum, MGIIb-O1
-# and UBA8886. UBA57 and UBA60 have four each, enough to build a pangenome on the
-# cluster but not enough for the statistics downstream, so they stop here.
+# and UBA8886. UBA57 and UBA60 have four each, enough to build a pangenome on
+# the cluster (step 20 uses n >= 4), but the thesis analyses only species with
+# n >= 5 to keep the results focused, so they stop here.
 
 suppressPackageStartupMessages({
   library(dplyr)
