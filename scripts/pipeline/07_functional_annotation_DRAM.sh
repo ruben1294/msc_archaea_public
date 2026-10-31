@@ -92,8 +92,8 @@ if [[ -n "$DRAM_DB_DIR" && ! -d "$DRAM_DB_DIR" ]]; then
     DRAM_DB_DIR=""
 fi
 
-# In annotate mode the .fa files sit one level down; in annotate_genes mode the
-# .faa files sit two levels down, one directory per MAG from step 05.
+# In annotate mode the .fa files are one level down; in annotate_genes mode the
+# .faa files are two levels down, one directory per MAG from step 05.
 log "Searching for .${INPUT_EXTENSION} files..."
 input_files=()
 if [[ "$DRAM_MODE" == "annotate" ]]; then

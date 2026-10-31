@@ -37,10 +37,10 @@ PREFIX="10mag_archaea"
 SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-24}"
 
 # Keep this short: GTDB-Tk runs Prodigal, which dies with "AF_UNIX path too
-# long" when the temporary directory sits deep in a filesystem.
+# long" when the temporary directory is deep in a filesystem.
 # mktemp rather than reusing an inherited TMPDIR: the cleanup below must only
-# ever remove a directory this script created. SLURM wrappers export TMPDIR
-# pointing into the project tree.
+# ever remove a directory this script created. SLURM wrappers export a TMPDIR
+# inside the project tree.
 TMPDIR="$(mktemp -d /tmp/gtdbtk_XXXXXXXX)"
 export TMPDIR
 trap 'rm -rf "${TMPDIR:?}"' EXIT

@@ -669,7 +669,7 @@ def write_06_label_styles(outdir):
 def write_07_dram2_binary(outdir, product_data):
     fname = '07_dram2_binary.txt'
 
-    # Indices of the fields that carry data
+    # Indices of the fields that hold data
     active_field_indices = get_dram2_active_fields()
 
     # Filter DRAM2_FIELDS, colours and labels
@@ -714,7 +714,7 @@ def write_07_dram2_binary(outdir, product_data):
                 if expected[i] != observed[i]
             ]
             print(
-                f" WARNING [07]: {mag} — valores calculados difieren de los esperados:",
+                f" WARNING [07]: en {mag} los valores calculados difieren de los esperados:",
                 file=sys.stderr,
             )
             for lbl, exp, obs in diff:

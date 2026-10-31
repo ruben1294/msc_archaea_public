@@ -28,13 +28,13 @@
 # Use pacman to load and install packages if needed
 #pacman::p_load(char = required_packages, install = TRUE, update = FALSE)
 
-# Runs locally rather than on the cluster; nothing here needs a scheduler.
+# Runs locally; nothing here needs a scheduler.
 #
-# The subplots carry no titles. Every figure below ends up inside a panel that
+# The subplots have no titles. Every figure below ends up inside a panel that
 # has its own title, which a per-subplot title would only repeat.
 #
 # From the RStudio console, source() runs it with the defaults, since
-# commandArgs() then carries no options.
+# commandArgs() then returns no options.
 
 # === Configure library paths ===
 user_lib <- Sys.getenv("R_LIBS_USER")
@@ -1165,7 +1165,7 @@ if (nrow(df_val_filtered) > 0) {
 
   # Work out the significant comparisons before plotting, so that
   # stat_compare_means only ever receives pairs at p < 0.05. Otherwise it draws
-  # a bracket for every pair and most of them carry no asterisk.
+  # a bracket for every pair and most of them have no asterisk.
   depth_cmp_completeness  <- sig_pairs(df_val_filtered, "Depth", "Completeness",   my_depth_comparisons)
   depth_cmp_contamination <- sig_pairs(df_val_filtered, "Depth", "Contamination",  my_depth_comparisons)
   depth_cmp_quality       <- sig_pairs(df_val_filtered, "Depth", "Quality_Score",  my_depth_comparisons)
@@ -1463,7 +1463,7 @@ if (nrow(df_val_filtered) > 0) {
   #
   # The same metrics as Fig 7b (Genome_Size, Coding_Density, Contig_N50,
   # GC_Content), grouped by Order from FullTaxonomy rather than by depth or
-  # station. Each subplot carries a Kruskal-Wallis result, restricted to orders
+  # station. Each subplot reports a Kruskal-Wallis result, restricted to orders
   # with at least ORDER_MIN_N members, 3 by default.
   if (!is.null(cli_args$metadata) && file.exists(cli_args$metadata)) {
     cat("=== Generating Figure 7d: Assembly metrics by Order ===\n")
@@ -1478,7 +1478,7 @@ if (nrow(df_val_filtered) > 0) {
     order_levels_taxa <- c("Poseidoniales", "Nitrososphaerales",
                            "MGIII", "Undinarchaeales")
 
-    # An order name that is a code, first word all caps or carrying
+    # An order name that is a code, first word all caps or containing
     # digits, tells a reader nothing on its own, so the parent class goes in
     # front of it as "c. <Class>". Same rule as fmt_taxon() in tax_analysis.R.
     # Order names stay upright: CDC style italicises genus and below only.
@@ -1629,7 +1629,7 @@ if (nrow(df_val_filtered) > 0) {
 
 # GUNC chimerism, figures 8 to 12
 #
-# Needs --gunc-progenomes and --gunc-gtdb pointing at the gunc_summary_*.tsv
+# Needs --gunc-progenomes and --gunc-gtdb set to the gunc_summary_*.tsv
 # files that pipeline/02_chimerism.sh writes.
 #
 # GUNC (Orakov et al. 2021, Genome Biol.) flags chimeric bins by how far the
@@ -1733,7 +1733,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     #
     # Fig 7 again (completeness, contamination, Quality_Score, CSS) grouped by
     # order, plus a fifth subplot for RRS. All five reference GTDB r214, and
-    # each carries a Kruskal-Wallis result restricted to orders with at least
+    # each reports a Kruskal-Wallis result restricted to orders with at least
     # ORDER_MIN_N members.
     # -------------------------------------------------------------------------
     if (exists("df_val_filtered") && nrow(df_val_filtered) > 0 &&
@@ -1885,7 +1885,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
         width = 16, height = 10)
       cat("[OK] Saved Figure 7c (quality metrics by Order, with RRS)\n")
     } else {
-      cat("[WARN] Skipping Figure 7c — needs Valentín filtered data and --metadata.\n")
+      cat("[WARN] Skipping Figure 7c: needs Valentín filtered data and --metadata.\n")
     }
 
     # -------------------------------------------------------------------------
@@ -2036,7 +2036,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
       labs(x = "Base de datos de referencia",
            y = expression(bolditalic("Reference Representation Score") * bold(" (RRS)")),
            fill = "Quimerismo") +
-      # No fill legend here: p8b carries the same one, and guides = "collect"
+      # No fill legend here: p8b has the same one, and guides = "collect"
       # shows it once for the patchwork.
       guides(fill = "none")
 
@@ -2187,7 +2187,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # Fig 9: CSS distribution by sampling depth and station
     #
     # Tests whether chimerism tracks the sampling context. A difference between
-    # depths (OMZ, 1000 m, BTM) or stations could point to assembly or binning
+    # depths (OMZ, 1000 m, BTM) or stations could reflect assembly or binning
     # artefacts tied to community complexity or read depth at those sites.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 9: CSS by depth and station ===\n")
@@ -2291,7 +2291,7 @@ if (!is.null(cli_args$gunc_progenomes) && !is.null(cli_args$gunc_gtdb)) {
     # The rank where a genome reaches its maximum CSS shows how severe the
     # chimerism is. At broad ranks (kingdom, phylum, class) the contaminant is
     # phylogenetically distant, the worst case for downstream metabolic or
-    # phylogenomic analyses. At genus or species level it points to closely
+    # phylogenomic analyses. At genus or species level it suggests closely
     # related strains assembled together.
     # -------------------------------------------------------------------------
     cat("=== Generating Figure 10: Taxonomic level of maxCSS ===\n")
@@ -2900,7 +2900,7 @@ p_bar_context <- ggplot(summary_54, aes(x = Station, y = n_MAGs, fill = Mean_Qua
   ) +
   # Legend without the heavy capitalisation
   scale_fill_viridis_c(option = "mako", name = "Puntuación de\ncalidad media") +
-  # Headroom at the top, so the counts do not sit against the facet edge
+  # Headroom at the top, so the counts do not touch the facet edge
   scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
   # One row per depth
   facet_grid(Depth ~ .) +

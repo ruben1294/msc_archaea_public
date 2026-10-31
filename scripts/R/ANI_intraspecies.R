@@ -226,7 +226,7 @@ should_italicize_level <- function(level) {
 }
 
 # Italicises a taxon name per CDC style: genus, species and below go italic
-# word by word, while GTDB codes carrying digits (sp002507125, UBA60, MGIII)
+# word by word, while GTDB codes with digits (sp002507125, UBA60, MGIII)
 # stay upright.
 #   - level in {Family, Order, Class, Phylum, Domain}: the whole name in plain text.
 # Example: "Thalassarchaeum sp002507125" to "*Thalassarchaeum* sp002507125"
@@ -603,7 +603,7 @@ cat("[OK] Datos preparados\n\n")
 # Species on the y axis with formatted names. MAGs without a species go to
 # Fig1b instead, and a species holding a single MAG is dropped because it
 # yields no pairs.
-cat("=== Fig1: Distribución ANI — especies asignadas ===\n")
+cat("=== Fig1: Distribución ANI, especies asignadas ===\n")
 
 fig1_data <- sparse_df |>
   filter(intraspecies, Species_ref %in% species_ge2) |>
@@ -673,7 +673,7 @@ save_fig(p_fig1, file.path(output_dir, "Fig1_ANI_distribucion_intraespecie.png")
 )
 
 # ---- ---- Fig1b: within-genus ANI distribution, unassigned groups ----
-cat("=== Fig1b: Distribución ANI — grupos N/A ===\n")
+cat("=== Fig1b: Distribución ANI, grupos N/A ===\n")
 
 fig1b_data <- sparse_df |>
   filter(intragroup_na, Species_group_ref %in% na_ge2) |>
@@ -704,7 +704,7 @@ if (nrow(fig1b_data) > 0) {
       )
     )
 
-  # More saturated colours here, since these panels carry fewer points
+  # More saturated colours here, since these panels have fewer points
   na_palette_fig1b <- c(
     "MGIIb-Q1 N/A"        = "#2471A3",
     "Nitrosopelagicus N/A" = "#1E8449",
@@ -864,7 +864,7 @@ save_fig(p_fig2, file.path(output_dir, "Fig2_ANI_heatmaps_por_especie.png"),
 )
 
 # ---- ---- Fig2b: heatmaps for unassigned groups with at least 3 MAGs ----
-cat("=== Fig2b: Heatmaps — grupos N/A ===\n")
+cat("=== Fig2b: Heatmaps, grupos N/A ===\n")
 
 if (length(na_ge3) > 0) {
   heatmap_plots_na <- lapply(na_ge3, make_species_heatmap, is_na_group = TRUE)
@@ -890,7 +890,7 @@ if (length(na_ge3) > 0) {
 # with at least 3 MAGs. The clearest case is Thalassarchaeum sp002507125, where
 # the OMZ MAG sits consistently further from the rest than the 1000 m and BTM
 # MAGs sit from each other.
-cat("=== Fig3: ANI por profundidad — especies asignadas ===\n")
+cat("=== Fig3: ANI por profundidad, especies asignadas ===\n")
 
 fig3_data <- sparse_df |>
   filter(intraspecies, Species_ref %in% species_ge3) |>
@@ -957,7 +957,7 @@ if (nrow(fig3_data) > 0) {
 }
 
 # ---- ---- Fig3c: ANI by station context ----
-cat("=== Fig3c: ANI por estación — especies asignadas ===\n")
+cat("=== Fig3c: ANI por estación, especies asignadas ===\n")
 
 fig3c_data <- sparse_df |>
   filter(intraspecies, Species_ref %in% species_ge3) |>
@@ -1024,7 +1024,7 @@ if (nrow(fig3c_data) > 0) {
 }
 
 # ---- ---- Fig3b: ANI by depth, unassigned groups ----
-cat("=== Fig3b: ANI por profundidad — grupos N/A ===\n")
+cat("=== Fig3b: ANI por profundidad, grupos N/A ===\n")
 
 fig3b_data <- sparse_df |>
   filter(intragroup_na, Species_group_ref %in% na_ge2) |>
@@ -1300,7 +1300,7 @@ save_fig(p_fig5, file.path(output_dir, "Fig5_ANI_contribucion_por_MAG.png"),
 )
 
 # ---- ---- Fig5b: the same, coloured by station ----
-cat("=== Fig5b: Contribución por MAG — por estación ===\n")
+cat("=== Fig5b: Contribución por MAG, por estación ===\n")
 
 fig5_data <- fig5_data |>
   mutate(Station = factor(Station, levels = station_levels))
@@ -1653,7 +1653,7 @@ if (!is.null(p_fd) || !is.null(p_fs)) {
 
   cap_txt <- sprintf(
     paste0(
-      "LMM global (lme4) — ",
+      "LMM global (lme4): ",
       "Profundidad: b=%+.3f, chi2(%d)=%.2f, p=%s %s | ",
       "Estacion: b=%+.3f, chi2(%d)=%.2f, p=%s %s\n",
       "Puntos rojos/asteriscos (*): Wilcoxon FDR-adj p < 0.05 (BH). ",
@@ -1810,7 +1810,7 @@ make_genus_heatmap <- function(genus_val) {
   off_diag <- long_df$ANI[as.character(long_df$MAG_x) != as.character(long_df$MAG_y)]
   ani_min <- floor(min(off_diag, na.rm = TRUE) * 10) / 10
 
-  # Text colour: grey where the cell reads <AF, black where it carries an ANI.
+  # Text colour: grey where the cell reads <AF, black where it shows an ANI.
   # Precomputed as a vector, which avoids clashing with the colour scale used by
   # the tile borders, which map interaction(novel_x, novel_y).
   lab_col <- if_else(is.na(long_df$ANI), "gray45", "black")
@@ -1873,13 +1873,13 @@ output_files <- list(
   "Fig3_ANI_por_profundidad.png"                 = "ANI por profundidad (asignadas)",
   "Fig3b_ANI_por_profundidad_NA.png"             = "ANI por profundidad (grupos N/A)",
   "Fig3c_ANI_por_estacion.png"                   = "ANI por estación (asignadas)",
-  "Fig4a_ANI_heatmap_sin_metadatos.png"          = "Heatmap 54×54 — sin barras de metadatos",
-  "Fig4b_ANI_heatmap_con_metadatos.png"          = "Heatmap 54×54 — con barras de metadatos",
-  "Fig5_ANI_contribucion_por_MAG.png"            = "Contribución individual — por profundidad",
-  "Fig5b_ANI_contribucion_por_MAG_estacion.png"  = "Contribución individual — por estación",
-  "Fig7_estadistica_procedencia.png"             = "Análisis estadístico — procedencia vs ANI",
+  "Fig4a_ANI_heatmap_sin_metadatos.png"          = "Heatmap 54×54, sin barras de metadatos",
+  "Fig4b_ANI_heatmap_con_metadatos.png"          = "Heatmap 54×54, con barras de metadatos",
+  "Fig5_ANI_contribucion_por_MAG.png"            = "Contribución individual, por profundidad",
+  "Fig5b_ANI_contribucion_por_MAG_estacion.png"  = "Contribución individual, por estación",
+  "Fig7_estadistica_procedencia.png"             = "Análisis estadístico, procedencia vs ANI",
   "stat_ANI_wilcoxon_especie.tsv"                = "Wilcoxon FDR por especie (profundidad + estación)",
-  "stat_ANI_LMM_global.tsv"                      = "LMM global — beta, chi2, p-LRT"
+  "stat_ANI_LMM_global.tsv"                      = "LMM global: beta, chi2, p-LRT"
 )
 
 for (fn in names(output_files)) {

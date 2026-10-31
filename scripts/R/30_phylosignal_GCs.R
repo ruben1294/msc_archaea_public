@@ -20,7 +20,7 @@
 #
 #   git log --follow -- scripts/R/30_phylosignal_GCs.R
 
-cat("[30_phylosignal_GCs.R] DEPRECADO — análisis retirado del cuerpo del manuscrito.\n",
+cat("[30_phylosignal_GCs.R] DEPRECADO: análisis retirado del cuerpo del manuscrito.\n",
     "  La señal filogenética entra ahora únicamente vía PVR en script 29.\n",
     "  Saliendo sin producir outputs.\n", sep = "")
 

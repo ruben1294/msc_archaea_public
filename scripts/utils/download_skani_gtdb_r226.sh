@@ -5,7 +5,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # Downloads the pre-built skani sketches of GTDB R226 that step 04 searches the
 # MAGs against, and unpacks them under GTDB_SKETCH_DIR. Needs python3 with
-# requests, which most conda environments carry:
+# requests, which most conda environments include:
 #
 #   bash scripts/utils/download_skani_gtdb_r226.sh
 #
@@ -71,7 +71,7 @@ sys.exit(f"All {MAX_RETRIES} attempts failed for {url}")
 EOF
 
 log_info "Downloaded $(du -sh "$TAR_FILE" | cut -f1); testing the archive"
-# A truncated or corrupted download fails here rather than half-extracted.
+# A truncated or corrupted download fails here, before anything is extracted.
 tar -tzf "$TAR_FILE" > /dev/null
 
 log_info "Extracting"
@@ -80,7 +80,7 @@ tar -xzf "$TAR_FILE" -C "$PARENT_DIR"
 if [[ ! -d "$GTDB_SKETCH_DIR" ]]; then
     log_error "The archive did not unpack into $GTDB_SKETCH_DIR. It holds:"
     tar -tzf "$TAR_FILE" | head -5 >&2
-    log_error "Point GTDB_SKETCH_DIR in configs/server.env at that directory."
+    log_error "Set GTDB_SKETCH_DIR in configs/server.env to that directory."
     exit 1
 fi
 

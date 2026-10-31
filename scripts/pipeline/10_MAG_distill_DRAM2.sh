@@ -8,16 +8,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # product.tsv and the metabolism summaries. Most of the downstream R scripts
 # read one of those files.
 # It needs the GTDB-Tk summary of step 03 and the CheckM2 report of step 01,
-# both of which DRAM2 carries into the distillate.
+# both of which DRAM2 copies into the distillate.
 #
 # This supersedes the DRAM v1 pass in step 07, which stays so the comparison
 # between the two versions can be reproduced.
 #
 # The thesis ran a fork of DRAM2, ruben1294/DRAM, under Nextflow 25.10.2 with
-# the docker profile. The fork carries fixes to the KEGG database formatting,
+# the docker profile. The fork contains fixes to the KEGG database formatting,
 # the archaea-calibrated trait rules and the run configuration of this step;
 # its README lists every change. All of that is DRAM2-derived and GPL-licensed,
-# so it lives in the fork. DRAM2_REVISION in server.env
+# so it stays in the fork. DRAM2_REVISION in server.env
 # pins the commit; slurm/DRAM2_HPC_install.slurm fetches it into DRAM2_REPO,
 # and this script refuses a checkout at any other commit unless
 # DRAM2_ALLOW_OTHER_REVISION=true.
@@ -109,7 +109,7 @@ esac
 export NXF_OFFLINE="${NXF_OFFLINE:-true}"
 
 # Every task leaves its intermediate files in the work directory, which grows
-# large, so it sits under PROJECT_DIR, which can be scratch, rather than inside
+# large, so it goes under PROJECT_DIR, which can be scratch, rather than inside
 # the pipeline checkout.
 export NXF_WORK="${DRAM2_WORK_DIR:-${PROJECT_DIR}/work/DRAM2}"
 log_info "Work directory:  $NXF_WORK"

@@ -31,7 +31,7 @@ resolve_project_dir <- function() {
   from_env <- Sys.getenv("MSC_ARCHAEA_DIR")
   if (nzchar(from_env)) {
     if (!dir.exists(from_env)) {
-      stop("MSC_ARCHAEA_DIR points at a missing directory: ", from_env,
+      stop("MSC_ARCHAEA_DIR names a missing directory: ", from_env,
            call. = FALSE)
     }
     return(normalizePath(from_env))
@@ -185,7 +185,7 @@ pan_class_colors <- c(
 
 # ---- taxon_italic ----
 # CDC style: genus and below are italic, family and above are not. A word
-# carrying a digit or written in all caps is a strain or clade code, so it
+# with a digit or written in all caps is a strain or clade code, so it
 # stays upright even inside an italic name.
 ITALIC_LEVELS <- c("Genus", "Species", "Subspecies", "Strain")
 

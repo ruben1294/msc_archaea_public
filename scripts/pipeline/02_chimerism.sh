@@ -4,18 +4,18 @@ set -euo pipefail
 # Step 2. Screens the 54 MAGs for chimerism with GUNC 1.1 against two reference
 # databases, ProGenomes3 and GTDB r214. It closes the quality block that step 01
 # opens. CheckM2 estimates completeness and contamination from the genes a MAG
-# carries; GUNC tests whether those genes come from more than one lineage. It
+# encodes; GUNC tests whether those genes come from more than one lineage. It
 # runs on the MIMAG-filtered set that utils/01_filter_mags.py leaves in
 # results/01_mag_quality/filtered/, after utils/05_rename_mags.sh has given the
 # files their final names, and needs nothing from any later step.
 #
 # GUNC assigns single-copy genes to clades and derives a clade separation score
 # (CSS) from how far the assignments spread. Genes spread across several
-# distinct clades point to a chimeric assembly. GUNC calls a genome chimeric at
+# distinct clades indicate a chimeric assembly. GUNC calls a genome chimeric at
 # CSS above 0.45, with pass.GUNC False.
 #
-# ProGenomes3 gives broad prokaryotic coverage; GTDB r214 carries the deeper
-# archaeal taxonomy and is the one to trust for this dataset.
+# ProGenomes3 gives broad prokaryotic coverage; GTDB r214 has the deeper
+# archaeal taxonomy and is the more reliable reference for this dataset.
 #
 # GUNC flags genomes and this step removes none: all 54 go on to step 03. In
 # this dataset 22 of the 54 fail against GTDB r214 and 24 against ProGenomes3.
@@ -219,7 +219,7 @@ fi
 #
 # gunc plot draws one stacked bar per genome showing how gene assignments
 # distribute across taxonomic ranks, which identifies the contigs
-# carrying the contaminating signal. It takes a single .diamond.*.out file from
+# that hold the contamination. It takes a single .diamond.*.out file from
 # the diamond_output/ directory that --detailed_output produced.
 
 log_info "Step 3: diagnostic plots"

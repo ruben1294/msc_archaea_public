@@ -46,7 +46,7 @@ if [[ -f "$PFAM_SETUP_SENTINEL" ]]; then
 else
     # anvi'o refuses --reset outside its default Pfam location, so a directory
     # left by an interrupted download has to go before it can start again. That
-    # is left to you rather than done here, in case PFAM_DATA_DIR points at
+    # is left to you rather than done here, in case PFAM_DATA_DIR holds
     # something else.
     if [[ -e "$PFAM_DATA_DIR" ]]; then
         log_error "$PFAM_DATA_DIR exists but holds no complete snapshot."

@@ -1,10 +1,10 @@
 # Step 10. DRAM2 runs as a Nextflow workflow inside containers, so this
-# environment holds only the scheduler and git, not the tools.
+# environment only has the scheduler and git, not the tools.
 #
 # The workflow is the fork ruben1294/DRAM at the commit DRAM2_REVISION pins in
 # configs/server.env. slurm/DRAM2_HPC_install.slurm clones it, caches the
 # Nextflow plugins and checks the container engine. On a cluster where only some
-# nodes reach the internet, that has to happen on one of them, once; every later
+# nodes reach the internet, that has to happen on one of them, once. Every later
 # run sets NXF_OFFLINE.
 #
 # The thesis ran Nextflow 25.10.2 on OpenJDK 17.

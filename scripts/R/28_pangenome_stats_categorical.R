@@ -119,7 +119,7 @@ for (bin_file in bin_files) {
     next
   }
 
-  # A cluster present in every MAG, or in none, carries no information for any
+  # A cluster present in every MAG, or in none, is uninformative for any
   # of these tests, so it is dropped before they run.
   pres <- colSums(mag_x_gc)
   variable_gcs <- pres > 0 & pres < nrow(mag_x_gc)

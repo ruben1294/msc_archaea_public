@@ -131,7 +131,7 @@ if (file.exists(QUALITY_TSV)) {
 } else {
   log_warn(
     "Quality report not found at ", QUALITY_TSV,
-    " — sensitivity analysis will be skipped"
+    "; sensitivity analysis will be skipped"
   )
 }
 
@@ -363,8 +363,8 @@ panel_w <- function(n_subplots) max(7, 5.2 * min(3, n_subplots))
 panel_h <- function(n_subplots) 4.5 * ceiling(n_subplots / 3)
 
 # Combined panel: pangenome classes along the top, accumulation curves below.
-# No panel titles, since each subplot already carries its species name, and one
-# tag per row rather than per subplot. wrap_elements() makes tag_levels
+# No panel titles, since each subplot already shows its species name, and one
+# tag per row, not per subplot. wrap_elements() makes tag_levels
 # match at the row level instead of descending into each subplot.
 if (length(panel_classes) > 0 && length(panel_curves) > 0) {
   ord <- intersect(canonical_species, names(panel_classes))
@@ -397,7 +397,7 @@ if (length(panel_classes) > 0 && length(panel_curves) > 0) {
 
   # Tag styling matches tax_analysis.R and the other panels: lowercase letters
   # with no parentheses, bold, size 20, black. wrap_elements() keeps the tags on
-  # the two rows rather than on every subplot inside them.
+  # the two rows instead of every subplot inside them.
   combined <- (patchwork::wrap_elements(full = row_classes) /
     patchwork::wrap_elements(full = row_curves)) +
     patchwork::plot_annotation(tag_levels = "a") &

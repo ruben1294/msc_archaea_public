@@ -12,7 +12,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #
 # The seed ortholog e-value is 1e-3, looser than the 1e-5 default. For scale:
 # 1e-3 permissive, 1e-5 the eggNOG default, 1e-10 strict. The looser cutoff is
-# paired with a minimum seed ortholog bit score of 60, which carries most of the
+# paired with a minimum seed ortholog bit score of 60, which does most of the
 # filtering.
 
 load_project_config
@@ -67,7 +67,7 @@ if [[ ! -d "${EGGNOG_DATA_DIR:-}" ]]; then
     EGGNOG_DATA_DIR=""
 fi
 
-# Step 05 writes one directory per MAG, so the .faa files sit exactly two levels
+# Step 05 writes one directory per MAG, so the .faa files are exactly two levels
 # below INPUT_DIR.
 log "Searching for protein files..."
 faa_files=()
@@ -139,7 +139,7 @@ for faa_file in "${faa_files[@]}"; do
         annot_file="${output_prefix}.emapper.annotations"
 
         if [[ -f "$annot_file" ]]; then
-            # The emapper output carries # comment lines above and below the
+            # The emapper output has # comment lines above and below the
             # table. grep -c would exit 1 on a file that is all comments and
             # pipefail would take the script with it.
             # shellcheck disable=SC2126

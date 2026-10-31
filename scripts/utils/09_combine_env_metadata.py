@@ -132,7 +132,7 @@ def read_depths(path):
     the Station column is empty.
     """
     df = pd.read_excel(path, sheet_name=0, engine="openpyxl")
-    # Drop the spacer rows the spreadsheet carries, where Station is blank
+    # Drop the spreadsheet's spacer rows, where Station is blank
     station_col = None
     for cand in ("Estación", "Estacion", "Station"):
         if cand in df.columns:

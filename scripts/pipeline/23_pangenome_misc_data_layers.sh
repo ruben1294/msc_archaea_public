@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-# Step 23. Builds one TSV per species carrying each MAG's Station, Depth,
+# Step 23. Builds one TSV per species with each MAG's Station, Depth,
 # ROMZ_flag and Order from MAGs_metadata.tsv, and imports them into the
 # corresponding PAN.db as layer misc-data.
 #

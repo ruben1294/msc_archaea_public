@@ -1,7 +1,7 @@
 # Steps 12 to 15, plus 17 and 18. The marker-based phylogenomics route.
 #
 # trimAl and IQ-TREE are pinned to the versions the thesis ran, 1.5.0 and 2.2.5.
-# The MAFFT version is the one this file has always named; no log of the runs
+# The MAFFT version is the one this file has always named, no log of the runs
 # records it.
 #
 # FASconCAT-G is a single Perl script with no conda package;

@@ -1,12 +1,12 @@
 # Steps 03, 11, 16 and 19. GTDB-Tk classifies the MAGs and builds the de novo
-# trees; scripts/pipeline/curate_tree_and_itol.py also uses its FastTree.
+# trees. scripts/pipeline/curate_tree_and_itol.py also uses its FastTree.
 #
 # Steps 03 and 11 ran GTDB-Tk 2.5.2 and steps 16 and 19 ran 2.6.1, all four
 # against the GTDB R226 reference package, the same release as the skani
-# sketches of step 04. This file pins 2.6.1; to rerun steps 03 and 11 exactly,
+# sketches of step 04. This file pins 2.6.1. To rerun steps 03 and 11 exactly,
 # create a second environment with gtdbtk=2.5.2.
 #
-# GTDBTK_DATA_PATH has to point at the reference package or GTDB-Tk refuses to
+# GTDBTK_DATA_PATH must be set to the reference package or GTDB-Tk refuses to
 # start; the steps set it from GTDBTK_DB in configs/server.env.
 #
 # Steps 11, 16 and 19 set a short TMPDIR because Prodigal, which GTDB-Tk calls

@@ -16,12 +16,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 #     DisplayName as a layer and anvi-display-pan labels genomes from it.
 #
 # Pfam, COG24_PATHWAY and COG24_FUNCTION are deleted from
-# GENOMES_modified.db.gene_function_calls, where they live;
+# GENOMES_modified.db.gene_function_calls, where they are stored;
 # they are not in PAN.db. EVERYTHING stays, because it is synthetic, the union
 # of the remaining functional sources, and removing it would mean removing all
 # of them.
 #
-# This one runs locally rather than on the cluster: it is sqlite work and small
+# This one runs locally: it is sqlite work and small
 # TSV edits, nothing that needs a scheduler.
 
 trap 'log_error "Script failed at line $LINENO with exit code $?"; exit 1' ERR
@@ -218,7 +218,7 @@ PYEOF
         -o "$layers_tsv_en"
 
     # The output TSV keeps the ID column and the renamed columns, nothing else.
-    # Carrying the untouched columns through would collide on re-import with the
+    # Keeping the untouched columns would collide on re-import with the
     # original keys, which are still in the database at this point.
     python3 - <<PYEOF
 import pandas as pd
@@ -405,7 +405,7 @@ for old, new in mapping.items():
     cur.execute("UPDATE gene_cluster_frequencies SET layer = ? WHERE layer = ?", (new, old))
 
 # layer_orders is (data_key, data_type, data_value); data_value holds
-# the newick, and any other string that carries genome_names
+# the newick, and any other string that contains genome_names
 cur.execute("SELECT data_key, data_value FROM layer_orders")
 rows = cur.fetchall()
 for data_key, data_value in rows:

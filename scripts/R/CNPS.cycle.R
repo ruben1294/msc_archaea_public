@@ -730,7 +730,7 @@ make_cnps_station_heatmap <- function(abundance_df, title_es, outfile) {
     c("white", "yellow", "orange", "orangered", "red", "darkred")
   )
 
-  # Rows already carry the station names, so no sidebar is needed
+  # Rows are already labelled with the station names, so no sidebar is needed
   ht <- Heatmap(
     mat_st,
     name = "Abundancia",
@@ -937,7 +937,7 @@ run_cycle_plots <- function(abundance_df, cycle_name, cycle_title_es,
     )
   )
 
-  # heatmap.s takes only the rows carrying at least one non-zero value
+  # heatmap.s takes only the rows with at least one non-zero value
   num_mat <- abund_es[, mag_cols, drop = FALSE]
   has_signal <- rowSums(num_mat > 0, na.rm = TRUE) > 0
   abund_es_nz <- abund_es[has_signal, , drop = FALSE]
@@ -1478,7 +1478,7 @@ if (length(mags_10) == 0) {
 
 # SECTION G: COMMUNITY-LEVEL SUMMARY, TAXONOMY AND METADATA BUBBLES
 #
-# Absorbs what used to live in CNPS.cycle_2.R.
+# Absorbs the former contents of CNPS.cycle_2.R.
 # Reuses: translate_to_spanish, capitalize_first, font_family,
 #            WSL_BASE, OUT_DIR, CNPS_CACHE_FILE, meta
 # Reads the CSVs written in section A rather than the in-memory objects.
@@ -1978,7 +1978,7 @@ plot_tax_meta_combined_g <- function(data, tax_level, meta_col,
       scale_fill_viridis_c(
         option = "plasma", name = "Abundancia\nmedia", na.value = "transparent"
       ) +
-      # A small x expansion, so the panels carry little blank space at the sides
+      # A small x expansion, so the panels have little blank space at the sides
       scale_x_discrete(expand = expansion(add = 0.5)) +
       scale_y_discrete(labels = function(x) {
       lab <- sub("_(Carbono|Nitr\u00f3geno|Azufre|F\u00f3sforo)$", "", x)

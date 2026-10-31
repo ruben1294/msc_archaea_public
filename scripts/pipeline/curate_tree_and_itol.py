@@ -70,7 +70,7 @@ def _ensure_conda_env() -> None:
                 conda_exe = candidate
                 break
     if not conda_exe:
-        print("[WARN] conda not found — proceeding without env switch "
+        print("[WARN] conda not found; proceeding without env switch "
               "(FastTree may not be in PATH)", flush=True)
         return
     print(f"[INFO] Re-execing inside conda env '{_CONDA_ENV}' …", flush=True)
@@ -278,7 +278,7 @@ STATION_COLORS = {
 }
 
 # Depth colors: code to (hex, Spanish label)
-# OMZ samples carry Depth="ROMZ" in MAGs_metadata.tsv, not "OMZ". ROMZ is the
+# OMZ samples have Depth="ROMZ" in MAGs_metadata.tsv, not "OMZ". ROMZ is the
 # Spanish abbreviation for the oxygen minimum zone.
 DEPTH_COLORS = {
     "BTM":  ("#1d3557", "Fondo"),

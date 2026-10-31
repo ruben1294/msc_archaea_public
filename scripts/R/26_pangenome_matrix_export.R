@@ -48,7 +48,7 @@ META_TSV    <- file.path(PROJECT_DIR, "data", "MAGs_metadata.tsv")
 
 dir.create(DERIVED_DIR, showWarnings = FALSE, recursive = TRUE)
 
-# The species that carry enough MAGs to report on.
+# The species with enough MAGs to report on.
 SPECIES_N5PLUS <- c("MGIIb_O1_sp002498525",
                     "Thalassarchaeum_sp002507125",
                     "UBA8886_sp003193815")
@@ -115,8 +115,8 @@ for (sp_dir in species_dirs) {
   # gene_clusters_summary.txt.gz is tab delimited, one row per gene call
   df <- read_tsv(gc_summary, show_col_types = FALSE, progress = FALSE)
 
-  # The annotation sources anvi'o 9 writes. Missing ones are skipped rather than
-  # treated as an error, since not every pangenome carries all of them.
+  # The annotation sources anvi'o 9 writes. Missing ones are skipped instead of
+  # treated as an error, since not every pangenome has all of them.
   fn_cols <- intersect(
     c("KOfam_ACC", "KOfam", "KEGG_Module_ACC", "KEGG_Module",
       "KEGG_Class", "COG20_FUNCTION_ACC", "COG20_FUNCTION",

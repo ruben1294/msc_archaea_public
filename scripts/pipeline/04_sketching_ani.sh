@@ -13,7 +13,7 @@ set -euo pipefail
 # whether ANI stays below 95% against every GTDB reference in its genus, how far
 # it sits from its described relatives, and where it lands among the other 53.
 #
-# It sits right after taxonomy because it answers the same question, whether
+# It runs right after taxonomy because it answers the same question, whether
 # those 10 are new species, and needs nothing from any later step: only the
 # filtered MAGs and data/MAGs_metadata.tsv, which utils/06_generate_metadata.py
 # rebuilds from the step 03 output.
@@ -63,9 +63,9 @@ MAG_EXT="fa"
 #
 # -s 75, under the skani default of 80:
 #   Novel archaeal genera can sit at 78 to 82% ANI from their closest GTDB
-#   representative. Dropping the screen by five points, as skani recommends,
-#   keeps those borderline hits alive long enough for the accurate estimator
-#   to run on them.
+#   representative. Lowering the screen from 80 to 75, as skani recommends,
+#   keeps those borderline hits in the candidate set until the accurate
+#   estimator runs on them.
 #
 # --slow (-c 30):
 #   Best accuracy on fragmented genomes with N50 in the low kb. It trades speed
@@ -107,7 +107,7 @@ if [[ "$N_MAGS" -eq 0 ]]; then
     exit 1
 fi
 
-# Every novel MAG is checked up front, so a typo in the list above surfaces
+# Every novel MAG is checked up front, so a typo in the list above shows up
 # before any of the long passes start.
 for mag in "${NOVEL_MAGS[@]}"; do
     if [[ ! -f "${MAG_DIR}/${mag}.${MAG_EXT}" ]]; then

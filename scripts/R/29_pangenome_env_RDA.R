@@ -13,7 +13,7 @@
 #
 # Only species with at least five MAGs are processed.
 #
-# Physicochemical_properties.xlsx carries two sheets:
+# Physicochemical_properties.xlsx has two sheets:
 #   Physicochemical_by_depth   one row per depth (ROMZ, 1000, BTM)
 #   Stations_depths            one row per station and depth
 #
@@ -56,7 +56,7 @@ local({
   }
 })
 
-# Converts a display name carrying markdown italics (*X*) into an expression()
+# Converts a display name with markdown italics (*X*) into an expression()
 # that base R can render through title() and mtext(). plot.varpart uses base
 # graphics, where the asterisks would otherwise print literally.
 italic_title <- function(pretty) {
@@ -142,7 +142,7 @@ phylo_pvr <- function(tree, tips_keep, n_axes = 3) {
 # --- Load environmental data -------------------------------------------------
 if (!file.exists(ENV_XLSX)) {
   stop("Environmental XLSX not found: ", ENV_XLSX,
-       " — run scripts/utils/09_combine_env_metadata.py first")
+       "; run scripts/utils/09_combine_env_metadata.py first")
 }
 env_depth <- read_xlsx(ENV_XLSX, sheet = "Physicochemical_by_depth") %>%
   rename(
@@ -203,7 +203,7 @@ if (file.exists(TREE_NWK)) {
                    matched, length(tree$tip.label)))
 } else {
   log_warn("Tree not found at ", TREE_NWK,
-           " — RDA will be unconditioned")
+           "; RDA will be unconditioned")
 }
 
 # ---- one species at a time ----
@@ -305,7 +305,7 @@ for (bin_file in bin_files) {
   # varpart returns NA for the adjusted R squared when the model is
   # undersaturated, which happens easily with few MAGs and many variables. To
   # get interpretable numbers back, the environmental variables and the number
-  # of PVR axes are both trimmed to what the degrees of freedom can carry.
+  # of PVR axes are both trimmed to what the degrees of freedom can support.
   # The constraint is residual_df = n - n_env - n_pvr - 1 >= 1.
   if (!is.null(pvr_axes) && length(cond_terms) > 0) {
     n_mags_vp     <- nrow(Y)

@@ -933,7 +933,7 @@ save_fig(p2c, "Fig2C_clases_estacion_profundidad.png",
 save_fig(p2d, "Fig2D_clases_profundidad_estacion.png", width = 12, height = 6)
 
 # ---- section 7: bubble chart of ecological niches ----
-# With few categories, a bubble chart carries presence, relative abundance and
+# With few categories, a bubble chart shows presence, relative abundance and
 # spatial distribution at once, where a heatmap would only show the last two.
 cat("\n=== Sección 7: Gráficos de burbujas por nivel taxonómico ===\n")
 
@@ -1334,7 +1334,7 @@ if (length(mags_no_species) == 0) {
 #   AF < 50%                    no close genomic relative in GTDB R226,
 #                               possibly novel at genus level or above
 #
-# The aligned fraction carries most of the weight. A high ANI over a low AF
+# The aligned fraction matters most. A high ANI over a low AF
 # means the alignment found conserved housekeeping regions and little else,
 # which is not evidence of genome-wide homology.
 #
@@ -1444,7 +1444,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
 
   # Fig 10A: lollipop, ANI to the closest GTDB R226 representative.
   # Puts every novel MAG on the same axis against its nearest known relative.
-  # Point size carries the aligned fraction, which resolves the
+  # Point size encodes the aligned fraction, which resolves the
   # ambiguity of an ANI computed over short conserved stretches.
   novelty_colors_10 <- c(
     "Nueva especie (ANI 90–95%)" = "#2980B9",
@@ -1520,7 +1520,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # ---- Fig 10A, two-panel form: lollipop for ANI beside bars for AF ----
 
   # ---- two-panel form ----
-  # The ANI percentage sits left of the lollipop so it reads without a lookup.
+  # The ANI percentage is printed left of the lollipop, so no lookup is needed.
   p_c_ani <- ggplot(skani_best, aes(x = ANI, y = DisplayName)) +
     annotate("rect",
       xmin = 95, xmax = Inf, ymin = -Inf, ymax = Inf,
@@ -1594,7 +1594,7 @@ if (!file.exists(skani_gtdb_file) || !file.exists(skani_sparse_file)) {
   # Fig 10B: scatter of ANI against AF_query, every GTDB hit above 5% AF.
   # The cloud is each novel MAG's signature in GTDB reference space. High AF
   # with high ANI marks a close relative; very low AF with high ANI
-  # points to alignment on conserved genes only (false positives). The
+  # indicates alignment on conserved genes only (false positives). The
   # top left quadrant (AF >= 50%, ANI < 95%) is confirmed new species; the
   # bottom band (AF < 50%) is a taxon GTDB R226 does not represent well.
   skani_hits_filt <- skani_gtdb %>%
@@ -2378,7 +2378,7 @@ p_sankey <- ggplot(
 save_fig(p_sankey, "Fig13_sankey_taxonomico_filo_especie.png", width = 17, height = 11)
 
 # === SECTION 1c (v2): combined sankey / order / species panel ===
-# A variant of Fig1_panel_filo_orden_especie where subpanel (a) carries the
+# A variant of Fig1_panel_filo_orden_especie where subpanel (a) shows the
 # Sankey instead of the stacked phylum bars. Subpanels (b) and (c) are reused
 # unchanged from the original panel. It is assembled here rather than in section
 # 1c because p_sankey is defined in

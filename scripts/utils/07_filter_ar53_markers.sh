@@ -96,8 +96,8 @@ for fasta_file in "$AR53_DIR"/*.fa; do
     }
     ' "$fasta_file")
     
-    # A sequence shorter than 30% of the marker mean carries too little signal
-    # to align usefully, so that is the cut.
+    # Sequences shorter than 30% of the marker mean have too few informative
+    # positions to align well, so they are dropped.
     min_length=$(awk -v avg="$avg_length" 'BEGIN { print int(avg * 0.30) }')
     
     log_msg "  Length mean: $avg_length AA"

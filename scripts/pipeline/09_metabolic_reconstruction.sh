@@ -38,7 +38,7 @@ COMBINED_OUTPUT="${OUTPUT_DIR}/decoder_expander_combined"
 CPU_CORES="${SLURM_CPUS_PER_TASK:-8}"
 
 # The KofamKOALA submission date is part of the directory name, so find the
-# table rather than hard-coding the date.
+# table instead of hard-coding the date.
 INPUT_FILE="${INPUT_FILE:-}"
 if [[ -z "$INPUT_FILE" ]]; then
     INPUT_FILE=$(find "${RESULTS_DIR}/${KO_ASSIGNMENT_SUBDIR}" -maxdepth 2 \
@@ -48,8 +48,8 @@ fi
 PROTEIN_FILE="${PROTEIN_FILE:-${RESULTS_DIR}/${GENE_PREDICTION_SUBDIR}/proteins/CMRA_all_proteins_final.faa}"
 
 # KEGG-Expander ships inside the KEGGDecoder package rather than on PATH, so ask
-# Python where the package lives instead of naming a conda prefix. Override
-# KEGGDECODER_DIR to point somewhere else.
+# Python where the package is installed instead of naming a conda prefix. Set
+# KEGGDECODER_DIR to use another location.
 KEGGDECODER_DIR="${KEGGDECODER_DIR:-}"
 if [[ -z "$KEGGDECODER_DIR" ]]; then
     KEGGDECODER_DIR=$(python -c \

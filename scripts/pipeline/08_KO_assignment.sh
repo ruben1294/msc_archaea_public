@@ -33,7 +33,7 @@ if [[ ! -d "$KO_DIR" ]]; then
     exit 1
 fi
 
-# The submission date is part of the directory name, so glob rather than assume.
+# The submission date is part of the directory name, so it is found with a glob.
 mapfile -t transformed < <(find "$KO_DIR" -maxdepth 2 -name "all_kofam_KOs.transformed.tsv" -type f | sort)
 
 if [[ ${#transformed[@]} -eq 0 ]]; then

@@ -25,9 +25,9 @@ load_project_config
 require_commands anvi-setup-kegg-data anvi-run-kegg-kofams anvi-setup-pfams anvi-run-pfams
 
 # --- Validate required config variables ---
-# KEGG_DATA_DIR and PFAM_DATA_DIR are where the anvi'o snapshots live, about
+# KEGG_DATA_DIR and PFAM_DATA_DIR hold the anvi'o snapshots, about
 # 30 GB and 3 GB. They are downloaded on the first run and reused afterwards, so
-# point them at a filesystem every compute node can read. On nodes without
+# put them on a filesystem every compute node can read. On nodes without
 # network access, download them beforehand with scripts/utils/setup_anvio9.sh.
 required_vars=(PROJECT_DIR RESULTS_DIR PANGENOME_SUBDIR TEMP_SUBDIR KEGG_DATA_DIR PFAM_DATA_DIR)
 for var in "${required_vars[@]}"; do
@@ -105,7 +105,7 @@ if [[ -f "$PFAM_SETUP_SENTINEL" ]]; then
 else
     # anvi'o refuses --reset on a non-default --pfam-data-dir (safety guard), so
     # a directory left by an interrupted download has to go first. That is left
-    # to the user rather than done here, in case PFAM_DATA_DIR points at
+    # to the user rather than done here, in case PFAM_DATA_DIR holds
     # something else.
     if [[ -e "$PFAM_DATA_DIR" ]]; then
         log_error "  $PFAM_DATA_DIR exists but holds no complete Pfam snapshot."

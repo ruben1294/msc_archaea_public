@@ -14,7 +14,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # dropped connection is likely, so this swaps in one that continues a partial
 # file with an HTTP Range request. GUNC then checks each file against the md5
 # sum the server publishes and deletes it on a mismatch, so a resumed download
-# that went wrong is caught rather than used.
+# that went wrong is caught before it is used.
 #
 # A database already in place is skipped, which makes the script safe to rerun
 # after an interruption.

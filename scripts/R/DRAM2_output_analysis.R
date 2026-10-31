@@ -222,11 +222,11 @@ gpar_f <- function(...) {
 
 # Italicises taxon names, following tax_analysis.R.
 #
-# DisplayName carries a station and bin suffix, as in "Thalassarchaeum betae A4
+# DisplayName has a station and bin suffix, as in "Thalassarchaeum betae A4
 # BTM_21", so testing the whole string with grepl("[0-9]", ...) is always TRUE
 # and nothing would ever be italicised. Only the first word, the genus, decides
 # the face for the whole string:
-#   upright if it carries digits (GTDB codes: UBA57, sp002507125)
+#   upright if it contains digits (GTDB codes: UBA57, sp002507125)
 #   upright if it is all caps (MGIII, DPANN)
 #   upright if the name is NA or "Sin asignar"
 #   italic otherwise, meaning an established genus or species name
@@ -810,7 +810,7 @@ reorder_rows_by_version <- function(mat, ann_df, annotation_version,
 # against a curated or HMM functional database
 # (KEGG, KOfam, dbCAN, CAMPER, sulfur, methyl, FeGenie, metals). A hit in
 # UniRef does not count. It is sequence homology, and the reference protein it
-# points at may itself be uncharacterised, so a UniRef hit can mean nothing more
+# matches may itself be uncharacterised, so a UniRef hit can mean nothing more
 # than "resembles something nobody has identified". Those are reported separately
 # as Homology_Only, split into informative and vague by what the hit description
 # says.
@@ -1055,7 +1055,7 @@ order_to_class <- local({
 })
 
 # Puts the class in parentheses after an order name that is a code: first
-# word all caps (MGIII, DPANN) or carrying digits (UBA1234). Only applies to
+# word all caps (MGIII, DPANN) or containing digits (UBA1234). Only applies to
 # labels on figures collapsed by order.
 fmt_order_label <- function(ord_name) {
   if (is.na(ord_name)) return(ord_name)
@@ -1866,7 +1866,7 @@ summary_by_mag_tax <- summary_by_mag %>%
     geom_bar(stat = "identity", fill = "steelblue", color = "black", width = 0.6) +
     geom_errorbar(aes(ymin = pmax(0, mean_pct - sd_pct), ymax = mean_pct + sd_pct),
                   width = 0.2, color = "gray30") +
-    # The label sits at the far right of the error bar, clear of the SD bar.
+    # The label goes at the far right of the error bar, clear of the SD bar.
     geom_text(aes(y = mean_pct + sd_pct, label = sprintf("%.1f%%", mean_pct)),
               hjust = -0.15, size = 3.5, family = font_family) +
     geom_hline(yintercept = global_mean, linetype = "dashed",
@@ -1957,7 +1957,7 @@ if (!is.null(res_order$sig)) {
   }
   writeLines(
     c(
-      "Kruskal-Wallis omnibus test — % anotación funcional curada (KEGG/HMM, sin UniRef) por Orden",
+      "Kruskal-Wallis omnibus test: % anotación funcional curada (KEGG/HMM, sin UniRef) por Orden",
       sprintf("  H0: la distribución del %% de anotación funcional curada es igual entre órdenes."),
       sprintf("  N total de MAGs (con n≥2 por grupo): %d", N_omni),
       sprintf("  Grupos evaluados (n≥2 MAGs): %d", sig$n_groups),
@@ -2963,7 +2963,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
     bool_cols <- all_cols[is_bool_col]
     num_cols <- all_cols[!is_bool_col]
 
-    # Columns carrying at least one value
+    # Columns with at least one value
     bool_keep <- bool_cols[vapply(bool_cols, function(cn) {
       any(as.character(prod_raw[[cn]]) %in% c("True", "TRUE"), na.rm = TRUE)
     }, logical(1))]
@@ -3144,7 +3144,7 @@ if (file.exists(PRODUCT_FILE) && file.exists(GENOME_STATS_FILE)) {
       )
     ))
 
-    # The individual heatmaps carry neither right_annotation nor row names.
+    # The individual heatmaps have neither right_annotation nor row names.
     # all_right_anno is added to the HeatmapList with +, which puts the legend
     # after it.
     has_bool <- length(bool_keep) > 0
@@ -3582,7 +3582,7 @@ make_trait_order_heatmap <- function(trait_df, title_es, outfile, subtitle_tool 
   col_fun_tr_ord <- colorRamp2(c(0, 0.5, 1), c("white", "#74C476", "#006D2C"))
 
   # Right margin scaled to the longest order name, counting the class suffix
-  # that code-like names carry
+  # that code-like names get
   fmt_rn <- sapply(rownames(mat), fmt_order_label)
   max_name_mm  <- max(nchar(fmt_rn)) * 2.2  # about 2.2 mm per character at fontsize 10
   pad_right    <- max(20, ceiling(max_name_mm))     # at least 20 mm
@@ -3721,8 +3721,8 @@ if (file.exists(TRAITS_FILE)) {
 
 # ---- 13b. TRAITS AGGREGATED BY DEPTH, STATION AND GENUS ----
 cat("=== SECCIÓN 13b: Ver treatment_comparison.R ===\n")
-# What used to live here, the aggregated heatmaps Fig9a to 9f along with the
-# Fisher tests and logistic models, now lives in treatment_comparison.R.
+# The aggregated heatmaps Fig9a to 9f, with their Fisher tests and logistic
+# models, moved from here to treatment_comparison.R.
 cat("  (Gráficos 9a-9f generados por treatment_comparison.R)\n\n")
 
 # ---- 14. METABOLIC SUMMARY BY CATEGORY (metabolism_summary.xlsx) ----
@@ -3981,7 +3981,7 @@ make_metals_heatmap <- function(title_es, outfile,
         an_mt <- ro$ann
       }
 
-      # Integer then character, so the palette is discrete rather than continuous
+      # Integer then character, so the palette is discrete
       mat_int <- matrix(as.integer(pmin(mat_ord, 2, na.rm = TRUE)),
         nrow = nrow(mat_ord), dimnames = dimnames(mat_ord)
       )

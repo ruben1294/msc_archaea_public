@@ -2,8 +2,8 @@
 # completeness matrices.
 #
 # KEGG-Decoder pins Python 3.6, which is why it gets an environment of its own.
-# KEGG-Expander ships inside the same package rather than on PATH; step 09 asks
-# Python where the KEGGDecoder package lives instead of assuming a prefix.
+# KEGG-Expander ships inside the same package rather than on PATH. Step 09 asks
+# Python where the KEGGDecoder package is.
 name: keggdecoder
 channels:
   - conda-forge

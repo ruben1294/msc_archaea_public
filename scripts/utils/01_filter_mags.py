@@ -38,7 +38,7 @@ MAX_CONT_HIGH = float(os.environ.get("HIGH_QUALITY_CONTAMINATION", 5))
 MIN_COMP_MEDIUM = float(os.environ.get("MIN_COMPLETENESS", 50))
 MAX_CONT_MEDIUM = float(os.environ.get("MAX_CONTAMINATION", 10))
 
-# scripts/utils/ sits two levels below the repository root.
+# scripts/utils/ is two levels below the repository root.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 logger = logging.getLogger("filter_mags")
@@ -48,7 +48,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", type=Path,
                         help="project root (default: $PROJECT_DIR, $MSC_ARCHAEA_DIR "
-                             "or the repository this script lives in)")
+                             "or the repository that contains this script)")
     parser.add_argument("--raw-dir", type=Path,
                         help="directory holding the unfiltered MAGs "
                              "(default: <base>/data/mags)")

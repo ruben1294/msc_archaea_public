@@ -44,8 +44,8 @@ CPUS="${SLURM_CPUS_PER_TASK:-24}"
 
 # Keep this path short. A deep TMPDIR is what triggers the AF_UNIX error above.
 # mktemp rather than reusing an inherited TMPDIR: the cleanup below must only
-# ever remove a directory this script created. SLURM wrappers export TMPDIR
-# pointing into the project tree.
+# ever remove a directory this script created. SLURM wrappers export a TMPDIR
+# inside the project tree.
 TMPDIR="$(mktemp -d /tmp/gtdbtk_XXXXXXXX)"
 export TMPDIR
 trap 'rm -rf "${TMPDIR:?}"' EXIT

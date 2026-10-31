@@ -47,7 +47,7 @@ PREFIX="10mag_refs"
 SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK:-16}"
 
 # Prodigal, which GTDB-Tk calls internally, fails with "AF_UNIX path too long"
-# when the temporary directory sits deep in a filesystem. mktemp keeps it short
+# when the temporary directory is deep in a filesystem. mktemp keeps it short
 # and keeps it ours, so an inherited TMPDIR is never touched.
 TMPDIR="$(mktemp -d /tmp/gtdbtk_XXXXXXXX)"
 export TMPDIR
@@ -56,7 +56,7 @@ export TMP="$TMPDIR"
 log_info "GTDB-Tk temp dir: ${TMPDIR}"
 
 # The 10 target MAGs (no-species assignment, MIMAG medium-quality or better)
-# A4.BTM.megahit.bin.58 carries 6.5% contamination; it stays in, flagged.
+# A4.BTM.megahit.bin.58 has 6.5% contamination; it stays in, flagged.
 TARGET_MAGS=(
     "A6.BTM.megahit.bin.3"
     "A4.BTM.megahit.bin.15"

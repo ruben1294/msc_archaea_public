@@ -2,7 +2,7 @@
 #
 # The GTDB R226 sketch database is downloaded separately; see
 # scripts/utils/download_skani_gtdb_r226.sh. GTDB_SKETCH_DIR in
-# configs/server.env points at it, and --skip-gtdb runs the intra-study passes
+# configs/server.env holds its path, and --skip-gtdb runs the intra-study passes
 # without it.
 name: skani
 channels:

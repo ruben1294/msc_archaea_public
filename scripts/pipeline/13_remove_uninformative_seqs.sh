@@ -22,7 +22,7 @@ log_job_header "trimAl column trimming, three branches"
 load_project_config
 require_vars PROJECT_DIR RESULTS_DIR
 
-# TRIMAL_PATH in server.env points at a specific build; without it the script
+# TRIMAL_PATH in server.env selects a specific build; without it the script
 # falls back to whatever trimal is on PATH.
 if [[ -n "${TRIMAL_PATH:-}" && -x "${TRIMAL_PATH}" ]]; then
     TRIMAL_EXEC="$TRIMAL_PATH"

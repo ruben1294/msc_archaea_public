@@ -87,7 +87,7 @@ log_warn <- function(...) cat(sprintf("[%s] [WARN] %s\n",
                                       paste0(...)), file = stderr())
 sanitize <- function(x) gsub("[^a-zA-Z0-9_]", "_", x)
 
-# Shannon entropy normalised by log(k): 0 means the cluster sits in a single
+# Shannon entropy normalised by log(k): 0 means the cluster is confined to a single
 # category, 1 means it spreads evenly across all k. It separates
 # depth-restricted clusters from depth-agnostic ones.
 shannon_norm <- function(counts) {
@@ -278,7 +278,7 @@ for (sp_name in canonical_species) {
 
   # geom_boxplot draws nothing at n = 1, since there is no IQR. The jitter keeps
   # the points visible regardless, and the crossbar puts a median line on the
-  # single-observation categories, so every category reads as a box.
+  # single-observation categories, so every category is drawn as a box.
   long_hom_plot <- long_hom %>%
     filter(!is.na(value), !is.na(depth_dom)) %>%
     group_by(metric, depth_dom) %>%
@@ -477,7 +477,7 @@ for (sp_name in canonical_species) {
         override.aes = list(size = 6, alpha = 1)
       )) +
       # The rho glyph does not render in this environment: the active font
-      # family carries no Greek, and the fallback substitutes a question mark.
+      # family has no Greek glyphs, and the fallback substitutes a question mark.
       # The axis names the statistic instead; the scale is -1 to +1 either way.
       labs(title = pretty,
            x = "Coeficiente de Spearman",

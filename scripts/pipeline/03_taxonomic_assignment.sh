@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # writes the summary tables under results/03_taxonomy_assigned/. The DRAM2
 # config, the tree scripts and the R scripts all read
 # classify/tax_.ar53.summary.tsv from there, so the prefix defaults to "tax_",
-# the one that file name carries; change it and they stop finding the table.
+# the one in that file name; change it and they stop finding the table.
 #
 # The thesis ran this with GTDB-Tk 2.5.2 against GTDB R226.
 #

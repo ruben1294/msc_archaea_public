@@ -18,7 +18,7 @@ log_error() { echo "[$(_log_stamp)] [ERROR] $*" >&2; }
 
 # Repository root, derived from this file's own location rather than from the
 # caller, so it holds no matter which directory the script runs from or how deep
-# in scripts/ the caller sits.
+# in scripts/ the caller is.
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export REPO_ROOT
 
@@ -43,7 +43,7 @@ load_project_config() {
 }
 
 # Fails with a list of everything missing rather than one variable at a time, so
-# a half-filled server.env surfaces in a single run.
+# every gap in a half-filled server.env shows up in a single run.
 require_vars() {
     local missing=()
     local var

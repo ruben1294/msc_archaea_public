@@ -6,7 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 # Step 1. Runs CheckM2 over the input MAGs in data/mags/ and writes
 # quality_report.tsv under results/01_mag_quality/. Before that it strips
 # duplicate contig IDs, which CheckM2 rejects and which show up when
-# MAGs binned from separate assemblies of the same station carry contigs with
+# MAGs binned from separate assemblies of the same station contain contigs with
 # the same name.
 #
 # Two helpers finish the quality block before step 02:
@@ -142,7 +142,7 @@ if [ "$DUPLICATES_FOUND" -eq 1 ]; then
         mag_basename=$(basename "$mag")
         mag_temp="${TEMP_DIR}/${mag_basename}.tmp"
 
-        # The in_duplicate flag carries across the sequence lines that follow a
+        # The in_duplicate flag persists across the sequence lines that follow a
         # repeated header, so the whole record is dropped rather than its header
         # alone.
         awk '

@@ -6,8 +6,8 @@ set -euo pipefail
 # across them: genafpair (E-INS-i, tolerant of unalignable regions between
 # conserved blocks), localpair (L-INS-i) and globalpair (G-INS-i).
 #
-# Each strategy writes to its own directory, and steps 13 to 15 carry the three
-# branches forward independently.
+# Each strategy writes to its own directory, and steps 13 to 15 process the three
+# branches independently.
 #
 # Markers with fewer than two sequences cannot be aligned; they are copied
 # through unchanged so the file set stays complete for the concatenation in
@@ -22,7 +22,7 @@ log_job_header "MAFFT marker alignment, three strategies"
 load_project_config
 require_vars PROJECT_DIR RESULTS_DIR
 
-# MAFFT_PATH in server.env points at a specific build; without it the script
+# MAFFT_PATH in server.env selects a specific build; without it the script
 # falls back to whatever mafft is on PATH.
 if [[ -n "${MAFFT_PATH:-}" && -x "${MAFFT_PATH}" ]]; then
     MAFFT_EXEC="$MAFFT_PATH"

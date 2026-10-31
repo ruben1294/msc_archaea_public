@@ -64,5 +64,5 @@ it and what to do without a licence.
 The work ran on two clusters. anvi'o 9 would not build on the first, over its
 `datrie` dependency, so the pangenome steps, 20 to 26, ran on a
 second one. Nothing in the code depends on that split: keep one copy of
-`configs/server.env` per machine and point `CONFIG_FILE` at the one each step
+`configs/server.env` per machine and set `CONFIG_FILE` to the one each step
 should read.
